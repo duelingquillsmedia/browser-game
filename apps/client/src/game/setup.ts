@@ -2,7 +2,7 @@ import { createMonster, startCombat, toCombatant, type Character, type CombatSta
 import type { Encounter } from "./lore";
 
 export function beginEncounter(character: Character, encounter: Encounter): CombatState {
-  const party = [toCombatant({ ...character, hp: character.maxHp }, "party")];
+  const party = [toCombatant(character, "party")];
   const enemies = encounter.monsterTemplateIds.map((templateId, index) =>
     toCombatant(createMonster(templateId, `${encounter.id}-${index}`), "enemy")
   );

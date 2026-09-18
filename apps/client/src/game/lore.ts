@@ -7,6 +7,12 @@ export const WORLD_INTRO = [
     "against the frontier — the first step of a much longer road.",
 ];
 
+export const HOME_TOWN_NAME = "Fallowmere";
+
+export const HOME_TOWN_DESCRIPTION =
+  "A cluster of stone waystations and traders' stalls at the crossroads of the Ashen Coast, " +
+  "the Silverwood, and the Bloodmere Plains — the last safe ground before the frontier.";
+
 export interface Encounter {
   id: string;
   name: string;

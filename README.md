@@ -20,6 +20,11 @@ database yet: create a character, pick an encounter, and fight it out.
 - A first art pass: a textured background, an ornate HP bar, and portrait
   frames for party/enemy cards, drawn from a craftpix.net fantasy GUI kit
   (see [Assets](#assets)).
+- A character roster and a home-base hub: pick or create a character, land in
+  Fallowmere (the frontier waypost), venture out to fight, and rest to heal
+  between trips. Characters persist in the browser (`localStorage`) — there's
+  no account system yet, so "your characters" means "this browser's
+  characters" until real accounts land in milestone 2.
 
 ## Tech stack
 
