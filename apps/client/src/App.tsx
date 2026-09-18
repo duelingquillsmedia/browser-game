@@ -11,7 +11,7 @@ import { ResultScreen } from "./screens/ResultScreen";
 import { WORLD_INTRO, WORLD_NAME, type Encounter } from "./game/lore";
 import { beginEncounter } from "./game/setup";
 import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
-import { supabase } from "./lib/supabaseClient";
+import { isSupabaseConfigured, supabase } from "./lib/supabaseClient";
 import "./App.css";
 
 type Screen =
@@ -25,6 +25,20 @@ type Screen =
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="screen intro-screen">
+        <h1>Configuration Needed</h1>
+        <p className="subtitle">
+          This app can't reach its database yet. Copy <code>apps/client/.env.example</code> to{" "}
+          <code>apps/client/.env</code> and fill in your Supabase project's URL and publishable key
+          (or set <code>VITE_SUPABASE_URL</code> / <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> in your
+          hosting provider's environment variables), then reload.
+        </p>
+      </div>
+    );
+  }
 
   async function handleBegin() {
     const { data } = await supabase.auth.getSession();
