@@ -51,7 +51,7 @@ function AbilityAssigner({ scores, onChange }: AbilityAssignerProps) {
 }
 
 export interface CharacterCreationScreenProps {
-  onComplete: (character: Character) => void;
+  onComplete: (character: Character) => Promise<void>;
 }
 
 export function CharacterCreationScreen({ onComplete }: CharacterCreationScreenProps) {
@@ -59,6 +59,8 @@ export function CharacterCreationScreen({ onComplete }: CharacterCreationScreenP
   const [raceId, setRaceId] = useState("human");
   const [classId, setClassId] = useState("fighter");
   const [scores, setScores] = useState<AbilityScores>(() => defaultAssignment("fighter"));
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const race = RACES[raceId];
   const cls = CLASSES[classId];
@@ -81,9 +83,16 @@ export function CharacterCreationScreen({ onComplete }: CharacterCreationScreenP
     setScores(defaultAssignment(nextClassId));
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!preview) return;
-    onComplete({ ...preview, id: `hero-${Date.now()}` });
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onComplete(preview);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save this character. Please try again.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -144,8 +153,10 @@ export function CharacterCreationScreen({ onComplete }: CharacterCreationScreenP
         </div>
       )}
 
-      <button type="button" className="primary" disabled={!canCreate} onClick={handleSubmit}>
-        Set Out
+      {error && <p className="auth-error">{error}</p>}
+
+      <button type="button" className="primary" disabled={!canCreate || submitting} onClick={handleSubmit}>
+        {submitting ? "Please wait…" : "Set Out"}
       </button>
     </div>
   );

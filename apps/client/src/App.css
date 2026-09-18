@@ -48,6 +48,34 @@ button.ghost {
   padding: 0.4rem 1rem;
 }
 
+/* Auth */
+.auth-screen {
+  max-width: 420px;
+}
+
+.auth-form {
+  margin-top: 1.5rem;
+}
+
+.auth-error {
+  color: var(--danger);
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0;
+}
+
+.auth-info {
+  color: var(--success);
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0;
+}
+
+.screen-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 /* Character creation */
 .field {
   display: flex;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ActionRequest, Character, CombatState } from "@eridan/engine";
 import { submitPlayerAction } from "@eridan/engine";
+import { AuthScreen } from "./screens/AuthScreen";
 import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
 import { TownHubScreen } from "./screens/TownHubScreen";
@@ -10,10 +11,12 @@ import { ResultScreen } from "./screens/ResultScreen";
 import { WORLD_INTRO, WORLD_NAME, type Encounter } from "./game/lore";
 import { beginEncounter } from "./game/setup";
 import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
+import { supabase } from "./lib/supabaseClient";
 import "./App.css";
 
 type Screen =
   | { kind: "intro" }
+  | { kind: "auth" }
   | { kind: "characterSelect" }
   | { kind: "creation" }
   | { kind: "townHub"; character: Character }
@@ -22,6 +25,11 @@ type Screen =
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
+
+  async function handleBegin() {
+    const { data } = await supabase.auth.getSession();
+    setScreen({ kind: data.session ? "characterSelect" : "auth" });
+  }
 
   if (screen.kind === "intro") {
     return (
@@ -32,11 +40,15 @@ function App() {
             {paragraph}
           </p>
         ))}
-        <button type="button" className="primary" onClick={() => setScreen({ kind: "characterSelect" })}>
+        <button type="button" className="primary" onClick={handleBegin}>
           Begin
         </button>
       </div>
     );
+  }
+
+  if (screen.kind === "auth") {
+    return <AuthScreen onAuthenticated={() => setScreen({ kind: "characterSelect" })} />;
   }
 
   if (screen.kind === "characterSelect") {
@@ -44,6 +56,7 @@ function App() {
       <CharacterSelectScreen
         onSelect={(character) => setScreen({ kind: "townHub", character })}
         onCreateNew={() => setScreen({ kind: "creation" })}
+        onSignedOut={() => setScreen({ kind: "intro" })}
       />
     );
   }
@@ -51,9 +64,9 @@ function App() {
   if (screen.kind === "creation") {
     return (
       <CharacterCreationScreen
-        onComplete={(character) => {
-          addCharacterToRoster(character);
-          setScreen({ kind: "townHub", character });
+        onComplete={async (character) => {
+          const saved = await addCharacterToRoster(character);
+          setScreen({ kind: "townHub", character: saved });
         }}
       />
     );
@@ -64,10 +77,14 @@ function App() {
       <TownHubScreen
         character={screen.character}
         onVentureOut={() => setScreen({ kind: "encounterSelect", character: screen.character })}
-        onRest={() => {
+        onRest={async () => {
           const rested = { ...screen.character, hp: screen.character.maxHp };
-          updateCharacterInRoster(rested);
           setScreen({ kind: "townHub", character: rested });
+          try {
+            await updateCharacterInRoster(rested);
+          } catch (err) {
+            console.error("Failed to save rest:", err);
+          }
         }}
         onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
       />
@@ -108,9 +125,13 @@ function App() {
     return (
       <ResultScreen
         status={combat.status}
-        onContinue={() => {
-          updateCharacterInRoster(updatedCharacter);
+        onContinue={async () => {
           setScreen({ kind: "townHub", character: updatedCharacter });
+          try {
+            await updateCharacterInRoster(updatedCharacter);
+          } catch (err) {
+            console.error("Failed to save combat result:", err);
+          }
         }}
       />
     );
