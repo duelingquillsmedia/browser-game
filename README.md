@@ -16,14 +16,15 @@ client-server milestone (combat is still resolved in the browser for now).
   proficiency bonus, saving-throw-style flee checks, crits/fumbles.
 - Turn-based combat against AI-controlled monsters, with a combat log,
   Defend/buff AC bonuses, and once-per-combat abilities (e.g. Second Wind).
-- A handful of low-level encounters flavored around Eridan's Ashen Coast,
-  Silverwood, and Bloodmere Plains.
+- A handful of low-level encounters flavored around Ridgeton's frontier —
+  the Tameless Shore, Tiuv Forest, and Collmhor Wood — pulled from the
+  project's own Encyclopedia of Eridan (see [Lore](#lore)).
 - A first art pass: a textured background, an ornate HP bar, and portrait
   frames for party/enemy cards, drawn from a craftpix.net fantasy GUI kit
   (see [Assets](#assets)).
 - A character roster and a home-base hub: sign in, pick or create a
-  character, land in Fallowmere (the frontier waypost), venture out to
-  fight, and rest to heal between trips.
+  character, land in Ridgeton (a logging town on the Tameless Shore),
+  venture out to fight, and rest to heal between trips.
 - Real accounts (email/password via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
@@ -114,6 +115,30 @@ non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
    the full geography of Eridan.
 5. Further art passes: character/monster sprites and per-location backgrounds
    as more craftpix.net packs get added (only the GUI kit is in so far).
+
+## Lore
+
+World content is grounded in the project's own **Encyclopedia of Eridan**
+(staged in the shared Drive folder, `Eridan MMO/Eridan Lore Files`), not
+invented placeholder names. Currently wired in (`apps/client/src/game/lore.ts`,
+plus race/monster flavor text in `packages/engine`):
+
+- **Ridgeton**, a logging town on the Tameless Shore, as the player hub.
+- Three starting encounters on real Eridan geography: the **Tameless Shore**
+  (goblins out of Claw Bay), **Tiuv Forest** (a dire wolf), and **Collmhor
+  Wood** (an orc marauder, per the orcs-vs-bugbears conflict noted there).
+- Race flavor text tied to real locations (dwarves/Bronze Hills, halflings/
+  Prakov's Gift, wood elves/Corran Woodland, orcs/Collmhor Wood & Raduna).
+
+Not yet pulled in: the Encyclopedia's full race list (Bugbears, Gnomes,
+Goblins, Kobolds are canon "common races" alongside the 5 already playable),
+the full 12-class list (only 4 are implemented), its magic system (Divinity/
+Demonic/Wild/Arcane), named NPCs and factions, and the `Chapters` folder's
+22 narrative chapters (three POV characters — useful for tone and NPC
+writing later, not consulted for this pass). The Encyclopedia also lists
+"Selyria," "Synndara," and "Verach" as candidate names for the world itself,
+with Eridan specifically the first/only continent — this project uses
+"Eridan" throughout, matching how it's been referred to so far.
 
 ## Assets
 

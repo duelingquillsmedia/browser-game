@@ -1,17 +1,18 @@
 export const WORLD_NAME = "Eridan";
 
 export const WORLD_INTRO = [
-  "The world of Eridan has weathered ages of drifting empires, buried magic, and " +
-    "quiet wars fought between things older than any crown.",
+  "Eridan is the only continent yet charted in this world — a land of ancient forests, " +
+    "frozen seas, and cities raised by dwarven forge and elven grove alike.",
   "You are one of countless wanderers testing their steel and their spellcraft " +
-    "against the frontier — the first step of a much longer road.",
+    "against its wilder reaches — the first step of a much longer road.",
 ];
 
-export const HOME_TOWN_NAME = "Fallowmere";
+export const HOME_TOWN_NAME = "Ridgeton";
 
 export const HOME_TOWN_DESCRIPTION =
-  "A cluster of stone waystations and traders' stalls at the crossroads of the Ashen Coast, " +
-  "the Silverwood, and the Bloodmere Plains — the last safe ground before the frontier.";
+  "A logging town on the wild Tameless Shore, southwest of Eldrin City. Ridgeton has long " +
+  "since outlawed the slavers who once built it and welcomes anyone willing to work — though " +
+  "the shore around it still isn't safe after dark.";
 
 export interface Encounter {
   id: string;
@@ -21,33 +22,33 @@ export interface Encounter {
   monsterTemplateIds: string[];
 }
 
-/** A handful of low-level encounters for the frontier around Eridan's Ashen Coast. */
+/** A handful of low-level encounters on the frontier around Ridgeton. */
 export const ENCOUNTERS: Encounter[] = [
   {
-    id: "ashen-coast-raiders",
-    name: "Raiders on the Ashen Road",
-    location: "The Ashen Coast",
+    id: "tameless-shore-raiders",
+    name: "Raiders on the Tameless Shore",
+    location: "The Tameless Shore",
     flavorText:
-      "Smoke rises from a burned way-shrine along the coast road. Two goblin raiders are still " +
-      "picking through the wreckage when they spot you.",
+      "Smoke rises from a burned way-shrine along the coast road out of Ridgeton. Two goblin " +
+      "raiders out of Claw Bay are still picking through the wreckage when they spot you.",
     monsterTemplateIds: ["goblin", "goblin"],
   },
   {
-    id: "silverwood-hunter",
-    name: "The Silverwood's Hunter",
-    location: "The Silverwood",
+    id: "tiuv-forest-hunter",
+    name: "The Hunter of Tiuv Forest",
+    location: "Tiuv Forest",
     flavorText:
-      "A low growl rolls out from beneath the silver-barked trees. A dire wolf, ribs showing " +
-      "beneath a matted coat, stalks out to bar your path.",
+      "A low growl rolls out from beneath Tiuv Forest's tangled canopy. A dire wolf, ribs " +
+      "showing beneath a matted coat, stalks out to bar your path.",
     monsterTemplateIds: ["direWolf"],
   },
   {
-    id: "bloodmere-marauder",
-    name: "A Bloodmere Marauder",
-    location: "The Bloodmere Plains",
+    id: "collmhor-wood-marauder",
+    name: "A Collmhor Wood Marauder",
+    location: "Collmhor Wood",
     flavorText:
-      "A lone orc marauder stands over a fallen way-marker, greataxe resting on one shoulder, " +
-      "sizing you up as easy plunder.",
+      "A lone orc marauder stands over a fallen way-marker at the edge of Collmhor Wood, " +
+      "greataxe resting on one shoulder, sizing you up as easy plunder.",
     monsterTemplateIds: ["orcMarauder"],
   },
 ];

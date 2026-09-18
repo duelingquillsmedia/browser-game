@@ -23,7 +23,7 @@ export const RACES: Record<string, Race> = {
     id: "human",
     name: "Human",
     description:
-      "The most numerous folk of Eridan, spread from the free cities of the Ashen Coast to the trade roads of the interior.",
+      "The most numerous folk of Eridan, spread from the farmlands of the Arnweyal Plains to the trade halls of Eldrin City.",
     abilityBonuses: { str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 },
     speed: 30,
     traits: [
@@ -37,7 +37,8 @@ export const RACES: Record<string, Race> = {
     id: "elf",
     name: "Elf",
     description:
-      "Long-lived kin of the Silverwood, the elves of Eridan keep watch over the old forests and older grudges.",
+      "Long-lived kin of the Corran Woodland's golden-leafed forests, wood elves keep watch over the old " +
+      "trees and older grudges — kin of theirs elsewhere on the continent have grown into peoples all their own.",
     abilityBonuses: { dex: 2, int: 1 },
     speed: 30,
     traits: [
@@ -55,7 +56,8 @@ export const RACES: Record<string, Race> = {
     id: "dwarf",
     name: "Dwarf",
     description:
-      "Descendants of the Deephold clans, dwarves carved their halls into the roots of the Ironspine Mountains.",
+      "Descendants of the clanholds carved into the Bronze Hills, dwarves of Eridan mine and forge some of " +
+      "the finest weapons on the continent.",
     abilityBonuses: { con: 2, str: 1 },
     speed: 25,
     traits: [
@@ -73,7 +75,8 @@ export const RACES: Record<string, Race> = {
     id: "orc",
     name: "Orc",
     description:
-      "The clans of the Bloodmere plains, orcs of Eridan built a warrior society out of a hard, unforgiving land.",
+      "From the war-bands of Collmhor Wood to the peaceful clans of frozen Raduna, orcs of Eridan have built " +
+      "warrior societies out of some of the continent's hardest, most unforgiving land.",
     abilityBonuses: { str: 2, con: 1 },
     speed: 30,
     traits: [
@@ -87,7 +90,8 @@ export const RACES: Record<string, Race> = {
     id: "halfling",
     name: "Halfling",
     description:
-      "River-folk of the Eridan lowlands, halflings favor the quiet life and are far harder to pin down than they look.",
+      "River-folk of Prakov's Gift, halflings favor the quiet life among the tobacco fields and are far " +
+      "harder to pin down than they look.",
     abilityBonuses: { dex: 2, cha: 1 },
     speed: 25,
     traits: [

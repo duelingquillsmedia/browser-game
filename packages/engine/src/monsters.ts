@@ -35,7 +35,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
   goblin: {
     id: "goblin",
     name: "Goblin Raider",
-    description: "A wiry raider from the warrens beneath the Ashen Coast cliffs.",
+    description: "A wiry raider out of the goblin port towns of Claw Bay, preying on travelers along the Tameless Shore.",
     abilityScores: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 },
     hitDie: 6,
     hitDiceCount: 2,
@@ -56,7 +56,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
   direWolf: {
     id: "direWolf",
     name: "Dire Wolf",
-    description: "A pack hunter grown huge on the game trails of the Silverwood.",
+    description: "A pack hunter grown huge on the game trails of Tiuv Forest.",
     abilityScores: { str: 15, dex: 15, con: 13, int: 3, wis: 12, cha: 7 },
     hitDie: 8,
     hitDiceCount: 3,
@@ -76,7 +76,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
   orcMarauder: {
     id: "orcMarauder",
     name: "Orc Marauder",
-    description: "A blooded warrior of the Bloodmere clans, out for plunder.",
+    description: "A blooded warrior out of Collmhor Wood, where orcs and bugbears have fought over the old ruins for generations.",
     abilityScores: { str: 16, dex: 12, con: 14, int: 9, wis: 9, cha: 10 },
     hitDie: 8,
     hitDiceCount: 4,
