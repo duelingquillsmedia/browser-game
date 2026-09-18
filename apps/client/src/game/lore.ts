@@ -1,3 +1,7 @@
+import tamelessShoreBg from "../assets/backgrounds/tameless-shore.jpg";
+import tiuvForestBg from "../assets/backgrounds/tiuv-forest.jpg";
+import collmhorWoodBg from "../assets/backgrounds/collmhor-wood.jpg";
+
 export const WORLD_NAME = "Eridan";
 
 export const WORLD_INTRO = [
@@ -20,6 +24,7 @@ export interface Encounter {
   location: string;
   flavorText: string;
   monsterTemplateIds: string[];
+  backgroundImage: string;
 }
 
 /** A handful of low-level encounters on the frontier around Ridgeton. */
@@ -32,6 +37,7 @@ export const ENCOUNTERS: Encounter[] = [
       "Smoke rises from a burned way-shrine along the coast road out of Ridgeton. Two goblin " +
       "raiders out of Claw Bay are still picking through the wreckage when they spot you.",
     monsterTemplateIds: ["goblin", "goblin"],
+    backgroundImage: tamelessShoreBg,
   },
   {
     id: "tiuv-forest-hunter",
@@ -41,6 +47,7 @@ export const ENCOUNTERS: Encounter[] = [
       "A low growl rolls out from beneath Tiuv Forest's tangled canopy. A dire wolf, ribs " +
       "showing beneath a matted coat, stalks out to bar your path.",
     monsterTemplateIds: ["direWolf"],
+    backgroundImage: tiuvForestBg,
   },
   {
     id: "collmhor-wood-marauder",
@@ -50,5 +57,6 @@ export const ENCOUNTERS: Encounter[] = [
       "A lone orc marauder stands over a fallen way-marker at the edge of Collmhor Wood, " +
       "greataxe resting on one shoulder, sizing you up as easy plunder.",
     monsterTemplateIds: ["orcMarauder"],
+    backgroundImage: collmhorWoodBg,
   },
 ];

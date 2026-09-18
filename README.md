@@ -22,6 +22,9 @@ client-server milestone (combat is still resolved in the browser for now).
 - A first art pass: a textured background, an ornate HP bar, and portrait
   frames for party/enemy cards, drawn from a craftpix.net fantasy GUI kit
   (see [Assets](#assets)).
+- Per-location battle backgrounds on the encounter-select and combat
+  screens — coastline for the Tameless Shore, a wooded river valley for
+  Tiuv Forest, jungle ruins for Collmhor Wood.
 - A character roster and a home-base hub: sign in, pick or create a
   character, land in Ridgeton (a logging town on the Tameless Shore),
   venture out to fight, and rest to heal between trips.
@@ -113,8 +116,8 @@ non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
 3. Guilds, PvP duels/arenas, and group raids.
 4. Expanded content: more races/classes, items and equipment, quests, and
    the full geography of Eridan.
-5. Further art passes: character/monster sprites and per-location backgrounds
-   as more craftpix.net packs get added (only the GUI kit is in so far).
+5. Further art passes: character/monster sprites, and more per-location
+   backgrounds as new encounters and locations get added.
 
 ## Lore
 
@@ -149,3 +152,13 @@ bar frame, and the party/enemy portrait frames. The rest of the pack (login/
 registration screens, inventory, journal, map, skill tree, etc.) is staged
 in the project's shared Drive folder for when those systems get built —
 no point shipping unused art for screens that don't exist yet.
+
+Battle backgrounds (`apps/client/src/assets/backgrounds`) are sourced from
+craftpix.net's horizontal battle-background packs (the "Background
+Environments" Drive folder holds six full packs), also under the standard
+craftpix.net license, picked per encounter location: a beach/coastline
+scene for the Tameless Shore, a wooded river valley for Tiuv Forest, and a
+jungle-with-ruins scene for Collmhor Wood (which doubles nicely as the "old
+ruins" orcs and bugbears fight over there). The remaining packs (arena,
+ship interior, cave, and plains/land variants) are staged for future
+locations.

@@ -16,7 +16,16 @@ export function EncounterSelectScreen({ character, onChoose }: EncounterSelectSc
 
       <div className="encounter-list">
         {ENCOUNTERS.map((encounter) => (
-          <button key={encounter.id} type="button" className="encounter-card" onClick={() => onChoose(encounter)}>
+          <button
+            key={encounter.id}
+            type="button"
+            className="encounter-card"
+            style={{
+              backgroundImage:
+                `linear-gradient(rgba(28, 21, 36, 0.78), rgba(28, 21, 36, 0.9)), url(${encounter.backgroundImage})`,
+            }}
+            onClick={() => onChoose(encounter)}
+          >
             <h3>{encounter.name}</h3>
             <p className="location">{encounter.location}</p>
             <p className="flavor">{encounter.flavorText}</p>

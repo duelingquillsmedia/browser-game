@@ -41,7 +41,13 @@ export function CombatScreen({ combat, encounter, onSubmitAction }: CombatScreen
   }
 
   return (
-    <div className="screen combat-screen">
+    <div
+      className="screen combat-screen"
+      style={{
+        backgroundImage:
+          `linear-gradient(rgba(18, 13, 24, 0.55), rgba(18, 13, 24, 0.8)), url(${encounter.backgroundImage})`,
+      }}
+    >
       <h1>{encounter.name}</h1>
       <p className="subtitle">{encounter.location}</p>
 
