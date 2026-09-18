@@ -24,7 +24,8 @@ client-server milestone (combat is still resolved in the browser for now).
   (see [Assets](#assets)).
 - Per-location battle backgrounds on the encounter-select and combat
   screens — coastline for the Tameless Shore, a wooded river valley for
-  Tiuv Forest, jungle ruins for Collmhor Wood.
+  Tiuv Forest, jungle ruins for Collmhor Wood — plus a castle-towers
+  skyline on the Ridgeton town hub.
 - A character roster and a home-base hub: sign in, pick or create a
   character, land in Ridgeton (a logging town on the Tameless Shore),
   venture out to fight, and rest to heal between trips.
@@ -159,6 +160,7 @@ Environments" Drive folder holds six full packs), also under the standard
 craftpix.net license, picked per encounter location: a beach/coastline
 scene for the Tameless Shore, a wooded river valley for Tiuv Forest, and a
 jungle-with-ruins scene for Collmhor Wood (which doubles nicely as the "old
-ruins" orcs and bugbears fight over there). The remaining packs (arena,
-ship interior, cave, and plains/land variants) are staged for future
-locations.
+ruins" orcs and bugbears fight over there). Ridgeton's town hub uses a
+castle-towers skyline from the same "Castle Battle Arena" pack. The
+remaining packs (arena floors/walls, ship interior, cave, and plains/land
+variants) are staged for future locations.

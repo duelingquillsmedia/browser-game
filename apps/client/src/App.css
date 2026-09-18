@@ -305,6 +305,12 @@ button.ghost {
 }
 
 /* Town hub */
+.town-hub-screen {
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+}
+
 .town-hub-card {
   max-width: 420px;
 }

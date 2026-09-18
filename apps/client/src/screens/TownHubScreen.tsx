@@ -1,6 +1,6 @@
 import { CLASSES, RACES, type Character } from "@eridan/engine";
 import { HealthBar } from "../components/HealthBar";
-import { HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME } from "../game/lore";
+import { HOME_TOWN_BACKGROUND, HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME } from "../game/lore";
 
 export interface TownHubScreenProps {
   character: Character;
@@ -14,7 +14,13 @@ export function TownHubScreen({ character, onVentureOut, onRest, onSwitchCharact
   const canRest = character.hp < character.maxHp;
 
   return (
-    <div className="screen town-hub-screen">
+    <div
+      className="screen town-hub-screen"
+      style={{
+        backgroundImage:
+          `linear-gradient(rgba(18, 13, 24, 0.55), rgba(18, 13, 24, 0.85)), url(${HOME_TOWN_BACKGROUND})`,
+      }}
+    >
       <h1>{HOME_TOWN_NAME}</h1>
       <p className="subtitle">{HOME_TOWN_DESCRIPTION}</p>
 

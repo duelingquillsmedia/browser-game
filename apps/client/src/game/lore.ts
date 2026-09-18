@@ -1,6 +1,7 @@
 import tamelessShoreBg from "../assets/backgrounds/tameless-shore.jpg";
 import tiuvForestBg from "../assets/backgrounds/tiuv-forest.jpg";
 import collmhorWoodBg from "../assets/backgrounds/collmhor-wood.jpg";
+import ridgetonBg from "../assets/backgrounds/ridgeton.jpg";
 
 export const WORLD_NAME = "Eridan";
 
@@ -17,6 +18,8 @@ export const HOME_TOWN_DESCRIPTION =
   "A logging town on the wild Tameless Shore, southwest of Eldrin City. Ridgeton has long " +
   "since outlawed the slavers who once built it and welcomes anyone willing to work — though " +
   "the shore around it still isn't safe after dark.";
+
+export const HOME_TOWN_BACKGROUND = ridgetonBg;
 
 export interface Encounter {
   id: string;
