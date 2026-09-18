@@ -11,7 +11,7 @@ import { ResultScreen } from "./screens/ResultScreen";
 import { WORLD_INTRO, WORLD_NAME, type Encounter } from "./game/lore";
 import { beginEncounter } from "./game/setup";
 import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
-import { isSupabaseConfigured, supabase } from "./lib/supabaseClient";
+import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
 import "./App.css";
 
 type Screen =
@@ -36,6 +36,17 @@ function App() {
           (or set <code>VITE_SUPABASE_URL</code> / <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> in your
           hosting provider's environment variables), then reload.
         </p>
+        <div className="preview-card">
+          <h3>Diagnostics</h3>
+          <p className="combatant-meta">Build mode: {supabaseConfigDebug.mode}</p>
+          <p className="combatant-meta">
+            VITE_SUPABASE_URL: {supabaseConfigDebug.urlPresent ? supabaseConfigDebug.urlPreview : "not set"}
+          </p>
+          <p className="combatant-meta">
+            VITE_SUPABASE_PUBLISHABLE_KEY:{" "}
+            {supabaseConfigDebug.publishableKeyPresent ? supabaseConfigDebug.publishableKeyPreview : "not set"}
+          </p>
+        </div>
       </div>
     );
   }

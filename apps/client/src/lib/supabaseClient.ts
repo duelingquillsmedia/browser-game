@@ -12,6 +12,20 @@ const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
  */
 export const isSupabaseConfigured = Boolean(url && publishableKey);
 
+/**
+ * Safe-to-display diagnostics for the "Configuration Needed" screen — no
+ * secrets, just enough to tell at a glance whether the hosting env actually
+ * has these vars, and to catch a truncated/malformed value without leaking
+ * the whole key.
+ */
+export const supabaseConfigDebug = {
+  mode: import.meta.env.MODE,
+  urlPresent: Boolean(url),
+  urlPreview: url ? `${url.slice(0, 24)}…` : "(not set)",
+  publishableKeyPresent: Boolean(publishableKey),
+  publishableKeyPreview: publishableKey ? `${publishableKey.slice(0, 14)}…` : "(not set)",
+};
+
 export const supabase = createClient(
   url || "https://placeholder.supabase.co",
   publishableKey || "placeholder-key"
