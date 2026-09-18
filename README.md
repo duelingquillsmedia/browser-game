@@ -70,6 +70,18 @@ directly from the client via `@supabase/supabase-js` — no custom server yet.
 - **Env vars**: `apps/client/.env` (gitignored) needs `VITE_SUPABASE_URL`
   and `VITE_SUPABASE_PUBLISHABLE_KEY`; see `.env.example`.
 
+## Deployment
+
+The site is deployed on Netlify (`ageofbrokenwings`, Git-linked to this repo)
+at `ageofbrokenwings.duelingquills.com`, with a branch-preview URL per
+non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
+
+- The same two vars from `.env` must also be set as environment variables on
+  the Netlify project (Site settings → Environment variables) — they don't
+  come from the repo, since `.env` is gitignored.
+- Changing them doesn't affect an already-built deploy — trigger a new
+  deploy (push a commit, or "Trigger deploy" in the Netlify UI) afterward.
+
 ## Roadmap
 
 1. ~~Single-player combat prototype~~ (milestone 1)
