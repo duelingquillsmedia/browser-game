@@ -11,10 +11,10 @@ export function HealthBar({ hp, maxHp }: HealthBarProps) {
 
   return (
     <div className="health-bar" aria-label={`HP ${hp} of ${maxHp}`}>
+      <img src={hpBarFrame} alt="" className="health-bar-frame" />
       <div className="health-bar-track">
         <div className={`health-bar-fill ${tone}`} style={{ width: `${pct}%` }} />
       </div>
-      <img src={hpBarFrame} alt="" className="health-bar-frame" />
       <span className="health-bar-label">
         {hp} / {maxHp}
       </span>
