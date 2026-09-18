@@ -63,12 +63,33 @@ directly from the client via `@supabase/supabase-js` — no custom server yet.
   against Postgres (simulating both the owning user and another user) that
   a user can fully manage their own characters and can't read, edit, or
   delete anyone else's.
-- **Auth**: email/password via Supabase Auth (`AuthScreen`). New sign-ups
-  may require email confirmation depending on the project's auth settings —
-  the UI handles both the "signed in immediately" and "check your email"
-  cases.
+- **Auth**: email/password and Google OAuth via Supabase Auth (`AuthScreen`).
+  New email sign-ups may require confirmation depending on the project's
+  auth settings — the UI handles both the "signed in immediately" and
+  "check your email" cases. Google requires one-time setup outside this
+  repo (see below) before the button works.
 - **Env vars**: `apps/client/.env` (gitignored) needs `VITE_SUPABASE_URL`
   and `VITE_SUPABASE_PUBLISHABLE_KEY`; see `.env.example`.
+
+### Enabling Google sign-in
+
+The "Continue with Google" button is wired up in code, but Google is not
+enabled as a provider by default — there's no API for this, it's a one-time
+manual setup in two dashboards:
+
+1. **Google Cloud Console** (`console.cloud.google.com` → APIs & Services →
+   Credentials): create an OAuth 2.0 Client ID (type "Web application").
+   - Add this **Authorized redirect URI**:
+     `https://grhwedkojxidqrtzwdtd.supabase.co/auth/v1/callback`
+   - You'll also need to configure the OAuth consent screen (app name,
+     support email) if you haven't already for this Google Cloud project.
+   - Copy the generated **Client ID** and **Client Secret**.
+2. **Supabase Dashboard** (Authentication → Providers → Google): toggle it
+   on, paste in the Client ID and Client Secret from step 1, and save.
+
+No code changes or redeploys needed after that — it takes effect
+immediately since the client just redirects to Supabase, which handles the
+provider from there.
 
 ## Deployment
 

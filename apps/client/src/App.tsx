@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ActionRequest, Character, CombatState } from "@eridan/engine";
 import { submitPlayerAction } from "@eridan/engine";
 import { AuthScreen } from "./screens/AuthScreen";
@@ -25,6 +25,24 @@ type Screen =
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
+
+  // Picks up sign-ins that complete via a full-page redirect (Google OAuth,
+  // email confirmation links) — those land back here with no in-memory
+  // screen state, so without this the user would be stuck looking at
+  // whatever screen the page happened to load on.
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        setScreen((prev) => (prev.kind === "intro" || prev.kind === "auth" ? { kind: "characterSelect" } : prev));
+      }
+      if (event === "SIGNED_OUT") {
+        setScreen({ kind: "intro" });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (!isSupabaseConfigured) {
     return (
