@@ -25,7 +25,11 @@ body,
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #221a2c 0%, var(--bg) 60%);
+  background:
+    radial-gradient(circle at top, rgba(34, 26, 44, 0.55) 0%, rgba(18, 13, 24, 0.8) 65%),
+    url("./assets/ui/combat-bg.png");
+  background-size: cover;
+  background-attachment: fixed;
   color: var(--text);
 }
 

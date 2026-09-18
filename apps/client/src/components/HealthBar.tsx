@@ -1,3 +1,5 @@
+import hpBarFrame from "../assets/ui/hp-bar-frame.png";
+
 export interface HealthBarProps {
   hp: number;
   maxHp: number;
@@ -9,7 +11,10 @@ export function HealthBar({ hp, maxHp }: HealthBarProps) {
 
   return (
     <div className="health-bar" aria-label={`HP ${hp} of ${maxHp}`}>
-      <div className={`health-bar-fill ${tone}`} style={{ width: `${pct}%` }} />
+      <div className="health-bar-track">
+        <div className={`health-bar-fill ${tone}`} style={{ width: `${pct}%` }} />
+      </div>
+      <img src={hpBarFrame} alt="" className="health-bar-frame" />
       <span className="health-bar-label">
         {hp} / {maxHp}
       </span>

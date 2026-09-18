@@ -17,6 +17,9 @@ database yet: create a character, pick an encounter, and fight it out.
   Defend/buff AC bonuses, and once-per-combat abilities (e.g. Second Wind).
 - A handful of low-level encounters flavored around Eridan's Ashen Coast,
   Silverwood, and Bloodmere Plains.
+- A first art pass: a textured background, an ornate HP bar, and portrait
+  frames for party/enemy cards, drawn from a craftpix.net fantasy GUI kit
+  (see [Assets](#assets)).
 
 ## Tech stack
 
@@ -49,5 +52,15 @@ npm run build  # builds the engine and client
 3. Guilds, PvP duels/arenas, and group raids.
 4. Expanded content: more races/classes, items and equipment, quests, and
    the full geography of Eridan.
-5. Art pass: swap in craftpix.net sprite/tileset assets for characters,
-   monsters, and environments (currently text/UI-only).
+5. Further art passes: character/monster sprites and per-location backgrounds
+   as more craftpix.net packs get added (only the GUI kit is in so far).
+
+## Assets
+
+UI art is from the craftpix.net "Fantasy RPG GUI" pack (`craftpix-500908-fantasy-rpg-gui`),
+used under its standard craftpix.net license. Only a handful of pieces are
+wired in so far (`apps/client/src/assets/ui`): a background texture, the HP
+bar frame, and the party/enemy portrait frames. The rest of the pack (login/
+registration screens, inventory, journal, map, skill tree, etc.) is staged
+in the project's shared Drive folder for when those systems get built —
+no point shipping unused art for screens that don't exist yet.
