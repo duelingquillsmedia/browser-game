@@ -1,0 +1,328 @@
+.screen {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3rem;
+}
+
+h1 {
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+button.primary {
+  display: block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  color: #211609;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #d9b25c;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+}
+
+/* Character creation */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 1rem 0;
+}
+
+.picker-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.picker {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.picker legend {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: 0 0.3rem;
+}
+
+.picker .option {
+  display: inline-block;
+  margin: 0.2rem;
+  padding: 0.35rem 0.7rem;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+}
+
+.picker .option.selected {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.picker .description {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.6rem;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.ability-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+.preview-card {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Encounter select */
+.encounter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.encounter-card {
+  text-align: left;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--text);
+}
+
+.encounter-card:hover {
+  border-color: var(--accent);
+}
+
+.encounter-card .location {
+  color: var(--accent);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0.2rem 0 0.5rem;
+}
+
+.encounter-card .flavor {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Combat */
+.combat-screen {
+  max-width: 900px;
+}
+
+.battlefield {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.party-side,
+.enemy-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.combatant-card {
+  position: relative;
+  text-align: left;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.combatant-card.current-turn {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.combatant-card.down {
+  opacity: 0.45;
+}
+
+.combatant-card.selectable {
+  cursor: pointer;
+  border-color: var(--success);
+}
+
+.combatant-card.selectable:hover {
+  background: var(--bg-panel-alt);
+}
+
+.combatant-name {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.combatant-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+.status-tag {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--danger);
+}
+
+.badge {
+  font-size: 0.7rem;
+  background: var(--accent-dim);
+  color: #fff;
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+}
+
+.health-bar {
+  position: relative;
+  height: 14px;
+  background: #2a2033;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-top: 0.4rem;
+}
+
+.health-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.health-bar-fill.high {
+  background: var(--success);
+}
+
+.health-bar-fill.mid {
+  background: #c9a24b;
+}
+
+.health-bar-fill.low {
+  background: var(--danger);
+}
+
+.health-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+
+.combat-log {
+  height: 160px;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.log-entry {
+  margin: 0.15rem 0;
+  color: var(--text-muted);
+}
+
+.action-menu {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.action-button {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}
+
+.action-button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.uses {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.action-prompt {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Result */
+.result-screen h1 {
+  color: var(--accent);
+}
+
+.result-screen.enemies_won h1 {
+  color: var(--danger);
+}
