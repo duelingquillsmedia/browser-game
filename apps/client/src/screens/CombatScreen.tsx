@@ -201,7 +201,9 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
         <CombatLog entries={visualState.log} />
 
         {isAnimating ? (
-          <p className="action-prompt">Resolving…</p>
+          <div className="ability-bar ability-bar-targeting">
+            <p className="action-prompt">Resolving…</p>
+          </div>
         ) : (
           actor && (
             <ActionMenu

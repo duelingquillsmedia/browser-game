@@ -672,8 +672,8 @@ button.ghost {
 /* Combat */
 .combat-screen {
   max-width: 900px;
-  /* Clears the fixed combat log docked to the bottom of the page. */
-  padding-bottom: 200px;
+  /* Clears the fixed combat log and ability bar docked to the bottom of the page. */
+  padding-bottom: 280px;
   /* Clears the fixed health-bar rails anchored to the viewport's edges. */
   padding-left: 240px;
   padding-right: 240px;
@@ -1078,14 +1078,6 @@ button.ghost {
   color: var(--text-muted);
 }
 
-.action-menu {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
 .action-button {
   background: var(--bg-panel-alt);
   border: 1px solid var(--border);
@@ -1098,14 +1090,109 @@ button.ghost {
   border-color: var(--accent);
 }
 
-.uses {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
 .action-prompt {
   color: var(--text-muted);
   margin: 0;
+}
+
+/* Ability bar: a WoW-style grid of square ability slots, docked a quarter-inch
+   above the fixed combat log. */
+.ability-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(160px + 0.25in);
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 3rem));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 5;
+}
+
+.ability-bar-targeting {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+}
+
+.ability-slot {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 4px 2px;
+  overflow: hidden;
+}
+
+.ability-slot:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.ability-slot:disabled {
+  cursor: not-allowed;
+}
+
+.ability-icon {
+  font-weight: bold;
+  font-size: 1rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.ability-name {
+  width: 100%;
+  font-size: 0.55rem;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ability-badge {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 0.65rem;
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.ability-cooldown-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.ability-cooldown-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* Result */

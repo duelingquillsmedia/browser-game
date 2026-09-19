@@ -98,7 +98,9 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     : [...cls.actions, strike];
 
   const bonusActions = [...(race.actions ?? [])];
-  if (character.originFeatId === "magicInitiate") {
+  // Wizards already have an at-will cantrip attack of their own (Firebolt) --
+  // a Magic Initiate cantrip on top of that would just be a redundant duplicate.
+  if (character.originFeatId === "magicInitiate" && character.classId !== "wizard") {
     bonusActions.push(buildMagicInitiateAction(character));
   }
 

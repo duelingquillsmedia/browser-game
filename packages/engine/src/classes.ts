@@ -34,7 +34,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "str",
         dice: "1d8",
         damageType: "slashing",
-        cooldown: 2,
       },
       {
         id: "second-wind",
@@ -44,7 +43,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "self",
         ability: "con",
         dice: "1d10",
-        usesPerCombat: 1,
+        cooldown: 3,
       },
       BASIC_ATTACK,
     ],
@@ -68,7 +67,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         dice: "1d6",
         damageType: "piercing",
-        cooldown: 2,
       },
       {
         id: "dagger-throw",
@@ -101,7 +99,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "int",
         dice: "1d10",
         damageType: "fire",
-        cooldown: 2,
       },
       {
         id: "fireball",
@@ -115,7 +112,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         saveAbility: "dex",
         dice: "3d6",
         damageType: "fire",
-        usesPerCombat: 1,
+        cooldown: 3,
       },
       {
         id: "arcane-shield",
@@ -125,7 +122,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "self",
         ability: "int",
         effectValue: 3,
-        usesPerCombat: 2,
+        cooldown: 2,
       },
     ],
     startingEquipment: { weapon: "oakenStaff", armor: "travelersRobe" },
@@ -148,7 +145,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "wis",
         dice: "1d8",
         damageType: "radiant",
-        cooldown: 2,
       },
       {
         id: "heal",
@@ -180,7 +176,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "str",
         dice: "2d6",
         damageType: "slashing",
-        cooldown: 2,
       },
       {
         id: "furious-resilience",
@@ -190,7 +185,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "self",
         ability: "con",
         dice: "1d10",
-        usesPerCombat: 1,
+        cooldown: 3,
       },
       BASIC_ATTACK,
     ],
@@ -214,7 +209,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "cha",
         dice: "1d8",
         damageType: "psychic",
-        cooldown: 2,
       },
       {
         id: "healing-word",
@@ -246,7 +240,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "wis",
         dice: "1d8",
         damageType: "piercing",
-        cooldown: 2,
       },
       {
         id: "cure-wounds",
@@ -278,7 +271,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         dice: "2d4",
         damageType: "bludgeoning",
-        cooldown: 2,
       },
       {
         id: "stunning-strike",
@@ -312,7 +304,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "str",
         dice: "1d10",
         damageType: "radiant",
-        cooldown: 2,
       },
       {
         id: "lay-on-hands",
@@ -344,7 +335,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         dice: "1d8",
         damageType: "piercing",
-        cooldown: 2,
       },
       {
         id: "goodberry",
@@ -376,7 +366,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "cha",
         dice: "1d8",
         damageType: "fire",
-        cooldown: 2,
       },
       {
         id: "shield",
@@ -386,7 +375,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "self",
         ability: "cha",
         effectValue: 5,
-        usesPerCombat: 2,
+        cooldown: 2,
       },
     ],
     startingEquipment: { weapon: "ritualDagger", armor: "travelersRobe" },
@@ -409,7 +398,6 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "cha",
         dice: "1d10",
         damageType: "force",
-        cooldown: 2,
       },
       {
         id: "armor-of-agathys",
@@ -419,7 +407,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "self",
         ability: "cha",
         effectValue: 2,
-        usesPerCombat: 2,
+        cooldown: 2,
       },
     ],
     startingEquipment: { weapon: "ritualDagger", armor: "travelersRobe" },
