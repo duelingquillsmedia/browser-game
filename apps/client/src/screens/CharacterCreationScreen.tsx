@@ -10,6 +10,7 @@ import {
   type AbilityScores,
   type Character,
 } from "@eridan/engine";
+import { BackButton } from "../components/BackButton";
 
 function defaultAssignment(classId: string): AbilityScores {
   const primary = CLASSES[classId].primaryAbility;
@@ -52,9 +53,10 @@ function AbilityAssigner({ scores, onChange }: AbilityAssignerProps) {
 
 export interface CharacterCreationScreenProps {
   onComplete: (character: Character) => Promise<void>;
+  onBack: () => void;
 }
 
-export function CharacterCreationScreen({ onComplete }: CharacterCreationScreenProps) {
+export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreationScreenProps) {
   const [name, setName] = useState("");
   const [raceId, setRaceId] = useState("human");
   const [classId, setClassId] = useState("fighter");
@@ -97,6 +99,7 @@ export function CharacterCreationScreen({ onComplete }: CharacterCreationScreenP
 
   return (
     <div className="screen creation-screen">
+      <BackButton onClick={onBack} />
       <h1>Forge Your Hero</h1>
       <p className="subtitle">A wanderer steps onto the roads of Eridan for the first time.</p>
 

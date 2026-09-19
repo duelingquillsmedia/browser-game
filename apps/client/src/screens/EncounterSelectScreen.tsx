@@ -1,14 +1,17 @@
 import type { Character } from "@eridan/engine";
+import { BackButton } from "../components/BackButton";
 import { ENCOUNTERS, type Encounter } from "../game/lore";
 
 export interface EncounterSelectScreenProps {
   character: Character;
   onChoose: (encounter: Encounter) => void;
+  onBack: () => void;
 }
 
-export function EncounterSelectScreen({ character, onChoose }: EncounterSelectScreenProps) {
+export function EncounterSelectScreen({ character, onChoose, onBack }: EncounterSelectScreenProps) {
   return (
     <div className="screen">
+      <BackButton onClick={onBack} />
       <h1>The Road Ahead</h1>
       <p className="subtitle">
         {character.name} sets out with {character.hp} HP and AC {character.armorClass}.

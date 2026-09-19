@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { BackButton } from "../components/BackButton";
 
 function GoogleIcon() {
   return (
@@ -26,11 +27,12 @@ function GoogleIcon() {
 
 export interface AuthScreenProps {
   onAuthenticated: () => void;
+  onBack: () => void;
 }
 
 type Mode = "sign-in" | "sign-up";
 
-export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
+export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,6 +93,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
 
   return (
     <div className="screen auth-screen">
+      <BackButton onClick={onBack} />
       <h1>{mode === "sign-in" ? "Welcome Back" : "Create an Account"}</h1>
       <p className="subtitle">
         {mode === "sign-in" ? "Sign in to see your heroes." : "One account, every hero you forge in Eridan."}

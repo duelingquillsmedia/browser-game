@@ -1,6 +1,7 @@
 import { CLASSES, RACES, type Character } from "@eridan/engine";
 import { HealthBar } from "../components/HealthBar";
 import { LocationBackdrop } from "../components/LocationBackdrop";
+import { BackButton } from "../components/BackButton";
 import { HOME_TOWN_BACKGROUND, HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME } from "../game/lore";
 
 export interface TownHubScreenProps {
@@ -9,6 +10,7 @@ export interface TownHubScreenProps {
   onRest: () => void;
   onOpenCharacterSheet: () => void;
   onSwitchCharacter: () => void;
+  onBack: () => void;
 }
 
 export function TownHubScreen({
@@ -17,6 +19,7 @@ export function TownHubScreen({
   onRest,
   onOpenCharacterSheet,
   onSwitchCharacter,
+  onBack,
 }: TownHubScreenProps) {
   const canVenture = character.hp > 0;
   const canRest = character.hp < character.maxHp;
@@ -25,6 +28,7 @@ export function TownHubScreen({
     <>
       <LocationBackdrop image={HOME_TOWN_BACKGROUND} />
       <div className="screen town-hub-screen">
+        <BackButton onClick={onBack} />
         <h1>{HOME_TOWN_NAME}</h1>
         <p className="subtitle">{HOME_TOWN_DESCRIPTION}</p>
 

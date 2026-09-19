@@ -2,14 +2,16 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { CLASSES, RACES, type Character } from "@eridan/engine";
 import { loadRoster, removeCharacterFromRoster } from "../game/roster";
 import { supabase } from "../lib/supabaseClient";
+import { BackButton } from "../components/BackButton";
 
 export interface CharacterSelectScreenProps {
   onSelect: (character: Character) => void;
   onCreateNew: () => void;
   onSignedOut: () => void;
+  onBack: () => void;
 }
 
-export function CharacterSelectScreen({ onSelect, onCreateNew, onSignedOut }: CharacterSelectScreenProps) {
+export function CharacterSelectScreen({ onSelect, onCreateNew, onSignedOut, onBack }: CharacterSelectScreenProps) {
   const [roster, setRoster] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export function CharacterSelectScreen({ onSelect, onCreateNew, onSignedOut }: Ch
 
   return (
     <div className="screen">
+      <BackButton onClick={onBack} />
       <div className="screen-header-row">
         <h1>Choose Your Hero</h1>
         <button type="button" className="ghost" onClick={handleSignOut}>

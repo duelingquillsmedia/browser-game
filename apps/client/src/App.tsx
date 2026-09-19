@@ -93,7 +93,12 @@ function App() {
   }
 
   if (screen.kind === "auth") {
-    return <AuthScreen onAuthenticated={() => setScreen({ kind: "characterSelect" })} />;
+    return (
+      <AuthScreen
+        onAuthenticated={() => setScreen({ kind: "characterSelect" })}
+        onBack={() => setScreen({ kind: "intro" })}
+      />
+    );
   }
 
   if (screen.kind === "characterSelect") {
@@ -102,6 +107,7 @@ function App() {
         onSelect={(character) => setScreen({ kind: "townHub", character })}
         onCreateNew={() => setScreen({ kind: "creation" })}
         onSignedOut={() => setScreen({ kind: "intro" })}
+        onBack={() => setScreen({ kind: "intro" })}
       />
     );
   }
@@ -113,6 +119,7 @@ function App() {
           const saved = await addCharacterToRoster(character);
           setScreen({ kind: "townHub", character: saved });
         }}
+        onBack={() => setScreen({ kind: "characterSelect" })}
       />
     );
   }
@@ -133,6 +140,7 @@ function App() {
         }}
         onOpenCharacterSheet={() => setScreen({ kind: "characterSheet", character: screen.character })}
         onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
+        onBack={() => setScreen({ kind: "characterSelect" })}
       />
     );
   }
@@ -169,6 +177,7 @@ function App() {
             combat: beginEncounter(screen.character, encounter),
           })
         }
+        onBack={() => setScreen({ kind: "townHub", character: screen.character })}
       />
     );
   }
