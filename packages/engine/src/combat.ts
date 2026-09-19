@@ -15,6 +15,8 @@ export interface Combatant {
   side: Side;
   /** A party member's species (for race-specific mechanics like Orc's Relentless Endurance); monsters have none. */
   raceId?: string;
+  /** A party member's class (for UI purposes, e.g. picking a combat sprite); monsters have none. */
+  classId?: string;
   /** A party member's Origin feat (for feat-specific mechanics like Alert or Savage Attacker); monsters have none. */
   originFeatId?: OriginFeatId;
   abilityScores: AbilityScores;
@@ -54,6 +56,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     name: source.name,
     side,
     raceId: "raceId" in source ? source.raceId : undefined,
+    classId: "classId" in source ? source.classId : undefined,
     originFeatId: "originFeatId" in source ? source.originFeatId : undefined,
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,

@@ -1,5 +1,7 @@
 import type { Combatant } from "@eridan/engine";
 import { HealthBar } from "./HealthBar";
+import { CharacterSprite, type SpriteState } from "./CharacterSprite";
+import { getPartySprite } from "../game/sprites";
 import portraitFrameParty from "../assets/ui/portrait-frame-party.png";
 import portraitFrameEnemy from "../assets/ui/portrait-frame-enemy.png";
 
@@ -29,11 +31,23 @@ export function CombatantCard({ combatant, isCurrentTurn, isSelectableTarget, ef
   ]
     .filter(Boolean)
     .join(" ");
-  const portraitClassNames = ["combatant-portrait", effect ? `fx-${effect.kind}` : ""].filter(Boolean).join(" ");
+  const sprite = combatant.side === "party" ? getPartySprite(combatant.raceId, combatant.classId) : undefined;
+  const portraitClassNames = [
+    "combatant-portrait",
+    sprite ? "has-sprite" : "",
+    effect ? `fx-${effect.kind}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const initial = combatant.name.trim().charAt(0).toUpperCase();
   const portraitFrame = combatant.side === "party" ? portraitFrameParty : portraitFrameEnemy;
   const bloodied = combatant.hp > 0 && combatant.hp <= combatant.maxHp / 2;
+
+  let spriteState: SpriteState = "idle";
+  if (combatant.dead || combatant.hp <= 0) spriteState = "die";
+  else if (effect?.kind === "attacking") spriteState = "attack";
+  else if (effect?.kind === "hit") spriteState = "hurt";
 
   let statusTag: string | null = null;
   if (combatant.fled) statusTag = "Fled";
@@ -44,8 +58,14 @@ export function CombatantCard({ combatant, isCurrentTurn, isSelectableTarget, ef
   const content = (
     <>
       <div className={portraitClassNames}>
-        <span className="combatant-initial">{initial}</span>
-        <img src={portraitFrame} alt="" />
+        {sprite ? (
+          <CharacterSprite frames={sprite} state={spriteState} />
+        ) : (
+          <>
+            <span className="combatant-initial">{initial}</span>
+            <img src={portraitFrame} alt="" />
+          </>
+        )}
         {effect?.text && (
           <span key={effect.key} className={`floating-text floating-${effect.kind}`}>
             {effect.text}

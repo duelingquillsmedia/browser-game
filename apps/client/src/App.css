@@ -717,6 +717,17 @@ button.ghost {
   pointer-events: none;
 }
 
+.combatant-portrait.has-sprite {
+  width: 96px;
+  height: 84px;
+}
+
+.combatant-portrait .combatant-sprite-frame {
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
+}
+
 .combatant-initial {
   position: absolute;
   inset: 6px 10px;

@@ -41,6 +41,11 @@ client-server milestone (combat is still resolved in the browser for now).
   bars draining live) instead of jumping straight to the end state, with
   the combat log revealing one line at a time in step. The result screen
   waits for the final blow's animation to finish before appearing.
+- A first real character sprite: an Elf Wizard party member now shows an
+  animated idle/attack/hurt/die sprite in combat (contributed craftpix elf
+  sprite sheets) instead of the generic portrait frame. Every other
+  race/class combination still uses the generic portrait until more sprites
+  are added.
 - A handful of low-level encounters flavored around Ridgeton's frontier —
   the Tameless Shore, Tiuv Forest, and Collmhor Wood — pulled from the
   project's own Encyclopedia of Eridan (see [Lore](#lore)).
