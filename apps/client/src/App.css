@@ -418,6 +418,39 @@ button.ghost {
   color: var(--accent);
 }
 
+.tab-bar {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.tab-button:hover {
+  color: var(--text);
+}
+
+.tab-button.selected {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-panel {
+  margin-top: 1rem;
+}
+
 .equipment-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -505,6 +538,128 @@ button.ghost {
 
 .inventory-row .action-button {
   flex: none;
+}
+
+.equipped-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.equipped-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.equipped-slot .slot-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 56px);
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.inventory-slot {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventory-slot.filled {
+  cursor: pointer;
+}
+
+.inventory-slot.filled:hover {
+  border-color: var(--accent);
+}
+
+.inventory-slot.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.inventory-slot.equipped::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.inventory-slot .item-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.inventory-slot .quantity-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 0.7rem;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.item-detail-card {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.item-detail-icon {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.item-detail-icon .item-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.item-detail-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-detail-body h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.item-detail-body .action-button,
+.item-detail-body .ghost {
+  margin-top: 0.5rem;
 }
 
 /* Combat */
