@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActionRequest, CombatActionDef, CombatLogEntry, CombatState } from "@eridan/engine";
 import { currentCombatant } from "@eridan/engine";
-import { CombatantCard, type CombatantEffect } from "../components/CombatantCard";
+import { CombatantPortraitTile, CombatantInfoPanel, type CombatantEffect } from "../components/CombatantCard";
 import { CombatLog } from "../components/CombatLog";
 import { ActionMenu } from "../components/ActionMenu";
 import { LocationBackdrop } from "../components/LocationBackdrop";
@@ -158,28 +158,42 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
         <p className="subtitle">{encounter.location}</p>
 
         <div className="battlefield">
-          <div className="party-side">
+          <div className="battlefield-rail party-rail">
             {party.map((c) => (
-              <CombatantCard
-                key={c.id}
-                combatant={c}
-                isCurrentTurn={actor?.id === c.id}
-                isSelectableTarget={isSelectable("party")}
-                effect={effects[c.id]}
-                onSelect={() => handlePickTarget(c.id)}
-              />
+              <CombatantInfoPanel key={c.id} combatant={c} isCurrentTurn={actor?.id === c.id} />
             ))}
           </div>
-          <div className="enemy-side">
+
+          <div className="battlefield-arena">
+            <div className="arena-party">
+              {party.map((c) => (
+                <CombatantPortraitTile
+                  key={c.id}
+                  combatant={c}
+                  isCurrentTurn={actor?.id === c.id}
+                  isSelectableTarget={isSelectable("party")}
+                  effect={effects[c.id]}
+                  onSelect={() => handlePickTarget(c.id)}
+                />
+              ))}
+            </div>
+            <div className="arena-enemy">
+              {enemies.map((c) => (
+                <CombatantPortraitTile
+                  key={c.id}
+                  combatant={c}
+                  isCurrentTurn={actor?.id === c.id}
+                  isSelectableTarget={isSelectable("enemy")}
+                  effect={effects[c.id]}
+                  onSelect={() => handlePickTarget(c.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="battlefield-rail enemy-rail">
             {enemies.map((c) => (
-              <CombatantCard
-                key={c.id}
-                combatant={c}
-                isCurrentTurn={actor?.id === c.id}
-                isSelectableTarget={isSelectable("enemy")}
-                effect={effects[c.id]}
-                onSelect={() => handlePickTarget(c.id)}
-              />
+              <CombatantInfoPanel key={c.id} combatant={c} isCurrentTurn={actor?.id === c.id} />
             ))}
           </div>
         </div>

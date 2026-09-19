@@ -676,30 +676,97 @@ button.ghost {
 
 .battlefield {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.6fr) minmax(140px, 1fr);
+  align-items: center;
+  gap: 1rem;
   margin: 1.5rem 0;
 }
 
-.party-side,
-.enemy-side {
+.battlefield-rail {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
 }
 
-.combatant-card {
-  position: relative;
+.battlefield-arena {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2rem;
+  min-height: 110px;
+  padding: 0 0.5rem;
+}
+
+.arena-party,
+.arena-enemy {
+  display: flex;
+  align-items: flex-end;
   gap: 0.75rem;
-  text-align: left;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .battlefield {
+    grid-template-columns: 1fr;
+  }
+
+  .battlefield-rail {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .battlefield-rail > * {
+    flex: 1 1 200px;
+  }
+}
+
+.combatant-info-row {
+  position: relative;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 0.6rem 0.9rem 0.6rem 0.4rem;
+  padding: 0.6rem 0.9rem;
   color: var(--text);
+}
+
+.combatant-info-row.current-turn {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.combatant-info-row.down {
+  opacity: 0.45;
+}
+
+.combatant-tile {
+  position: relative;
+  display: inline-flex;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  padding: 4px;
+  color: inherit;
   font-family: inherit;
+}
+
+.combatant-tile.current-turn {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.combatant-tile.down {
+  opacity: 0.45;
+}
+
+.combatant-tile.selectable {
+  cursor: pointer;
+  border-color: var(--success);
+}
+
+.combatant-tile.selectable:hover {
+  background: var(--bg-panel-alt);
 }
 
 .combatant-portrait {
@@ -738,29 +805,6 @@ button.ghost {
   font-weight: bold;
   color: var(--accent);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-.combatant-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.combatant-card.current-turn {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.combatant-card.down {
-  opacity: 0.45;
-}
-
-.combatant-card.selectable {
-  cursor: pointer;
-  border-color: var(--success);
-}
-
-.combatant-card.selectable:hover {
-  background: var(--bg-panel-alt);
 }
 
 .combatant-name {
@@ -853,11 +897,11 @@ button.ghost {
 }
 
 /* Combat animations */
-.combatant-card.party .combatant-portrait.fx-attacking {
+.combatant-tile.party .combatant-portrait.fx-attacking {
   animation: lunge-right 0.5s ease;
 }
 
-.combatant-card.enemy .combatant-portrait.fx-attacking {
+.combatant-tile.enemy .combatant-portrait.fx-attacking {
   animation: lunge-left 0.5s ease;
 }
 
