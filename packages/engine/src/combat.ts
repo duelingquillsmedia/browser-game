@@ -39,13 +39,10 @@ export interface Combatant {
   dodging: boolean;
   initiative: number;
   fled: boolean;
-  /** Dropped to 0 HP but not (yet) dead — rolling Death Saving Throws each of their turns. */
+  /** Dropped to 0 HP — knocked out of the fight. For the party, this alone ends combat in defeat. */
   unconscious: boolean;
-  /** Stopped rolling Death Saving Throws after 3 successes; still Unconscious until healed. */
-  stable: boolean;
+  /** Only from an instant-death overkill hit; otherwise a party member simply goes Unconscious. */
   dead: boolean;
-  deathSaveSuccesses: number;
-  deathSaveFailures: number;
   /** Whether an Orc's Relentless Endurance has already saved this combatant once this fight. */
   usedRelentlessEndurance: boolean;
 }
@@ -75,10 +72,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     initiative: 0,
     fled: false,
     unconscious: false,
-    stable: false,
     dead: false,
-    deathSaveSuccesses: 0,
-    deathSaveFailures: 0,
     usedRelentlessEndurance: false,
   };
 }
@@ -99,7 +93,6 @@ export type CombatEventKind =
   | "defend"
   | "flee-success"
   | "flee-fail"
-  | "death-save"
   | "down";
 
 export interface CombatLogEntry {
@@ -133,11 +126,6 @@ function isUp(c: Combatant): boolean {
   return c.hp > 0 && !c.fled;
 }
 
-/** Occupies a turn at all — either able to act, or unconscious and rolling death saves. */
-function hasATurn(c: Combatant): boolean {
-  return isUp(c) || (c.side === "party" && c.unconscious && !c.dead);
-}
-
 /** A valid target for an attack/heal/save — up, or helpless (Unconscious) rather than gone (fled/dead). */
 function isTargetable(c: Combatant): boolean {
   return !c.fled && !c.dead;
@@ -168,7 +156,7 @@ function computeStatus(state: CombatState): CombatStatus {
   const party = state.combatants.filter((c) => c.side === "party");
   const enemies = state.combatants.filter((c) => c.side === "enemy");
 
-  if (party.every((c) => c.dead)) return "enemies_won";
+  if (party.every((c) => c.dead || c.unconscious)) return "enemies_won";
   if (enemies.every((c) => c.hp <= 0)) return "party_won";
   if (party.every((c) => c.fled)) return "party_fled";
   return "active";
@@ -213,33 +201,14 @@ export function startCombat(
 }
 
 /**
- * Handles what a party member's own 0-HP transition or further damage does:
- * falling unconscious, an instant death from massive damage, or a death
- * saving throw failure from being hit again while already down. Monsters
- * have no equivalent — per the SRD, a monster simply dies at 0 HP.
+ * Handles what a party member's own drop to 0 HP does: falling unconscious
+ * (which alone ends the fight in defeat), or an instant death from massive
+ * damage. Monsters have no equivalent — per the SRD, a monster simply dies
+ * at 0 HP. A no-op if they're already down, or this hit didn't finish them.
  */
-function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage: number, isCrit: boolean, hpBefore: number): void {
-  if (target.hp > 0 || target.dead) return;
+function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage: number, hpBefore: number): void {
+  if (target.hp > 0 || target.dead || target.unconscious) return;
 
-  if (hpBefore === 0) {
-    // Already at 0 HP (unconscious or stable) and took more damage.
-    if (damage <= 0) return;
-    target.stable = false;
-    const failures = isCrit ? 2 : 1;
-    target.deathSaveFailures += failures;
-    log(
-      state,
-      `${target.name} takes damage at 0 HP and suffers ${failures} death saving throw failure${failures > 1 ? "s" : ""}.`,
-      { kind: "death-save", targetId: target.id }
-    );
-    if (target.deathSaveFailures >= 3) {
-      target.dead = true;
-      log(state, `${target.name} dies.`, { kind: "down", targetId: target.id });
-    }
-    return;
-  }
-
-  // Just dropped to 0 HP this hit.
   const overkill = damage - hpBefore;
   if (overkill >= target.maxHp) {
     target.dead = true;
@@ -256,9 +225,6 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
     return;
   }
   target.unconscious = true;
-  target.stable = false;
-  target.deathSaveSuccesses = 0;
-  target.deathSaveFailures = 0;
   log(state, `${target.name} drops to 0 HP and falls unconscious!`, { kind: "down", targetId: target.id });
 }
 
@@ -321,7 +287,7 @@ function resolveAttack(
     crit: isCrit,
   });
 
-  if (target.side === "party") handlePartyDamageOutcome(state, target, damage, isCrit, hpBefore);
+  if (target.side === "party") handlePartyDamageOutcome(state, target, damage, hpBefore);
 }
 
 /** Resolves a saving-throw effect (e.g. Fireball) against every opposing combatant, one damage roll for all. */
@@ -357,7 +323,7 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
         amount: damage,
       }
     );
-    if (target.side === "party") handlePartyDamageOutcome(state, target, damage, false, hpBefore);
+    if (target.side === "party") handlePartyDamageOutcome(state, target, damage, hpBefore);
   }
 }
 
@@ -367,11 +333,8 @@ function resolveHeal(state: CombatState, actor: Combatant, target: Combatant, ac
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const healed = target.hp - before;
   if (target.hp > 0 && target.unconscious) {
-    // Regaining any HP ends the Unconscious condition (and the death saves that came with it).
+    // Regaining any HP ends the Unconscious condition.
     target.unconscious = false;
-    target.stable = false;
-    target.deathSaveSuccesses = 0;
-    target.deathSaveFailures = 0;
   }
   log(state, `${actor.name} uses ${action.name} on ${target.name}, restoring ${healed} HP.`, {
     kind: "heal",
@@ -408,50 +371,6 @@ function resolveFlee(state: CombatState, actor: Combatant, rng: RNG): void {
     log(state, `${actor.name} flees the battle!`, { kind: "flee-success", actorId: actor.id });
   } else {
     log(state, `${actor.name} tries to flee but can't get away!`, { kind: "flee-fail", actorId: actor.id });
-  }
-}
-
-/** A party member who starts their turn at 0 HP rolls a Death Saving Throw instead of acting. */
-function runDeathSave(state: CombatState, actor: Combatant, rng: RNG): void {
-  const roll = rollD20(rng);
-
-  if (roll === 20) {
-    actor.unconscious = false;
-    actor.stable = false;
-    actor.deathSaveSuccesses = 0;
-    actor.deathSaveFailures = 0;
-    actor.hp = 1;
-    log(state, `${actor.name} rolls a natural 20 on a death saving throw and springs back up with 1 HP!`, {
-      kind: "heal",
-      actorId: actor.id,
-      targetId: actor.id,
-      amount: 1,
-    });
-    return;
-  }
-
-  if (roll === 1) {
-    actor.deathSaveFailures += 2;
-  } else if (roll >= 10) {
-    actor.deathSaveSuccesses += 1;
-  } else {
-    actor.deathSaveFailures += 1;
-  }
-
-  log(
-    state,
-    `${actor.name} rolls ${roll} on a death saving throw ` +
-      `(${actor.deathSaveSuccesses} success${actor.deathSaveSuccesses === 1 ? "" : "es"}, ` +
-      `${actor.deathSaveFailures} failure${actor.deathSaveFailures === 1 ? "" : "s"}).`,
-    { kind: "death-save", actorId: actor.id }
-  );
-
-  if (actor.deathSaveFailures >= 3) {
-    actor.dead = true;
-    log(state, `${actor.name} dies.`, { kind: "down", targetId: actor.id });
-  } else if (actor.deathSaveSuccesses >= 3) {
-    actor.stable = true;
-    log(state, `${actor.name} stabilizes.`, { kind: "info", actorId: actor.id });
   }
 }
 
@@ -522,7 +441,7 @@ function advanceTurn(state: CombatState): void {
       log(state, `— Round ${state.round} —`, { kind: "round" });
     }
     const next = findCombatant(state, state.turnOrder[state.turnIndex]);
-    if (hasATurn(next)) {
+    if (isUp(next)) {
       next.tempArmorClassBonus = 0;
       next.dodging = false;
       return;
@@ -558,10 +477,10 @@ function runEnemyTurn(state: CombatState, rng: RNG): void {
 
 /**
  * After state mutation, refreshes status and auto-resolves anything that
- * doesn't need player input: enemy turns, and a downed party member's
- * automatic death saving throw. Stops (without advancing further) the
- * moment a party member is ready to act — including a party member who
- * just clawed back to consciousness via a natural 20.
+ * doesn't need player input (enemy turns), stopping the moment a party
+ * member is ready to act. A party member who drops to 0 HP goes Unconscious,
+ * which alone ends the fight in defeat, so there's nothing left to
+ * auto-resolve for them.
  */
 function advancePastDeadOrEnemies(state: CombatState, rng: RNG): CombatState {
   state.status = computeStatus(state);
@@ -569,16 +488,6 @@ function advancePastDeadOrEnemies(state: CombatState, rng: RNG): CombatState {
     const actor = currentCombatant(state);
     if (actor.side === "enemy") {
       runEnemyTurn(state, rng);
-    } else if (actor.unconscious && !actor.dead) {
-      if (!actor.stable) {
-        runDeathSave(state, actor, rng);
-        if (!actor.unconscious) {
-          // Revived mid-turn (natural 20) — let them act now instead of auto-advancing.
-          state.status = computeStatus(state);
-          break;
-        }
-      }
-      // Stable and still unconscious: nothing happens on their turn.
     } else {
       break; // a party member who can act normally — wait for player input
     }

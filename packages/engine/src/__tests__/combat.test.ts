@@ -25,10 +25,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     initiative: 0,
     fled: false,
     unconscious: false,
-    stable: false,
     dead: false,
-    deathSaveSuccesses: 0,
-    deathSaveFailures: 0,
     usedRelentlessEndurance: false,
     ...overrides,
   };
@@ -67,10 +64,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     initiative: 0,
     fled: false,
     unconscious: false,
-    stable: false,
     dead: false,
-    deathSaveSuccesses: 0,
-    deathSaveFailures: 0,
     usedRelentlessEndurance: false,
     ...overrides,
   };
@@ -166,47 +160,45 @@ describe("combat engine", () => {
     expect(fled.combatants.find((c) => c.id === "hero")!.fled).toBe(true);
   });
 
-  it("falls unconscious at 0 HP instead of ending the fight, and a natural 20 death save revives with 1 HP", () => {
+  it("falls unconscious at 0 HP, which alone ends the fight in defeat", () => {
     // foe (init 15) acts before hero (init 7) and its attack (roll 12 -> hits AC 12) deals
     // exactly 4 damage to hero's 4 HP -- 0 overkill, so hero falls unconscious rather than dying.
     const state = startCombat(
       [makeHero({ maxHp: 4, hp: 4 })],
       [makeFoe()],
-      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forDie(4, 4), forD20(20)])
+      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forDie(4, 4)])
     );
 
     const hero = state.combatants.find((c) => c.id === "hero")!;
     expect(state.log.some((entry) => entry.message.includes("falls unconscious"))).toBe(true);
-    expect(state.status).toBe("active"); // not an instant loss -- there's still a chance
-    expect(hero.unconscious).toBe(false); // revived by the natural 20
-    expect(hero.hp).toBe(1);
-    expect(state.turnOrder[state.turnIndex]).toBe("hero"); // stops to let them act now that they're up
+    expect(hero.unconscious).toBe(true);
+    expect(hero.dead).toBe(false);
+    expect(state.status).toBe("enemies_won"); // no death saves -- Unconscious alone ends the fight
   });
 
-  it("dies after failing three death saving throws (crits against an Unconscious target cause two failures)", () => {
+  it("kills a party member outright instead of leaving them merely unconscious, on a massive overkill hit", () => {
+    const massiveHit = {
+      id: "smash",
+      name: "Smash",
+      description: "",
+      kind: "attack" as const,
+      target: "enemy" as const,
+      ability: "str" as const,
+      dice: "1d20",
+      damageType: "bludgeoning" as const,
+    };
     const state = startCombat(
       [makeHero({ maxHp: 4, hp: 4 })],
-      [makeFoe()],
-      sequenceRng([
-        forD20(5),
-        forD20(15),
-        0,
-        forD20(12),
-        forDie(4, 4), // hero drops to 0 HP, unconscious
-        forD20(5), // hero's own death save: a plain failure (1)
-        0,
-        forD20(14),
-        forD20(18), // foe attacks with Advantage (unconscious target); kept roll 18 hits and auto-crits
-        forDie(4, 3),
-        forDie(4, 2), // crit damage dice; hit at 0 HP = 2 more failures (3 total) -> dead
-      ])
+      [makeFoe({ actions: [massiveHit] })],
+      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forD20(20)])
     );
 
     const hero = state.combatants.find((c) => c.id === "hero")!;
+    // 20 damage (str mod 0) against 4 HP -- overkill (16) >= maxHp (4) -> instant death.
     expect(hero.dead).toBe(true);
-    expect(hero.deathSaveFailures).toBe(3);
+    expect(hero.unconscious).toBe(false);
     expect(state.status).toBe("enemies_won");
-    expect(state.log.some((entry) => entry.message.includes("dies"))).toBe(true);
+    expect(state.log.some((entry) => entry.message.includes("dies instantly"))).toBe(true);
   });
 
   it("resolves an AoE save-for-half action (Fireball) against every enemy off a single damage roll", () => {

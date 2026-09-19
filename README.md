@@ -29,9 +29,8 @@ client-server milestone (combat is still resolved in the browser for now).
   proficiencies.
 - SRD 5.2.1-accurate combat resolution: ability modifiers, d20 attack rolls
   vs. AC, initiative, proficiency bonus (including on saving throws), crits
-  (double damage dice) and fumbles, Advantage/Disadvantage, damage types
-  with Resistance/Vulnerability/Immunity, and Death Saving Throws — see
-  [Combat Rules](#combat-rules).
+  (double damage dice) and fumbles, Advantage/Disadvantage, and damage types
+  with Resistance/Vulnerability/Immunity — see [Combat Rules](#combat-rules).
 - Turn-based combat against AI-controlled monsters, with a combat log, a
   proper Dodge action (Disadvantage on attackers, not a flat AC bump), an
   AoE save-for-half spell (Fireball), and once-per-combat abilities (e.g.
@@ -174,15 +173,16 @@ Commons Attribution 4.0 International License
   the SRD's actual Dodge action — not the flat AC bonus homebrew rule this
   used to be) and by attacking an Unconscious target (Advantage). The two
   cancel out rather than stacking, exactly per SRD.
-- **Death Saving Throws**: a party member dropped to 0 HP falls Unconscious
-  instead of ending the fight outright. On their turn they auto-roll a
-  death save (10+ succeeds, a nat 1 is two failures, a nat 20 revives them
-  at 1 HP); three failures and they die, three successes and they're
-  Stable. Taking damage while at 0 HP adds a failure (two if it's a
-  Critical Hit), and massive damage (overkill ≥ max HP) is an instant
-  death, all per SRD. Any hit against an Unconscious combatant is an
-  automatic Critical Hit — our engine has no positioning, so this always
-  applies rather than only "within 5 feet."
+- **Unconscious (homebrew, not SRD)**: a party member dropped to 0 HP falls
+  Unconscious, which alone ends the fight in defeat — no Death Saving
+  Throws, no chance to stabilize or claw back up mid-fight. Massive damage
+  (overkill ≥ max HP) is an instant death instead, per SRD. Any hit against
+  an Unconscious combatant is an automatic Critical Hit — our engine has no
+  positioning, so this always applies rather than only "within 5 feet."
+  Dropping the SRD's full death-save mini-game was a deliberate
+  simplification: with no allies around to stabilize or heal a downed
+  solo hero, rolling it out turn after turn added suspense without any
+  real chance of changing the outcome.
 - **Damage types + Resistance/Vulnerability/Immunity**: every attack and
   spell now has an SRD damage type (slashing, piercing, fire, radiant...).
   The resistance math (immunity zeroes, resistance halves and rounds down,
@@ -206,12 +206,13 @@ Commons Attribution 4.0 International License
   Weapon is a once-per-fight AoE save-for-half action built on the same
   "save" action kind as Fireball.
 - **Action cooldowns (homebrew, not SRD)**: each class's signature attack
-  now recharges every 2 rounds instead of being available every turn, so a
-  fight can't collapse into repeating the single best action — players
-  (and monsters) fall back to their basic Strike while it's down. Enemies
-  with more than one available attack also pick between them at random
-  instead of always the first, so a Goblin alternates Shortsword and
-  Strike rather than using the identical move every turn.
+  (Firebolt, Slash, Eldritch Blast...) is at-will, usable every turn like a
+  cantrip. Bigger one-off effects (Fireball, Second Wind, Arcane Shield...)
+  instead recharge on a multi-round cooldown rather than being exhausted
+  for good after one or two uses. Enemies with more than one available
+  attack pick between them at random instead of always the first, so a
+  Goblin alternates Shortsword and Strike rather than using the identical
+  move every turn.
 
 **Deliberately not ported**, because they assume a grid this engine
 doesn't have: cover, reach, opportunity attacks, and mounted/underwater

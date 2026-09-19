@@ -110,7 +110,7 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn }: CombatantInfoPa
   let statusTag: string | null = null;
   if (combatant.fled) statusTag = "Fled";
   else if (combatant.dead) statusTag = "Dead";
-  else if (combatant.unconscious) statusTag = combatant.stable ? "Stable (Unconscious)" : "Unconscious — Dying";
+  else if (combatant.unconscious) statusTag = "Unconscious";
   else if (combatant.hp <= 0) statusTag = "Defeated";
 
   return (
@@ -123,12 +123,6 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn }: CombatantInfoPa
       </div>
       <HealthBar hp={Math.max(0, combatant.hp)} maxHp={combatant.maxHp} />
       <div className="combatant-meta">AC {combatant.armorClass + combatant.tempArmorClassBonus}</div>
-      {combatant.unconscious && !combatant.stable && !combatant.dead && (
-        <div className="combatant-meta">
-          Death saves: {combatant.deathSaveSuccesses} success{combatant.deathSaveSuccesses === 1 ? "" : "es"}, {" "}
-          {combatant.deathSaveFailures} failure{combatant.deathSaveFailures === 1 ? "" : "s"}
-        </div>
-      )}
       {statusTag && <div className="status-tag">{statusTag}</div>}
     </div>
   );
