@@ -34,6 +34,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "str",
         dice: "1d8",
         damageType: "slashing",
+        cooldown: 2,
       },
       {
         id: "second-wind",
@@ -67,6 +68,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         dice: "1d6",
         damageType: "piercing",
+        cooldown: 2,
       },
       {
         id: "dagger-throw",
@@ -99,6 +101,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "int",
         dice: "1d10",
         damageType: "fire",
+        cooldown: 2,
       },
       {
         id: "fireball",
@@ -145,6 +148,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "wis",
         dice: "1d8",
         damageType: "radiant",
+        cooldown: 2,
       },
       {
         id: "heal",
@@ -176,6 +180,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "str",
         dice: "2d6",
         damageType: "slashing",
+        cooldown: 2,
       },
       {
         id: "furious-resilience",
@@ -209,6 +214,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "cha",
         dice: "1d8",
         damageType: "psychic",
+        cooldown: 2,
       },
       {
         id: "healing-word",
@@ -240,6 +246,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "wis",
         dice: "1d8",
         damageType: "piercing",
+        cooldown: 2,
       },
       {
         id: "cure-wounds",
@@ -271,6 +278,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         dice: "2d4",
         damageType: "bludgeoning",
+        cooldown: 2,
       },
       {
         id: "stunning-strike",
@@ -304,6 +312,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "str",
         dice: "1d10",
         damageType: "radiant",
+        cooldown: 2,
       },
       {
         id: "lay-on-hands",
@@ -335,6 +344,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         dice: "1d8",
         damageType: "piercing",
+        cooldown: 2,
       },
       {
         id: "goodberry",
@@ -366,6 +376,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "cha",
         dice: "1d8",
         damageType: "fire",
+        cooldown: 2,
       },
       {
         id: "shield",
@@ -398,6 +409,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "cha",
         dice: "1d10",
         damageType: "force",
+        cooldown: 2,
       },
       {
         id: "armor-of-agathys",

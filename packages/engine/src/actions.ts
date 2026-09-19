@@ -31,8 +31,16 @@ export interface CombatActionDef {
   damageType?: DamageType;
   /** Flat magnitude for buff effects (e.g. +2 AC). */
   effectValue?: number;
-  /** Once-per-combat actions (e.g. Second Wind) are marked with a cooldown. */
+  /** A hard cap on total uses for the whole fight (e.g. Second Wind, Fireball). */
   usesPerCombat?: number;
+  /**
+   * Rounds that must pass after use before this action is available again
+   * (independent of usesPerCombat, and reusable across multiple combats).
+   * Keeps a strong attack from being every turn's obvious best pick —
+   * without it, most classes only have 1-2 truly distinct choices before
+   * combat degenerates into repeating the same action.
+   */
+  cooldown?: number;
 }
 
 export const BASIC_ATTACK: CombatActionDef = {

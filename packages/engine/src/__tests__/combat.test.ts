@@ -15,6 +15,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     proficiencyBonus: 2,
     actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION],
     actionUses: {},
+    actionCooldowns: {},
     savingThrowProficiencies: [],
     damageResistances: [],
     damageVulnerabilities: [],
@@ -56,6 +57,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
       },
     ],
     actionUses: {},
+    actionCooldowns: {},
     savingThrowProficiencies: [],
     damageResistances: [],
     damageVulnerabilities: [],
@@ -299,5 +301,90 @@ describe("combat engine", () => {
     expect(hero.unconscious).toBe(false);
     expect(hero.usedRelentlessEndurance).toBe(true);
     expect(state.log.some((entry) => entry.message.includes("Relentless Endurance"))).toBe(true);
+  });
+
+  it("blocks a cooldown action from reuse until enough rounds have passed, then allows it again", () => {
+    const bigSwing = {
+      id: "big-swing",
+      name: "Big Swing",
+      description: "",
+      kind: "attack" as const,
+      target: "enemy" as const,
+      ability: "str" as const,
+      dice: "1d4",
+      damageType: "slashing" as const,
+      cooldown: 2,
+    };
+    const hero = makeHero({ actions: [bigSwing, BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION] });
+    const foe = makeFoe({ maxHp: 50, hp: 50 }); // high HP so it survives the whole exchange
+
+    // Round 1: hero (init 15) acts before foe (init 5).
+    let state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
+    expect(state.turnOrder).toEqual(["hero", "foe"]);
+
+    // Hero uses Big Swing: attack roll 15 hits, damage roll 3. Foe's follow-up attack (roll 5) misses.
+    state = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "big-swing", targetId: "foe" },
+      sequenceRng([forD20(15), forDie(4, 3), 0, forD20(5)])
+    );
+    expect(state.round).toBe(2);
+    expect(state.combatants.find((c) => c.id === "hero")!.actionCooldowns["big-swing"]).toBe(3);
+
+    // Round 2: still on cooldown (ready at round 3) -- reusing it throws.
+    expect(() =>
+      submitPlayerAction(state, { actorId: "hero", actionId: "big-swing", targetId: "foe" }, sequenceRng([0]))
+    ).toThrow();
+
+    // Hero falls back to Strike instead, advancing to round 3 (attack roll 15 hits, damage 3; foe misses back).
+    state = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "strike", targetId: "foe" },
+      sequenceRng([forD20(15), forDie(6, 3), 0, forD20(5)])
+    );
+    expect(state.round).toBe(3);
+
+    // Round 3: cooldown has elapsed (3 >= 3) -- Big Swing is usable again.
+    state = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "big-swing", targetId: "foe" },
+      sequenceRng([forD20(15), forDie(4, 2), 0, forD20(5)])
+    );
+    expect(state.log.some((entry) => entry.message.includes("Big Swing"))).toBe(true);
+    expect(state.combatants.find((c) => c.id === "hero")!.actionCooldowns["big-swing"]).toBe(5);
+  });
+
+  it("randomly picks among an enemy's available attacks instead of always the first one", () => {
+    const jab = {
+      id: "jab",
+      name: "Jab",
+      description: "",
+      kind: "attack" as const,
+      target: "enemy" as const,
+      ability: "str" as const,
+      dice: "1d4",
+      damageType: "piercing" as const,
+    };
+    const stab = {
+      id: "stab",
+      name: "Stab",
+      description: "",
+      kind: "attack" as const,
+      target: "enemy" as const,
+      ability: "str" as const,
+      dice: "1d4",
+      damageType: "piercing" as const,
+    };
+    const foe = makeFoe({ actions: [jab, stab] });
+
+    // foe (init 15) acts first; a selection roll of 0.75 against 2 choices picks index 1 (Stab).
+    const state = startCombat(
+      [makeHero()],
+      [foe],
+      sequenceRng([forD20(5), forD20(15), 0.75, 0, forD20(5)])
+    );
+
+    expect(state.log.some((entry) => entry.message.includes("Stab"))).toBe(true);
+    expect(state.log.some((entry) => entry.message.includes("Jab"))).toBe(false);
   });
 });

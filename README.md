@@ -195,6 +195,13 @@ Commons Attribution 4.0 International License
   Unconscious the first time they'd fall in a fight; a Dragonborn's Breath
   Weapon is a once-per-fight AoE save-for-half action built on the same
   "save" action kind as Fireball.
+- **Action cooldowns (homebrew, not SRD)**: each class's signature attack
+  now recharges every 2 rounds instead of being available every turn, so a
+  fight can't collapse into repeating the single best action — players
+  (and monsters) fall back to their basic Strike while it's down. Enemies
+  with more than one available attack also pick between them at random
+  instead of always the first, so a Goblin alternates Shortsword and
+  Strike rather than using the identical move every turn.
 
 **Deliberately not ported**, because they assume a grid this engine
 doesn't have: cover, reach, opportunity attacks, and mounted/underwater

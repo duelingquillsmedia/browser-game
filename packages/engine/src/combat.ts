@@ -24,6 +24,8 @@ export interface Combatant {
   proficiencyBonus: number;
   actions: CombatActionDef[];
   actionUses: Record<string, number>;
+  /** For actions with a `cooldown`: the round each one next becomes available again. */
+  actionCooldowns: Record<string, number>;
   /** Ability scores this combatant is proficient in saving throws with (party only; monsters default to none). */
   savingThrowProficiencies: AbilityKey[];
   damageResistances: DamageType[];
@@ -60,6 +62,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     proficiencyBonus: source.proficiencyBonus,
     actions: source.actions,
     actionUses: { ...source.actionUses },
+    actionCooldowns: {},
     savingThrowProficiencies: "classId" in source ? getClass(source.classId).savingThrowProficiencies : [],
     damageResistances: source.damageResistances ?? [],
     damageVulnerabilities: source.damageVulnerabilities ?? [],
@@ -112,6 +115,13 @@ function isTargetable(c: Combatant): boolean {
 
 function abilityMod(c: Combatant, key: AbilityKey): number {
   return abilityModifier(c.abilityScores[key]);
+}
+
+/** Whether `actor` can use `action` right now — respects both usesPerCombat and cooldown. */
+export function isActionReady(actor: Combatant, action: CombatActionDef, round: number): boolean {
+  if (action.usesPerCombat !== undefined && (actor.actionUses[action.id] ?? 0) <= 0) return false;
+  if (action.cooldown !== undefined && round < (actor.actionCooldowns[action.id] ?? 0)) return false;
+  return true;
 }
 
 function findCombatant(state: CombatState, id: string): Combatant {
@@ -399,6 +409,12 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     actor.actionUses[action.id] = remaining - 1;
   }
 
+  if (action.cooldown !== undefined) {
+    const readyAtRound = actor.actionCooldowns[action.id] ?? 0;
+    if (state.round < readyAtRound) throw new Error(`${action.name} is still recharging for ${actor.name}.`);
+    actor.actionCooldowns[action.id] = state.round + action.cooldown;
+  }
+
   switch (action.kind) {
     case "attack": {
       if (!request.targetId) throw new Error(`${action.name} requires a target.`);
@@ -449,16 +465,24 @@ function advanceTurn(state: CombatState): void {
   }
 }
 
-function pickEnemyAction(actor: Combatant): CombatActionDef {
-  const attacks = actor.actions.filter(
-    (a) => a.kind === "attack" && (a.usesPerCombat === undefined || (actor.actionUses[a.id] ?? 0) > 0)
-  );
-  return attacks[0] ?? actor.actions[0];
+/**
+ * Picks one of the enemy's currently-available attacks at random, rather
+ * than always the first — so a monster with more than one attack doesn't
+ * use the exact same move every single turn. Only spends an rng() draw
+ * when there's an actual choice to make, so a one-attack monster's turn
+ * doesn't consume randomness the rest of combat depends on.
+ */
+function pickEnemyAction(state: CombatState, actor: Combatant, rng: RNG): CombatActionDef {
+  const attacks = actor.actions.filter((a) => a.kind === "attack" && isActionReady(actor, a, state.round));
+  if (attacks.length === 0) return actor.actions[0];
+  if (attacks.length === 1) return attacks[0];
+  const index = Math.min(attacks.length - 1, Math.floor(rng() * attacks.length));
+  return attacks[index];
 }
 
 function runEnemyTurn(state: CombatState, rng: RNG): void {
   const actor = currentCombatant(state);
-  const action = pickEnemyAction(actor);
+  const action = pickEnemyAction(state, actor, rng);
   // Unconscious-but-not-dead party members are still valid (and helpless) targets.
   const targetableParty = state.combatants.filter((c) => c.side === "party" && isTargetable(c));
   const target = targetableParty[Math.floor(rng() * targetableParty.length)];

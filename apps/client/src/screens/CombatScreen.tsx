@@ -78,6 +78,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction }: CombatScreen
         {actor && (
           <ActionMenu
             actor={actor}
+            round={combat.round}
             pendingActionId={pendingAction?.id ?? null}
             onSelectAction={handleSelectAction}
             onCancel={() => setPendingAction(null)}
