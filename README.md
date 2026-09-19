@@ -155,12 +155,19 @@ with Eridan specifically the first/only continent — this project uses
 ## Assets
 
 UI art is from the craftpix.net "Fantasy RPG GUI" pack (`craftpix-500908-fantasy-rpg-gui`),
-used under its standard craftpix.net license. Only a handful of pieces are
-wired in so far (`apps/client/src/assets/ui`): a background texture, the HP
-bar frame, and the party/enemy portrait frames. The rest of the pack (login/
-registration screens, inventory, journal, map, skill tree, etc.) is staged
-in the project's shared Drive folder for when those systems get built —
-no point shipping unused art for screens that don't exist yet.
+used under its standard craftpix.net license. Wired in so far
+(`apps/client/src/assets/ui`): a background texture, the HP bar frame, the
+party/enemy portrait frames, and — on the character sheet — two ribbon
+banners cropped from the pack's Character and Inventory screen mockups (one
+blank, used as the sheet's title banner with the character's name overlaid;
+one with "Inventory" baked into the art, used as-is above the item list).
+Both crops keep the mockups' circular close button, repurposed as the
+sheet's "back to town" control. The pack doesn't include standalone item
+icons, so equipment-slot glyphs (weapon/armor/accessory) are small inline
+SVGs in `apps/client/src/components/ItemSlotIcon.tsx` rather than pack art.
+The rest of the pack (login/registration screens, journal, map, skill tree,
+etc.) is staged in the project's shared Drive folder for when those systems
+get built — no point shipping unused art for screens that don't exist yet.
 
 Battle backgrounds (`apps/client/src/assets/backgrounds`) are sourced from
 craftpix.net's horizontal battle-background packs (the "Background

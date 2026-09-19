@@ -10,6 +10,9 @@ import {
   type ItemSlot,
 } from "@eridan/engine";
 import { HealthBar } from "../components/HealthBar";
+import { ItemSlotIcon } from "../components/ItemSlotIcon";
+import ribbonBanner from "../assets/ui/ribbon-banner.png";
+import ribbonBannerInventory from "../assets/ui/ribbon-banner-inventory.png";
 
 export interface CharacterSheetScreenProps {
   character: Character;
@@ -36,11 +39,9 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
 
   return (
     <div className="screen character-sheet-screen">
-      <div className="screen-header-row">
-        <h1>{character.name}</h1>
-        <button type="button" className="ghost" onClick={onBack}>
-          Back to Town
-        </button>
+      <div className="ribbon-banner" style={{ backgroundImage: `url(${ribbonBanner})` }}>
+        <span className="ribbon-banner-text">{character.name}</span>
+        <button type="button" className="ribbon-banner-close" onClick={onBack} aria-label="Back to Town" />
       </div>
       <p className="subtitle">
         Level {character.level} {race?.name ?? character.raceId} {cls?.name ?? character.classId}
@@ -102,7 +103,10 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
           const item = itemId ? ITEM_TEMPLATES[itemId] : undefined;
           return (
             <div key={slot} className="equipment-slot">
-              <p className="location">{SLOT_LABELS[slot]}</p>
+              <p className="location">
+                <ItemSlotIcon slot={slot} />
+                {SLOT_LABELS[slot]}
+              </p>
               {item ? (
                 <>
                   <h3>{item.name}</h3>
@@ -119,7 +123,7 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
         })}
       </div>
 
-      <h2>Inventory</h2>
+      <div className="ribbon-banner ribbon-banner-inventory" style={{ backgroundImage: `url(${ribbonBannerInventory})` }} />
       <div className="inventory-list">
         {character.inventory.length === 0 && <p className="flavor">Nothing in the bag.</p>}
         {character.inventory.map((stack) => {
@@ -127,6 +131,9 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
           const isEquipped = equippedIds.has(stack.itemId);
           return (
             <div key={stack.itemId} className="inventory-row">
+              <div className="inventory-row-icon">
+                <ItemSlotIcon slot={item.slot} />
+              </div>
               <div>
                 <h3>
                   {item.name}
