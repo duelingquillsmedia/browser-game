@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createCharacter, equipItem, ownsItem, unequipItem } from "../character.js";
+import { createCharacter, equipItem, ownsItem, unequipItem, withStartingGearIfMissing } from "../character.js";
+import type { Character } from "../character.js";
 
 describe("createCharacter", () => {
   it("applies race ability bonuses and derives HP/AC for a level 1 character", () => {
@@ -110,5 +111,38 @@ describe("equipItem / unequipItem", () => {
 
   it("throws when equipping an item the character doesn't own", () => {
     expect(() => equipItem(fighter(), "oakenStaff")).toThrow();
+  });
+});
+
+describe("withStartingGearIfMissing", () => {
+  it("backfills inventory and equipment on a character saved before those fields existed", () => {
+    const legacy = createCharacter({
+      id: "pc-6",
+      name: "Old Timer",
+      raceId: "human",
+      classId: "fighter",
+      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+    });
+    // Simulate a row persisted before inventory/equipment were added.
+    const { inventory: _inv, equipment: _equip, ...withoutGear } = legacy;
+    const stripped = withoutGear as Character;
+
+    const migrated = withStartingGearIfMissing(stripped);
+
+    expect(migrated.equipment.weapon).toBe("ironLongsword");
+    expect(migrated.equipment.armor).toBe("chainShirt");
+    expect(migrated.inventory.length).toBeGreaterThan(0);
+    expect(migrated.armorClass).toBe(legacy.armorClass);
+  });
+
+  it("is a no-op for a character that already has inventory and equipment", () => {
+    const character = createCharacter({
+      id: "pc-7",
+      name: "Fresh",
+      raceId: "human",
+      classId: "fighter",
+      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+    });
+    expect(withStartingGearIfMissing(character)).toEqual(character);
   });
 });

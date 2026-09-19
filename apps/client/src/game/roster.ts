@@ -1,4 +1,4 @@
-import type { Character } from "@eridan/engine";
+import { withStartingGearIfMissing, type Character } from "@eridan/engine";
 import { supabase } from "../lib/supabaseClient";
 
 interface CharacterRow {
@@ -7,7 +7,9 @@ interface CharacterRow {
 }
 
 function rowToCharacter(row: CharacterRow): Character {
-  return { ...row.data, id: row.id };
+  // Characters saved before inventory/equipment existed won't have them in
+  // their stored jsonb — backfill so older rows don't crash the UI.
+  return withStartingGearIfMissing({ ...row.data, id: row.id });
 }
 
 export async function loadRoster(): Promise<Character[]> {

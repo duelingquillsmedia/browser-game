@@ -108,6 +108,22 @@ function buildStartingInventory(cls: CharacterClass): InventoryStack[] {
   return Array.from(counts, ([itemId, quantity]) => ({ itemId, quantity }));
 }
 
+/**
+ * Backfills inventory/equipment on a character persisted before those fields
+ * existed, granting the same starting kit a new character of their class
+ * would get. A no-op once both fields are already present.
+ */
+export function withStartingGearIfMissing(character: Character): Character {
+  if (character.inventory && character.equipment) return character;
+  const cls = getClass(character.classId);
+  const withGear: Character = {
+    ...character,
+    inventory: character.inventory ?? buildStartingInventory(cls),
+    equipment: character.equipment ?? { ...cls.startingEquipment },
+  };
+  return applyEquipmentEffects(withGear, cls);
+}
+
 export function createCharacter(options: CreateCharacterOptions): Character {
   const race = getRace(options.raceId);
   const cls = getClass(options.classId);
