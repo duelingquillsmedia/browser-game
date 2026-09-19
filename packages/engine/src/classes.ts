@@ -33,6 +33,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "enemy",
         ability: "str",
         dice: "1d8",
+        damageType: "slashing",
       },
       {
         id: "second-wind",
@@ -65,6 +66,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "enemy",
         ability: "dex",
         dice: "1d6",
+        damageType: "piercing",
       },
       {
         id: "dagger-throw",
@@ -74,6 +76,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "enemy",
         ability: "dex",
         dice: "1d4",
+        damageType: "piercing",
       },
     ],
     startingEquipment: { weapon: "huntersShortbow", armor: "leatherArmor" },
@@ -95,6 +98,21 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "enemy",
         ability: "int",
         dice: "1d10",
+        damageType: "fire",
+      },
+      {
+        id: "fireball",
+        name: "Fireball",
+        description:
+          "A roaring blast of fire engulfs every enemy. Each must succeed on a Dexterity saving throw or " +
+          "take fire damage (half as much on a success).",
+        kind: "save",
+        target: "enemies",
+        ability: "int",
+        saveAbility: "dex",
+        dice: "3d6",
+        damageType: "fire",
+        usesPerCombat: 1,
       },
       {
         id: "arcane-shield",
@@ -126,6 +144,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "enemy",
         ability: "wis",
         dice: "1d8",
+        damageType: "radiant",
       },
       {
         id: "heal",

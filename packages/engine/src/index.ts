@@ -4,6 +4,7 @@ export * from "./actions.js";
 export * from "./races.js";
 export * from "./classes.js";
 export * from "./items.js";
+export * from "./damage.js";
 export * from "./character.js";
 export * from "./monsters.js";
 export * from "./combat.js";

@@ -15,9 +15,19 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     proficiencyBonus: 2,
     actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION],
     actionUses: {},
+    savingThrowProficiencies: [],
+    damageResistances: [],
+    damageVulnerabilities: [],
+    damageImmunities: [],
     tempArmorClassBonus: 0,
+    dodging: false,
     initiative: 0,
     fled: false,
+    unconscious: false,
+    stable: false,
+    dead: false,
+    deathSaveSuccesses: 0,
+    deathSaveFailures: 0,
     ...overrides,
   };
 }
@@ -32,11 +42,32 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     hp: 7,
     armorClass: 10,
     proficiencyBonus: 2,
-    actions: [{ id: "claw", name: "Claw", description: "", kind: "attack", target: "enemy", ability: "str", dice: "1d4" }],
+    actions: [
+      {
+        id: "claw",
+        name: "Claw",
+        description: "",
+        kind: "attack",
+        target: "enemy",
+        ability: "str",
+        dice: "1d4",
+        damageType: "slashing",
+      },
+    ],
     actionUses: {},
+    savingThrowProficiencies: [],
+    damageResistances: [],
+    damageVulnerabilities: [],
+    damageImmunities: [],
     tempArmorClassBonus: 0,
+    dodging: false,
     initiative: 0,
     fled: false,
+    unconscious: false,
+    stable: false,
+    dead: false,
+    deathSaveSuccesses: 0,
+    deathSaveFailures: 0,
     ...overrides,
   };
 }
@@ -64,7 +95,7 @@ describe("combat engine", () => {
     expect(afterAttack.log.some((entry) => entry.message.includes("falls"))).toBe(true);
   });
 
-  it("auto-resolves enemy turns and applies the Defend AC bonus against the next attack", () => {
+  it("auto-resolves enemy turns and Defend imposes Disadvantage on the next attack against the defender", () => {
     // foe rolls 15+0=15, hero rolls 5+2=7 -> foe acts first, auto-resolved inside startCombat
     // (attack roll 15 hits, damage roll 3 -> 3 dmg since foe's str mod is 0).
     // (the 0 is the enemy AI's target-pick roll, irrelevant with a single target)
@@ -78,8 +109,10 @@ describe("combat engine", () => {
     const heroAfterHit = state.combatants.find((c) => c.id === "hero")!;
     expect(heroAfterHit.hp).toBe(17);
 
-    // Hero defends (+2 AC); foe's follow-up attack (11+0+2=13) now misses vs AC 14.
-    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forD20(11)]));
+    // Hero defends (Dodge). Foe's follow-up attack rolls with Disadvantage: (13, 5) keeps
+    // the lower 5, for a total of 5+0+2=7 against AC 12 -- a miss, though the 13 alone
+    // (13+2=15) would have hit, proving Disadvantage is what causes it to whiff.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forD20(13), forD20(5)]));
     const heroAfterDefend = state.combatants.find((c) => c.id === "hero")!;
     expect(heroAfterDefend.hp).toBe(17); // unchanged: the follow-up attack missed
     expect(state.round).toBe(2);
@@ -111,5 +144,102 @@ describe("combat engine", () => {
     expect(() =>
       submitPlayerAction(state, { actorId: "foe", actionId: "claw", targetId: "hero" }, sequenceRng([forD20(10)]))
     ).toThrow();
+  });
+
+  it("adds the saving-throw proficiency bonus to Flee only when the actor is proficient in Dexterity saves", () => {
+    // Roll 6 + dex mod 2 = 8, below the DC 10 -- fails without proficiency...
+    const state = startCombat([makeHero()], [makeFoe()], sequenceRng([forD20(15), forD20(1)]));
+    const failed = submitPlayerAction(state, { actorId: "hero", actionId: "flee" }, sequenceRng([forD20(6)]));
+    expect(failed.combatants.find((c) => c.id === "hero")!.fled).toBe(false);
+
+    // ...but 6 + 2 + a +2 proficiency bonus = 10 succeeds for a class (like Rogue) proficient in Dex saves.
+    const proficientState = startCombat(
+      [makeHero({ savingThrowProficiencies: ["dex"] })],
+      [makeFoe()],
+      sequenceRng([forD20(15), forD20(1)])
+    );
+    const fled = submitPlayerAction(proficientState, { actorId: "hero", actionId: "flee" }, sequenceRng([forD20(6)]));
+    expect(fled.combatants.find((c) => c.id === "hero")!.fled).toBe(true);
+  });
+
+  it("falls unconscious at 0 HP instead of ending the fight, and a natural 20 death save revives with 1 HP", () => {
+    // foe (init 15) acts before hero (init 7) and its attack (roll 12 -> hits AC 12) deals
+    // exactly 4 damage to hero's 4 HP -- 0 overkill, so hero falls unconscious rather than dying.
+    const state = startCombat(
+      [makeHero({ maxHp: 4, hp: 4 })],
+      [makeFoe()],
+      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forDie(4, 4), forD20(20)])
+    );
+
+    const hero = state.combatants.find((c) => c.id === "hero")!;
+    expect(state.log.some((entry) => entry.message.includes("falls unconscious"))).toBe(true);
+    expect(state.status).toBe("active"); // not an instant loss -- there's still a chance
+    expect(hero.unconscious).toBe(false); // revived by the natural 20
+    expect(hero.hp).toBe(1);
+    expect(state.turnOrder[state.turnIndex]).toBe("hero"); // stops to let them act now that they're up
+  });
+
+  it("dies after failing three death saving throws (crits against an Unconscious target cause two failures)", () => {
+    const state = startCombat(
+      [makeHero({ maxHp: 4, hp: 4 })],
+      [makeFoe()],
+      sequenceRng([
+        forD20(5),
+        forD20(15),
+        0,
+        forD20(12),
+        forDie(4, 4), // hero drops to 0 HP, unconscious
+        forD20(5), // hero's own death save: a plain failure (1)
+        0,
+        forD20(14),
+        forD20(18), // foe attacks with Advantage (unconscious target); kept roll 18 hits and auto-crits
+        forDie(4, 3),
+        forDie(4, 2), // crit damage dice; hit at 0 HP = 2 more failures (3 total) -> dead
+      ])
+    );
+
+    const hero = state.combatants.find((c) => c.id === "hero")!;
+    expect(hero.dead).toBe(true);
+    expect(hero.deathSaveFailures).toBe(3);
+    expect(state.status).toBe("enemies_won");
+    expect(state.log.some((entry) => entry.message.includes("dies"))).toBe(true);
+  });
+
+  it("resolves an AoE save-for-half action (Fireball) against every enemy off a single damage roll", () => {
+    const fireball = {
+      id: "fireball",
+      name: "Fireball",
+      description: "",
+      kind: "save" as const,
+      target: "enemies" as const,
+      ability: "int" as const,
+      saveAbility: "dex" as const,
+      dice: "3d6",
+      damageType: "fire" as const,
+      usesPerCombat: 1,
+    };
+    const caster = makeHero({
+      abilityScores: { str: 10, dex: 10, con: 10, int: 16, wis: 10, cha: 10 },
+      actions: [fireball],
+      actionUses: { fireball: 1 },
+    });
+    // DC = 8 + proficiency(2) + int mod(3) = 13.
+    const failer = makeFoe({ id: "foe1", name: "Foe1", maxHp: 10, hp: 10 });
+    const succeeder = makeFoe({ id: "foe2", name: "Foe2", maxHp: 6, hp: 6 });
+
+    const state = startCombat([caster], [failer, succeeder], sequenceRng([forD20(20), forD20(5), forD20(6)]));
+    expect(state.turnOrder[0]).toBe("hero"); // highest initiative, acts first
+
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "fireball" },
+      sequenceRng([forDie(6, 4), forDie(6, 4), forDie(6, 4), forD20(5), forD20(15)])
+    );
+
+    // Base damage 4+4+4=12, rolled once. Foe1 (roll 5, DC 13) fails -> takes 12, dies (10 HP).
+    // Foe2 (roll 15, DC 13) succeeds -> takes half, 6 -> also dies (6 HP), ending the fight.
+    expect(after.status).toBe("party_won");
+    expect(after.combatants.find((c) => c.id === "foe1")!.hp).toBe(0);
+    expect(after.combatants.find((c) => c.id === "foe2")!.hp).toBe(0);
   });
 });

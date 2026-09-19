@@ -21,7 +21,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction }: CombatScreen
   const enemies = combat.combatants.filter((c) => c.side === "enemy");
 
   function handleSelectAction(action: CombatActionDef) {
-    if (action.target === "self" || action.target === "none") {
+    if (action.target === "self" || action.target === "none" || action.target === "enemies") {
       onSubmitAction({ actorId: actor!.id, actionId: action.id });
       return;
     }

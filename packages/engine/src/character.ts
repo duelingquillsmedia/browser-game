@@ -4,6 +4,7 @@ import { getRace } from "./races.js";
 import { getClass, type CharacterClass } from "./classes.js";
 import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
+import type { DamageType } from "./damage.js";
 
 export interface InventoryStack {
   itemId: string;
@@ -28,6 +29,10 @@ export interface Character {
   inventory: InventoryStack[];
   /** Which owned item (by id) is worn in each slot, if any. */
   equipment: Partial<Record<ItemSlot, string>>;
+  /** No current race/class grants these — reserved for future features (e.g. a Dwarf's poison resistance). */
+  damageResistances?: DamageType[];
+  damageVulnerabilities?: DamageType[];
+  damageImmunities?: DamageType[];
 }
 
 export function abilityMod(character: Character, key: AbilityKey): number {
@@ -59,6 +64,7 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass): Chara
           description: `A basic attack with your equipped ${weapon.name}.`,
           ability: weapon.ability ?? BASIC_ATTACK.ability,
           dice: weapon.damageDice,
+          damageType: weapon.damageType ?? BASIC_ATTACK.damageType,
         }
       : BASIC_ATTACK;
 

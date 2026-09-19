@@ -2,6 +2,7 @@ import type { AbilityScores } from "./abilities.js";
 import { abilityModifier } from "./dice.js";
 import type { CombatActionDef } from "./actions.js";
 import { BASIC_ATTACK } from "./actions.js";
+import type { DamageType } from "./damage.js";
 
 export interface MonsterTemplate {
   id: string;
@@ -12,6 +13,10 @@ export interface MonsterTemplate {
   hitDiceCount: number;
   baseArmorClass: number;
   actions: CombatActionDef[];
+  /** None of Eridan's current frontier threats have any — reserved for future undead/elemental monsters. */
+  damageResistances?: DamageType[];
+  damageVulnerabilities?: DamageType[];
+  damageImmunities?: DamageType[];
 }
 
 export interface Monster {
@@ -25,6 +30,9 @@ export interface Monster {
   proficiencyBonus: number;
   actions: CombatActionDef[];
   actionUses: Record<string, number>;
+  damageResistances: DamageType[];
+  damageVulnerabilities: DamageType[];
+  damageImmunities: DamageType[];
 }
 
 /**
@@ -49,6 +57,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
         target: "enemy",
         ability: "dex",
         dice: "1d6",
+        damageType: "piercing",
       },
       BASIC_ATTACK,
     ],
@@ -70,6 +79,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
         target: "enemy",
         ability: "str",
         dice: "2d4",
+        damageType: "piercing",
       },
     ],
   },
@@ -90,6 +100,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
         target: "enemy",
         ability: "str",
         dice: "1d12",
+        damageType: "slashing",
       },
       BASIC_ATTACK,
     ],
@@ -116,5 +127,8 @@ export function createMonster(templateId: string, instanceId: string): Monster {
     actionUses: Object.fromEntries(
       template.actions.filter((a) => a.usesPerCombat).map((a) => [a.id, a.usesPerCombat!])
     ),
+    damageResistances: template.damageResistances ?? [],
+    damageVulnerabilities: template.damageVulnerabilities ?? [],
+    damageImmunities: template.damageImmunities ?? [],
   };
 }

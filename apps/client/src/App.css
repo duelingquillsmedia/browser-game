@@ -611,6 +611,10 @@ button.ghost {
   padding: 0.1rem 0.35rem;
 }
 
+.badge-bloodied {
+  background: var(--danger);
+}
+
 .health-bar {
   position: relative;
   width: 100%;

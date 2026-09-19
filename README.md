@@ -12,10 +12,15 @@ client-server milestone (combat is still resolved in the browser for now).
 - 5 playable races (Human, Elf, Dwarf, Orc, Halfling) with SRD-style ability
   bonuses and traits.
 - 4 classes (Fighter, Rogue, Wizard, Cleric) with distinct actions.
-- SRD-style mechanics: ability modifiers, d20 attack rolls vs. AC, initiative,
-  proficiency bonus, saving-throw-style flee checks, crits/fumbles.
-- Turn-based combat against AI-controlled monsters, with a combat log,
-  Defend/buff AC bonuses, and once-per-combat abilities (e.g. Second Wind).
+- SRD 5.2.1-accurate combat resolution: ability modifiers, d20 attack rolls
+  vs. AC, initiative, proficiency bonus (including on saving throws), crits
+  (double damage dice) and fumbles, Advantage/Disadvantage, damage types
+  with Resistance/Vulnerability/Immunity, and Death Saving Throws — see
+  [Combat Rules](#combat-rules).
+- Turn-based combat against AI-controlled monsters, with a combat log, a
+  proper Dodge action (Disadvantage on attackers, not a flat AC bump), an
+  AoE save-for-half spell (Fireball), and once-per-combat abilities (e.g.
+  Second Wind).
 - A handful of low-level encounters flavored around Ridgeton's frontier —
   the Tameless Shore, Tiuv Forest, and Collmhor Wood — pulled from the
   project's own Encyclopedia of Eridan (see [Lore](#lore)).
@@ -127,6 +132,54 @@ non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
    of Eridan.
 5. Further art passes: character/monster sprites, and more per-location
    backgrounds as new encounters and locations get added.
+
+## Combat Rules
+
+Combat resolution (`packages/engine/src/combat.ts`) follows the **SRD 5.2.1**
+(staged in Drive as `SRD_CC_v5.2.1.pdf`) wherever it fits a non-grid,
+turn-based encounter. This work includes material from the System
+Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC,
+available at https://www.dndbeyond.com/srd, licensed under the Creative
+Commons Attribution 4.0 International License
+(https://creativecommons.org/licenses/by/4.0/legalcode).
+
+- **Advantage/Disadvantage**: rolled as two d20s, keeping the higher/lower.
+  Currently triggered by the Defend action (Disadvantage on attackers, per
+  the SRD's actual Dodge action — not the flat AC bonus homebrew rule this
+  used to be) and by attacking an Unconscious target (Advantage). The two
+  cancel out rather than stacking, exactly per SRD.
+- **Death Saving Throws**: a party member dropped to 0 HP falls Unconscious
+  instead of ending the fight outright. On their turn they auto-roll a
+  death save (10+ succeeds, a nat 1 is two failures, a nat 20 revives them
+  at 1 HP); three failures and they die, three successes and they're
+  Stable. Taking damage while at 0 HP adds a failure (two if it's a
+  Critical Hit), and massive damage (overkill ≥ max HP) is an instant
+  death, all per SRD. Any hit against an Unconscious combatant is an
+  automatic Critical Hit — our engine has no positioning, so this always
+  applies rather than only "within 5 feet."
+- **Damage types + Resistance/Vulnerability/Immunity**: every attack and
+  spell now has an SRD damage type (slashing, piercing, fire, radiant...).
+  The resistance math (immunity zeroes, resistance halves and rounds down,
+  vulnerability doubles, applied in that order) is implemented and unit
+  tested against the SRD's own worked example, but no current monster has
+  any — Eridan's frontier threats (goblins, wolves, orcs) are mundane and
+  wouldn't in a real stat block either. It's ready for the first undead or
+  elemental that should.
+- **Saving throw proficiency**: each class's `savingThrowProficiencies` (already
+  modeled, previously unused) now actually adds the proficiency bonus —
+  e.g. a Rogue (proficient in Dex saves) is meaningfully better at Flee
+  checks than a Fighter isn't.
+- **Fireball**: a new Wizard spell demonstrating the SRD's save-for-half
+  area rule — one damage roll, applied to every enemy, each rolling its
+  own Dexterity save for half damage on a success.
+
+**Deliberately not ported**, because they assume a grid this engine
+doesn't have: cover, reach, opportunity attacks, and mounted/underwater
+combat. Also out of scope for this pass: the SRD's full condition list
+(Prone, Restrained, Poisoned, Frightened, Blinded...) beyond Unconscious,
+since none of Eridan's current abilities can inflict them yet; bonus
+actions/reactions as a separate action-economy slot, since no current
+ability needs one; and temporary hit points, since nothing grants them.
 
 ## Lore
 

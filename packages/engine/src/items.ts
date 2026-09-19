@@ -1,4 +1,5 @@
 import type { AbilityKey } from "./abilities.js";
+import type { DamageType } from "./damage.js";
 
 export type ItemSlot = "weapon" | "armor" | "accessory";
 
@@ -13,6 +14,8 @@ export interface ItemTemplate {
   damageDice?: string;
   /** Ability score used for Strike's to-hit/damage roll with this weapon; defaults to Strike's own (str). */
   ability?: AbilityKey;
+  /** Damage type for Strike while this weapon is equipped; defaults to Strike's own (slashing). */
+  damageType?: DamageType;
   /** Reference value in gold pieces, for flavor (there's no wallet/shop yet). */
   value: number;
 }
@@ -37,6 +40,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     slot: "weapon",
     damageDice: "1d6",
     ability: "dex",
+    damageType: "piercing",
     value: 12,
   },
   oakenStaff: {
@@ -46,6 +50,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     slot: "weapon",
     damageDice: "1d6",
     ability: "int",
+    damageType: "bludgeoning",
     value: 12,
   },
   ashenMace: {
@@ -55,6 +60,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     slot: "weapon",
     damageDice: "1d6",
     ability: "wis",
+    damageType: "bludgeoning",
     value: 12,
   },
   leatherArmor: {
