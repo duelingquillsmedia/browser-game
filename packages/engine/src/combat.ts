@@ -17,6 +17,8 @@ export interface Combatant {
   raceId?: string;
   /** A party member's class (for UI purposes, e.g. picking a combat sprite); monsters have none. */
   classId?: string;
+  /** A monster's template (for UI purposes, e.g. picking a combat sprite); party members have none. */
+  templateId?: string;
   /** A party member's Origin feat (for feat-specific mechanics like Alert or Savage Attacker); monsters have none. */
   originFeatId?: OriginFeatId;
   abilityScores: AbilityScores;
@@ -54,6 +56,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     side,
     raceId: "raceId" in source ? source.raceId : undefined,
     classId: "classId" in source ? source.classId : undefined,
+    templateId: "templateId" in source ? source.templateId : undefined,
     originFeatId: "originFeatId" in source ? source.originFeatId : undefined,
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,

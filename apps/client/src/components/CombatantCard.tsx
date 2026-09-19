@@ -1,7 +1,7 @@
 import type { Combatant } from "@eridan/engine";
 import { HealthBar } from "./HealthBar";
 import { CharacterSprite, type SpriteState } from "./CharacterSprite";
-import { getPartySprite } from "../game/sprites";
+import { getPartySprite, getMonsterSprite } from "../game/sprites";
 import portraitFrameParty from "../assets/ui/portrait-frame-party.png";
 import portraitFrameEnemy from "../assets/ui/portrait-frame-enemy.png";
 
@@ -46,7 +46,10 @@ export function CombatantPortraitTile({
     .filter(Boolean)
     .join(" ");
 
-  const sprite = combatant.side === "party" ? getPartySprite(combatant.raceId, combatant.classId) : undefined;
+  const sprite =
+    combatant.side === "party"
+      ? getPartySprite(combatant.raceId, combatant.classId)
+      : getMonsterSprite(combatant.templateId, combatant.id);
   const portraitClassNames = [
     "combatant-portrait",
     sprite ? "has-sprite" : "",

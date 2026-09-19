@@ -45,6 +45,12 @@ client-server milestone (combat is still resolved in the browser for now).
   sprite sheets) instead of the generic portrait frame. Every other
   race/class combination still uses the generic portrait until more sprites
   are added.
+- Goblin Raiders got the same treatment with two distinct animated models,
+  so the two goblins in an encounter (e.g. Raiders on the Tameless Shore)
+  read as individuals instead of copy-pasted clones. Which model a given
+  Goblin Raider gets is picked deterministically from its own combatant id,
+  so it stays consistent across a fight. Every other monster still uses the
+  generic enemy portrait.
 - A handful of low-level encounters flavored around Ridgeton's frontier —
   the Tameless Shore, Tiuv Forest, and Collmhor Wood — pulled from the
   project's own Encyclopedia of Eridan (see [Lore](#lore)).
