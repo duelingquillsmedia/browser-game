@@ -369,14 +369,16 @@ button.ghost {
 }
 
 .ribbon-banner-close {
+  /* Sized/positioned in pixels of the banner's native 789x150 art (the X
+     glyph sits at roughly x:678-728, y:118-150), so it lines up with the
+     visible icon regardless of the container's rendered size. */
   position: absolute;
-  right: 4%;
-  bottom: 8%;
-  width: 9%;
-  aspect-ratio: 1;
+  left: 84%;
+  right: 6.5%;
+  top: 74%;
+  bottom: 0;
   background: transparent;
   border: none;
-  border-radius: 50%;
   cursor: pointer;
 }
 
