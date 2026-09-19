@@ -36,6 +36,11 @@ client-server milestone (combat is still resolved in the browser for now).
   proper Dodge action (Disadvantage on attackers, not a flat AC bump), an
   AoE save-for-half spell (Fireball), and once-per-combat abilities (e.g.
   Second Wind).
+- Animated combat resolution: each action plays out beat-by-beat (an
+  attack lunge, a hit flash and shake, floating damage/heal numbers, HP
+  bars draining live) instead of jumping straight to the end state, with
+  the combat log revealing one line at a time in step. The result screen
+  waits for the final blow's animation to finish before appearing.
 - A handful of low-level encounters flavored around Ridgeton's frontier —
   the Tameless Shore, Tiuv Forest, and Collmhor Wood — pulled from the
   project's own Encyclopedia of Eridan (see [Lore](#lore)).

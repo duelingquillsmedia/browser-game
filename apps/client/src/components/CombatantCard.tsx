@@ -3,14 +3,22 @@ import { HealthBar } from "./HealthBar";
 import portraitFrameParty from "../assets/ui/portrait-frame-party.png";
 import portraitFrameEnemy from "../assets/ui/portrait-frame-enemy.png";
 
+/** A momentary visual reaction to a combat event, keyed so React replays the animation on every occurrence. */
+export interface CombatantEffect {
+  kind: "attacking" | "hit" | "heal" | "buff";
+  text?: string;
+  key: number;
+}
+
 export interface CombatantCardProps {
   combatant: Combatant;
   isCurrentTurn: boolean;
   isSelectableTarget: boolean;
+  effect?: CombatantEffect;
   onSelect?: () => void;
 }
 
-export function CombatantCard({ combatant, isCurrentTurn, isSelectableTarget, onSelect }: CombatantCardProps) {
+export function CombatantCard({ combatant, isCurrentTurn, isSelectableTarget, effect, onSelect }: CombatantCardProps) {
   const isDown = combatant.hp <= 0 || combatant.fled;
   const classNames = [
     "combatant-card",
@@ -21,6 +29,7 @@ export function CombatantCard({ combatant, isCurrentTurn, isSelectableTarget, on
   ]
     .filter(Boolean)
     .join(" ");
+  const portraitClassNames = ["combatant-portrait", effect ? `fx-${effect.kind}` : ""].filter(Boolean).join(" ");
 
   const initial = combatant.name.trim().charAt(0).toUpperCase();
   const portraitFrame = combatant.side === "party" ? portraitFrameParty : portraitFrameEnemy;
@@ -34,9 +43,14 @@ export function CombatantCard({ combatant, isCurrentTurn, isSelectableTarget, on
 
   const content = (
     <>
-      <div className="combatant-portrait">
+      <div className={portraitClassNames}>
         <span className="combatant-initial">{initial}</span>
         <img src={portraitFrame} alt="" />
+        {effect?.text && (
+          <span key={effect.key} className={`floating-text floating-${effect.kind}`}>
+            {effect.text}
+          </span>
+        )}
       </div>
       <div className="combatant-info">
         <div className="combatant-name">

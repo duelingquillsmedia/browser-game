@@ -23,7 +23,7 @@ type Screen =
   | { kind: "townHub"; character: Character }
   | { kind: "characterSheet"; character: Character }
   | { kind: "encounterSelect"; character: Character }
-  | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter };
+  | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
@@ -193,7 +193,7 @@ function App() {
     }
   }
 
-  if (combat.status !== "active") {
+  if (combat.status !== "active" && screen.resultReady) {
     const survivor = combat.combatants.find((c) => c.side === "party");
     const updatedCharacter = survivor ? { ...character, hp: survivor.hp } : character;
 
@@ -212,7 +212,15 @@ function App() {
     );
   }
 
-  return <CombatScreen combat={combat} encounter={encounter} onSubmitAction={handleSubmitAction} />;
+  return (
+    <CombatScreen
+      key={encounter.id}
+      combat={combat}
+      encounter={encounter}
+      onSubmitAction={handleSubmitAction}
+      onSettled={() => setScreen({ kind: "combat", character, combat, encounter, resultReady: true })}
+    />
+  );
 }
 
 export default App;

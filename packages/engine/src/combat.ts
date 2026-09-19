@@ -80,9 +80,36 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
   };
 }
 
+/**
+ * What kind of thing happened, for a UI to key an animation off of —
+ * distinct from the human-readable `message`, which is for the log panel.
+ */
+export type CombatEventKind =
+  | "info"
+  | "round"
+  | "hit"
+  | "miss"
+  | "save-fail"
+  | "save-succeed"
+  | "heal"
+  | "buff"
+  | "defend"
+  | "flee-success"
+  | "flee-fail"
+  | "death-save"
+  | "down";
+
 export interface CombatLogEntry {
   round: number;
   message: string;
+  /** The combatant who caused this event, if any (for a UI to animate an "attacking" pose). */
+  actorId?: string;
+  /** The combatant this event happened to, if any (for a UI to animate a hit/heal reaction). */
+  targetId?: string;
+  kind?: CombatEventKind;
+  /** Damage dealt or HP restored by this event, if any. */
+  amount?: number;
+  crit?: boolean;
 }
 
 export type CombatStatus = "active" | "party_won" | "enemies_won" | "party_fled";
@@ -144,8 +171,8 @@ function computeStatus(state: CombatState): CombatStatus {
   return "active";
 }
 
-function log(state: CombatState, message: string): void {
-  state.log.push({ round: state.round, message });
+function log(state: CombatState, message: string, event?: Omit<CombatLogEntry, "round" | "message">): void {
+  state.log.push({ round: state.round, message, ...event });
 }
 
 export function startCombat(
@@ -173,10 +200,10 @@ export function startCombat(
     status: "active",
   };
 
-  log(state, "The battle begins!");
+  log(state, "The battle begins!", { kind: "info" });
   for (const id of turnOrder) {
     const c = findCombatant(state, id);
-    log(state, `${c.name} rolls initiative: ${c.initiative}.`);
+    log(state, `${c.name} rolls initiative: ${c.initiative}.`, { kind: "info", actorId: c.id });
   }
 
   return advancePastDeadOrEnemies(state, rng);
@@ -199,11 +226,12 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
     target.deathSaveFailures += failures;
     log(
       state,
-      `${target.name} takes damage at 0 HP and suffers ${failures} death saving throw failure${failures > 1 ? "s" : ""}.`
+      `${target.name} takes damage at 0 HP and suffers ${failures} death saving throw failure${failures > 1 ? "s" : ""}.`,
+      { kind: "death-save", targetId: target.id }
     );
     if (target.deathSaveFailures >= 3) {
       target.dead = true;
-      log(state, `${target.name} dies.`);
+      log(state, `${target.name} dies.`, { kind: "down", targetId: target.id });
     }
     return;
   }
@@ -212,20 +240,23 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
   const overkill = damage - hpBefore;
   if (overkill >= target.maxHp) {
     target.dead = true;
-    log(state, `${target.name} takes a devastating blow and dies instantly!`);
+    log(state, `${target.name} takes a devastating blow and dies instantly!`, { kind: "down", targetId: target.id });
     return;
   }
   if (target.raceId === "orc" && !target.usedRelentlessEndurance) {
     target.usedRelentlessEndurance = true;
     target.hp = 1;
-    log(state, `${target.name}'s Relentless Endurance kicks in — they stay on their feet at 1 HP!`);
+    log(state, `${target.name}'s Relentless Endurance kicks in — they stay on their feet at 1 HP!`, {
+      kind: "info",
+      targetId: target.id,
+    });
     return;
   }
   target.unconscious = true;
   target.stable = false;
   target.deathSaveSuccesses = 0;
   target.deathSaveFailures = 0;
-  log(state, `${target.name} drops to 0 HP and falls unconscious!`);
+  log(state, `${target.name} drops to 0 HP and falls unconscious!`, { kind: "down", targetId: target.id });
 }
 
 /** Rolls to see if `actor`'s attack/spell against `target` connects. */
@@ -241,7 +272,7 @@ function resolveAttack(
   const edge = advantaged && disadvantaged ? "none" : advantaged ? "advantage" : disadvantaged ? "disadvantage" : "none";
   let attackRoll = rollD20WithEdge(edge, rng);
   if (attackRoll === 1 && actor.raceId === "halfling") {
-    log(state, `${actor.name}'s Lucky trait rerolls a natural 1!`);
+    log(state, `${actor.name}'s Lucky trait rerolls a natural 1!`, { kind: "info", actorId: actor.id });
     attackRoll = rollD20WithEdge(edge, rng);
   }
   const mod = abilityMod(actor, action.ability) + actor.proficiencyBonus;
@@ -252,7 +283,11 @@ function resolveAttack(
   const hits = attackRoll === 20 || (!isFumble && total >= targetAc);
 
   if (!hits) {
-    log(state, `${actor.name} attacks ${target.name} with ${action.name} (${total} vs AC ${targetAc}) — misses!`);
+    log(state, `${actor.name} attacks ${target.name} with ${action.name} (${total} vs AC ${targetAc}) — misses!`, {
+      kind: "miss",
+      actorId: actor.id,
+      targetId: target.id,
+    });
     return;
   }
 
@@ -275,7 +310,13 @@ function resolveAttack(
 
   const crit = isCrit ? " Critical hit!" : "";
   const fell = target.side === "enemy" && target.hp === 0 ? ` ${target.name} falls!` : "";
-  log(state, `${actor.name} hits ${target.name} with ${action.name} for ${damage} ${damageType} damage.${crit}${fell}`);
+  log(state, `${actor.name} hits ${target.name} with ${action.name} for ${damage} ${damageType} damage.${crit}${fell}`, {
+    kind: "hit",
+    actorId: actor.id,
+    targetId: target.id,
+    amount: damage,
+    crit: isCrit,
+  });
 
   if (target.side === "party") handlePartyDamageOutcome(state, target, damage, isCrit, hpBefore);
 }
@@ -305,7 +346,13 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
     log(
       state,
       `${target.name} ${succeeded ? "partially resists" : "fails to resist"} ${actor.name}'s ${action.name} ` +
-        `(${saveTotal} vs DC ${dc}) and takes ${damage} ${damageType} damage.`
+        `(${saveTotal} vs DC ${dc}) and takes ${damage} ${damageType} damage.`,
+      {
+        kind: succeeded ? "save-succeed" : "save-fail",
+        actorId: actor.id,
+        targetId: target.id,
+        amount: damage,
+      }
     );
     if (target.side === "party") handlePartyDamageOutcome(state, target, damage, false, hpBefore);
   }
@@ -323,19 +370,28 @@ function resolveHeal(state: CombatState, actor: Combatant, target: Combatant, ac
     target.deathSaveSuccesses = 0;
     target.deathSaveFailures = 0;
   }
-  log(state, `${actor.name} uses ${action.name} on ${target.name}, restoring ${healed} HP.`);
+  log(state, `${actor.name} uses ${action.name} on ${target.name}, restoring ${healed} HP.`, {
+    kind: "heal",
+    actorId: actor.id,
+    targetId: target.id,
+    amount: healed,
+  });
 }
 
 function resolveBuff(state: CombatState, actor: Combatant, action: CombatActionDef): void {
   actor.tempArmorClassBonus += action.effectValue ?? 0;
-  log(state, `${actor.name} uses ${action.name}, gaining +${action.effectValue ?? 0} AC until their next turn.`);
+  log(state, `${actor.name} uses ${action.name}, gaining +${action.effectValue ?? 0} AC until their next turn.`, {
+    kind: "buff",
+    actorId: actor.id,
+  });
 }
 
 function resolveDefend(state: CombatState, actor: Combatant): void {
   actor.dodging = true;
   log(
     state,
-    `${actor.name} uses ${DEFEND_ACTION.name}: attacks against them have Disadvantage until their next turn.`
+    `${actor.name} uses ${DEFEND_ACTION.name}: attacks against them have Disadvantage until their next turn.`,
+    { kind: "defend", actorId: actor.id }
   );
 }
 
@@ -346,9 +402,9 @@ function resolveFlee(state: CombatState, actor: Combatant, rng: RNG): void {
   const total = roll + abilityMod(actor, "dex") + (proficient ? actor.proficiencyBonus : 0);
   if (total >= FLEE_DC) {
     actor.fled = true;
-    log(state, `${actor.name} flees the battle!`);
+    log(state, `${actor.name} flees the battle!`, { kind: "flee-success", actorId: actor.id });
   } else {
-    log(state, `${actor.name} tries to flee but can't get away!`);
+    log(state, `${actor.name} tries to flee but can't get away!`, { kind: "flee-fail", actorId: actor.id });
   }
 }
 
@@ -362,7 +418,12 @@ function runDeathSave(state: CombatState, actor: Combatant, rng: RNG): void {
     actor.deathSaveSuccesses = 0;
     actor.deathSaveFailures = 0;
     actor.hp = 1;
-    log(state, `${actor.name} rolls a natural 20 on a death saving throw and springs back up with 1 HP!`);
+    log(state, `${actor.name} rolls a natural 20 on a death saving throw and springs back up with 1 HP!`, {
+      kind: "heal",
+      actorId: actor.id,
+      targetId: actor.id,
+      amount: 1,
+    });
     return;
   }
 
@@ -378,15 +439,16 @@ function runDeathSave(state: CombatState, actor: Combatant, rng: RNG): void {
     state,
     `${actor.name} rolls ${roll} on a death saving throw ` +
       `(${actor.deathSaveSuccesses} success${actor.deathSaveSuccesses === 1 ? "" : "es"}, ` +
-      `${actor.deathSaveFailures} failure${actor.deathSaveFailures === 1 ? "" : "s"}).`
+      `${actor.deathSaveFailures} failure${actor.deathSaveFailures === 1 ? "" : "s"}).`,
+    { kind: "death-save", actorId: actor.id }
   );
 
   if (actor.deathSaveFailures >= 3) {
     actor.dead = true;
-    log(state, `${actor.name} dies.`);
+    log(state, `${actor.name} dies.`, { kind: "down", targetId: actor.id });
   } else if (actor.deathSaveSuccesses >= 3) {
     actor.stable = true;
-    log(state, `${actor.name} stabilizes.`);
+    log(state, `${actor.name} stabilizes.`, { kind: "info", actorId: actor.id });
   }
 }
 
@@ -454,7 +516,7 @@ function advanceTurn(state: CombatState): void {
     if (state.turnIndex >= total) {
       state.turnIndex = 0;
       state.round += 1;
-      log(state, `— Round ${state.round} —`);
+      log(state, `— Round ${state.round} —`, { kind: "round" });
     }
     const next = findCombatant(state, state.turnOrder[state.turnIndex]);
     if (hasATurn(next)) {
