@@ -3,6 +3,7 @@ import {
   ABILITY_KEYS,
   ABILITY_NAMES,
   BACKGROUNDS,
+  BASIC_ATTACK,
   CLASSES,
   ITEM_TEMPLATES,
   ORIGIN_FEATS,
@@ -11,6 +12,7 @@ import {
   getItem,
   type Character,
   type ItemSlot,
+  type ItemTemplate,
 } from "@eridan/engine";
 import { HealthBar } from "../components/HealthBar";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
@@ -44,6 +46,29 @@ const BAG_SLOT_COUNT = 20;
 
 function formatModifier(value: number): string {
   return value >= 0 ? `+${value}` : `${value}`;
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/**
+ * A weapon's dice/damage type/ability fall back to Strike's own (str,
+ * slashing) when unset, matching the equip logic in the engine's
+ * applyEquipmentEffects — so the displayed stats always match what
+ * actually happens in combat.
+ */
+function formatItemStats(item: ItemTemplate): string | null {
+  const parts: string[] = [];
+  if (item.damageDice) {
+    const ability = item.ability ?? BASIC_ATTACK.ability;
+    const damageType = item.damageType ?? BASIC_ATTACK.damageType ?? "slashing";
+    parts.push(`${item.damageDice} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
+  }
+  if (item.armorClassBonus) {
+    parts.push(`+${item.armorClassBonus} AC`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: CharacterSheetScreenProps) {
@@ -146,12 +171,13 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
               {(Object.keys(SLOT_LABELS) as ItemSlot[]).map((slot) => {
                 const itemId = character.equipment[slot];
                 const item = itemId ? ITEM_TEMPLATES[itemId] : undefined;
+                const stats = item ? formatItemStats(item) : null;
                 return (
                   <div key={slot} className="equipped-slot">
                     <button
                       type="button"
                       className={item ? "inventory-slot filled equipped" : "inventory-slot"}
-                      title={item ? item.name : `Nothing in ${SLOT_LABELS[slot]}`}
+                      title={item ? `${item.name}${stats ? ` — ${stats}` : ""}` : `Nothing in ${SLOT_LABELS[slot]}`}
                       onClick={() => item && onUnequip(slot)}
                     >
                       {item ? <ItemIcon itemId={item.id} slot={slot} /> : <ItemSlotIcon slot={slot} />}
@@ -175,6 +201,7 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
                 const item = getItem(stack.itemId);
                 const isEquipped = equippedIds.has(stack.itemId);
                 const isSelected = selectedItemId === stack.itemId;
+                const stats = formatItemStats(item);
                 return (
                   <button
                     key={stack.itemId}
@@ -184,7 +211,7 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
                       (isEquipped ? " equipped" : "") +
                       (isSelected ? " selected" : "")
                     }
-                    title={item.name}
+                    title={`${item.name}${stats ? ` — ${stats}` : ""}`}
                     onClick={() => setSelectedItemId(isSelected ? null : stack.itemId)}
                   >
                     <ItemIcon itemId={item.id} slot={item.slot} />
@@ -205,6 +232,7 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
                     {selectedStack.quantity > 1 && <span className="badge">×{selectedStack.quantity}</span>}
                     {equippedIds.has(selectedItem.id) && <span className="badge">Equipped</span>}
                   </h3>
+                  {formatItemStats(selectedItem) && <p className="item-stats">{formatItemStats(selectedItem)}</p>}
                   <p className="flavor">
                     {selectedItem.description} · {SLOT_LABELS[selectedItem.slot]} · {selectedItem.value} gp
                   </p>
