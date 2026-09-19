@@ -1,7 +1,9 @@
-import { ABILITY_KEYS, type AbilityKey, type AbilityScores } from "./abilities.js";
+import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier } from "./dice.js";
-import { getRace } from "./races.js";
+import { getRace, type Race } from "./races.js";
 import { getClass, type CharacterClass } from "./classes.js";
+import { getBackground } from "./backgrounds.js";
+import type { OriginFeatId } from "./feats.js";
 import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
@@ -16,6 +18,9 @@ export interface Character {
   name: string;
   raceId: string;
   classId: string;
+  /** The Background chosen at creation — grants ability score increases and an Origin feat (SRD 5.2.1). */
+  backgroundId: string;
+  originFeatId: OriginFeatId;
   level: number;
   abilityScores: AbilityScores;
   maxHp: number;
@@ -29,7 +34,6 @@ export interface Character {
   inventory: InventoryStack[];
   /** Which owned item (by id) is worn in each slot, if any. */
   equipment: Partial<Record<ItemSlot, string>>;
-  /** No current race/class grants these — reserved for future features (e.g. a Dwarf's poison resistance). */
   damageResistances?: DamageType[];
   damageVulnerabilities?: DamageType[];
   damageImmunities?: DamageType[];
@@ -47,8 +51,29 @@ export function ownsItem(character: Character, itemId: string): boolean {
   return character.inventory.some((stack) => stack.itemId === itemId && stack.quantity > 0);
 }
 
-/** Recomputes armorClass and the Strike action from base stats plus whatever's currently equipped. */
-function applyEquipmentEffects(character: Character, cls: CharacterClass): Character {
+/** The best of Intelligence, Wisdom, or Charisma — used by the Magic Initiate origin feat's bonus cantrip. */
+function bestMagicInitiateAbility(abilityScores: AbilityScores): AbilityKey {
+  const candidates: AbilityKey[] = ["int", "wis", "cha"];
+  return candidates.reduce((best, key) =>
+    abilityModifier(abilityScores[key]) > abilityModifier(abilityScores[best]) ? key : best
+  );
+}
+
+function buildMagicInitiateAction(character: Pick<Character, "abilityScores">): CombatActionDef {
+  return {
+    id: "minor-cantrip",
+    name: "Minor Cantrip",
+    description: "A flicker of borrowed magic from your background's Magic Initiate feat.",
+    kind: "attack",
+    target: "enemy",
+    ability: bestMagicInitiateAbility(character.abilityScores),
+    dice: "1d6",
+    damageType: "force",
+  };
+}
+
+/** Recomputes armorClass, resistances, and actions from base stats plus race/feat traits and whatever's equipped. */
+function applyEquipmentEffects(character: Character, cls: CharacterClass, race: Race): Character {
   const dexMod = abilityModifier(character.abilityScores.dex);
   const armor = character.equipment.armor ? getItem(character.equipment.armor) : undefined;
   const accessory = character.equipment.accessory ? getItem(character.equipment.accessory) : undefined;
@@ -72,11 +97,16 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass): Chara
     ? cls.actions.map((a) => (a.id === BASIC_ATTACK.id ? strike : a))
     : [...cls.actions, strike];
 
-  const actions = [...withStrike, DEFEND_ACTION, FLEE_ACTION].filter(
+  const bonusActions = [...(race.actions ?? [])];
+  if (character.originFeatId === "magicInitiate") {
+    bonusActions.push(buildMagicInitiateAction(character));
+  }
+
+  const actions = [...withStrike, ...bonusActions, DEFEND_ACTION, FLEE_ACTION].filter(
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
   );
 
-  return { ...character, armorClass, actions };
+  return { ...character, armorClass, actions, damageResistances: race.damageResistances ?? [] };
 }
 
 export function equipItem(character: Character, itemId: string): Character {
@@ -85,13 +115,13 @@ export function equipItem(character: Character, itemId: string): Character {
     throw new Error(`"${item.name}" is not in ${character.name}'s inventory.`);
   }
   const equipped = { ...character, equipment: { ...character.equipment, [item.slot]: itemId } };
-  return applyEquipmentEffects(equipped, getClass(character.classId));
+  return applyEquipmentEffects(equipped, getClass(character.classId), getRace(character.raceId));
 }
 
 export function unequipItem(character: Character, slot: ItemSlot): Character {
   const equipment = { ...character.equipment };
   delete equipment[slot];
-  return applyEquipmentEffects({ ...character, equipment }, getClass(character.classId));
+  return applyEquipmentEffects({ ...character, equipment }, getClass(character.classId), getRace(character.raceId));
 }
 
 export interface CreateCharacterOptions {
@@ -99,6 +129,7 @@ export interface CreateCharacterOptions {
   name: string;
   raceId: string;
   classId: string;
+  backgroundId: string;
   baseAbilityScores: AbilityScores;
   level?: number;
 }
@@ -115,29 +146,34 @@ function buildStartingInventory(cls: CharacterClass): InventoryStack[] {
 }
 
 /**
- * Backfills inventory/equipment on a character persisted before those fields
- * existed, granting the same starting kit a new character of their class
- * would get. A no-op once both fields are already present.
+ * Backfills fields on a character persisted before this engine version:
+ * inventory/equipment (added first), and background/origin feat (added
+ * later — defaults to Acolyte since the original data has no equivalent).
+ * A no-op once every field is already present.
  */
 export function withStartingGearIfMissing(character: Character): Character {
-  if (character.inventory && character.equipment) return character;
   const cls = getClass(character.classId);
+  const race = getRace(character.raceId);
+  const backgroundId = character.backgroundId ?? "acolyte";
   const withGear: Character = {
     ...character,
+    backgroundId,
+    originFeatId: character.originFeatId ?? getBackground(backgroundId).originFeatId,
     inventory: character.inventory ?? buildStartingInventory(cls),
     equipment: character.equipment ?? { ...cls.startingEquipment },
   };
-  return applyEquipmentEffects(withGear, cls);
+  return applyEquipmentEffects(withGear, cls, race);
 }
 
 export function createCharacter(options: CreateCharacterOptions): Character {
   const race = getRace(options.raceId);
   const cls = getClass(options.classId);
+  const background = getBackground(options.backgroundId);
   const level = options.level ?? 1;
 
   const abilityScores = { ...options.baseAbilityScores };
-  for (const key of ABILITY_KEYS) {
-    abilityScores[key] += race.abilityBonuses[key] ?? 0;
+  for (const key of background.abilityScores) {
+    abilityScores[key] = Math.min(20, abilityScores[key] + 1);
   }
 
   const conMod = abilityModifier(abilityScores.con);
@@ -148,6 +184,8 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     name: options.name,
     raceId: race.id,
     classId: cls.id,
+    backgroundId: background.id,
+    originFeatId: background.originFeatId,
     level,
     abilityScores,
     maxHp,
@@ -160,7 +198,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     equipment: { ...cls.startingEquipment },
   };
 
-  const character = applyEquipmentEffects(base, cls);
+  const character = applyEquipmentEffects(base, cls, race);
   character.actionUses = Object.fromEntries(
     character.actions.filter((a) => a.usesPerCombat).map((a) => [a.id, a.usesPerCombat!])
   );

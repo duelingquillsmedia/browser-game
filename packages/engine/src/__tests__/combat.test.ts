@@ -28,6 +28,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     dead: false,
     deathSaveSuccesses: 0,
     deathSaveFailures: 0,
+    usedRelentlessEndurance: false,
     ...overrides,
   };
 }
@@ -68,6 +69,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     dead: false,
     deathSaveSuccesses: 0,
     deathSaveFailures: 0,
+    usedRelentlessEndurance: false,
     ...overrides,
   };
 }
@@ -241,5 +243,61 @@ describe("combat engine", () => {
     expect(after.status).toBe("party_won");
     expect(after.combatants.find((c) => c.id === "foe1")!.hp).toBe(0);
     expect(after.combatants.find((c) => c.id === "foe2")!.hp).toBe(0);
+  });
+
+  it("adds the Alert origin feat's proficiency bonus to initiative", () => {
+    const state = startCombat(
+      [makeHero({ originFeatId: "alert", proficiencyBonus: 3 })],
+      [makeFoe()],
+      sequenceRng([forD20(10), forD20(5)])
+    );
+    const hero = state.combatants.find((c) => c.id === "hero")!;
+    // roll 10 + dex mod (14 -> +2) + Alert's proficiency bonus (3) = 15
+    expect(hero.initiative).toBe(15);
+  });
+
+  it("rerolls a natural 1 attack roll for a Halfling (Lucky trait)", () => {
+    const state = startCombat([makeHero({ raceId: "halfling" })], [makeFoe()], sequenceRng([forD20(15), forD20(5)]));
+
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "strike", targetId: "foe" },
+      sequenceRng([forD20(1), forD20(15), forDie(6, 4)])
+    );
+
+    expect(after.log.some((entry) => entry.message.includes("Lucky"))).toBe(true);
+    // reroll totals 15+3(str mod)+2(prof)=20 vs AC 10 -- hits for 4+3=7, exactly lethal.
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(0);
+  });
+
+  it("rolls damage dice twice and keeps the higher for Savage Attacker, on a non-crit hit", () => {
+    const state = startCombat(
+      [makeHero({ originFeatId: "savageAttacker" })],
+      [makeFoe({ maxHp: 20, hp: 20 })],
+      sequenceRng([forD20(15), forD20(5)])
+    );
+
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "strike", targetId: "foe" },
+      sequenceRng([forD20(15), forDie(6, 2), forDie(6, 5)])
+    );
+
+    // Higher of the two damage rolls (5) + str mod (3) = 8.
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(20 - 8);
+  });
+
+  it("drops an Orc to 1 HP instead of unconscious the first time they'd fall (Relentless Endurance)", () => {
+    const state = startCombat(
+      [makeHero({ raceId: "orc", maxHp: 4, hp: 4 })],
+      [makeFoe()],
+      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forDie(4, 4)])
+    );
+
+    const hero = state.combatants.find((c) => c.id === "hero")!;
+    expect(hero.hp).toBe(1);
+    expect(hero.unconscious).toBe(false);
+    expect(hero.usedRelentlessEndurance).toBe(true);
+    expect(state.log.some((entry) => entry.message.includes("Relentless Endurance"))).toBe(true);
   });
 });

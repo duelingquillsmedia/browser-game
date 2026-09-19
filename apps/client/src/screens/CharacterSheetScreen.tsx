@@ -1,8 +1,10 @@
 import {
   ABILITY_KEYS,
   ABILITY_NAMES,
+  BACKGROUNDS,
   CLASSES,
   ITEM_TEMPLATES,
+  ORIGIN_FEATS,
   RACES,
   abilityMod,
   getItem,
@@ -34,6 +36,8 @@ function formatModifier(value: number): string {
 export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: CharacterSheetScreenProps) {
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
+  const background = BACKGROUNDS[character.backgroundId];
+  const originFeat = ORIGIN_FEATS[character.originFeatId];
 
   const equippedIds = new Set(Object.values(character.equipment));
 
@@ -82,6 +86,22 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
                 <p className="flavor">{trait.description}</p>
               </div>
             ))}
+          </div>
+        </>
+      )}
+
+      {background && originFeat && (
+        <>
+          <h2>Background</h2>
+          <div className="trait-list">
+            <div className="trait-card">
+              <h3>{background.name}</h3>
+              <p className="flavor">{background.description}</p>
+            </div>
+            <div className="trait-card">
+              <h3>Origin Feat: {originFeat.name}</h3>
+              <p className="flavor">{originFeat.description}</p>
+            </div>
           </div>
         </>
       )}

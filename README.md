@@ -9,9 +9,24 @@ Milestone 1 proved out the core combat loop client-side only. This pass adds
 real accounts and server-side persistence via Supabase, ahead of the full
 client-server milestone (combat is still resolved in the browser for now).
 
-- 5 playable races (Human, Elf, Dwarf, Orc, Halfling) with SRD-style ability
-  bonuses and traits.
-- 4 classes (Fighter, Rogue, Wizard, Cleric) with distinct actions.
+- All 9 SRD 5.2.1 playable species (Human, Elf, Dwarf, Orc, Halfling,
+  Dragonborn, Gnome, Goliath, Tiefling), each with speed and traits; several
+  carry real mechanical hooks — a Dragonborn's fire resistance and
+  once-per-fight Breath Weapon (an AoE save-for-half), a Dwarf's poison
+  resistance, a Tiefling's fire resistance, an Orc's Relentless Endurance
+  (survive a killing blow at 1 HP, once per fight), and a Halfling's Lucky
+  trait (reroll a natural 1 on an attack roll).
+- A Background system, per the SRD 2024 rules: it's your Background, not
+  your species, that grants ability score increases and an Origin feat.
+  The 4 backgrounds detailed in the free SRD are implemented (Acolyte,
+  Criminal, Sage, Soldier), each granting +1 to three abilities and one of
+  the 4 free Origin feats (Alert's initiative bonus, Magic Initiate's bonus
+  cantrip, Savage Attacker's reroll-and-keep-higher damage dice, or
+  Skilled).
+- All 12 SRD classes (Fighter, Rogue, Wizard, Cleric, Barbarian, Bard,
+  Druid, Monk, Paladin, Ranger, Sorcerer, Warlock) with distinct actions
+  and SRD-accurate hit dice, primary ability, and saving throw
+  proficiencies.
 - SRD 5.2.1-accurate combat resolution: ability modifiers, d20 attack rolls
   vs. AC, initiative, proficiency bonus (including on saving throws), crits
   (double damage dice) and fumbles, Advantage/Disadvantage, damage types
@@ -34,8 +49,9 @@ client-server milestone (combat is still resolved in the browser for now).
 - A character roster and a home-base hub: sign in, pick or create a
   character, land in Ridgeton (a logging town on the Tameless Shore),
   venture out to fight, and rest to heal between trips.
-- A character sheet: full ability scores, race traits, and current
-  abilities, plus inventory and equipment slots (weapon/armor/accessory).
+- A character sheet: full ability scores, race traits, Background and
+  Origin feat, and current abilities, plus inventory and equipment slots
+  (weapon/armor/accessory).
   Equipping gear is functional, not cosmetic — it changes AC and the
   damage die on your basic attack in combat. Every character starts with
   a class-appropriate weapon and armor already equipped, and a spare
@@ -127,9 +143,9 @@ non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
    a shared zone/world and server-authoritative combat reusing
    `packages/engine` (currently combat still runs client-side).
 3. Guilds, PvP duels/arenas, and group raids.
-4. Expanded content: more races/classes, a larger item catalog (currently
-   10 starter items), currency and a shop, quests, and the full geography
-   of Eridan.
+4. Expanded content: the Encyclopedia's remaining races (Bugbear, Goblin,
+   Kobold), a larger item catalog (currently 12 starter items), currency
+   and a shop, quests, and the full geography of Eridan.
 5. Further art passes: character/monster sprites, and more per-location
    backgrounds as new encounters and locations get added.
 
@@ -172,6 +188,13 @@ Commons Attribution 4.0 International License
 - **Fireball**: a new Wizard spell demonstrating the SRD's save-for-half
   area rule — one damage roll, applied to every enemy, each rolling its
   own Dexterity save for half damage on a success.
+- **Race and Origin feat hooks**: Alert adds its proficiency bonus to
+  initiative; Savage Attacker rerolls a weapon hit's damage dice and keeps
+  the higher result; a Halfling's Lucky trait rerolls a natural 1 on an
+  attack roll; an Orc's Relentless Endurance drops them to 1 HP instead of
+  Unconscious the first time they'd fall in a fight; a Dragonborn's Breath
+  Weapon is a once-per-fight AoE save-for-half action built on the same
+  "save" action kind as Fireball.
 
 **Deliberately not ported**, because they assume a grid this engine
 doesn't have: cover, reach, opportunity attacks, and mounted/underwater
@@ -195,10 +218,10 @@ plus race/monster flavor text in `packages/engine`):
 - Race flavor text tied to real locations (dwarves/Bronze Hills, halflings/
   Prakov's Gift, wood elves/Corran Woodland, orcs/Collmhor Wood & Raduna).
 
-Not yet pulled in: the Encyclopedia's full race list (Bugbears, Gnomes,
-Goblins, Kobolds are canon "common races" alongside the 5 already playable),
-the full 12-class list (only 4 are implemented), its magic system (Divinity/
-Demonic/Wild/Arcane), named NPCs and factions, and the `Chapters` folder's
+Not yet pulled in: the Encyclopedia's remaining race list (Bugbears,
+Goblins, and Kobolds are canon "common races" alongside the 9 already
+playable), its magic system (Divinity/Demonic/Wild/Arcane), named NPCs and
+factions, and the `Chapters` folder's
 22 narrative chapters (three POV characters — useful for tone and NPC
 writing later, not consulted for this pass). The Encyclopedia also lists
 "Selyria," "Synndara," and "Verach" as candidate names for the world itself,

@@ -5,6 +5,7 @@ import type { Character } from "./character.js";
 import { getClass } from "./classes.js";
 import type { Monster } from "./monsters.js";
 import { applyDamageModifiers, type DamageType } from "./damage.js";
+import type { OriginFeatId } from "./feats.js";
 
 export type Side = "party" | "enemy";
 
@@ -12,6 +13,10 @@ export interface Combatant {
   id: string;
   name: string;
   side: Side;
+  /** A party member's species (for race-specific mechanics like Orc's Relentless Endurance); monsters have none. */
+  raceId?: string;
+  /** A party member's Origin feat (for feat-specific mechanics like Alert or Savage Attacker); monsters have none. */
+  originFeatId?: OriginFeatId;
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
@@ -37,6 +42,8 @@ export interface Combatant {
   dead: boolean;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  /** Whether an Orc's Relentless Endurance has already saved this combatant once this fight. */
+  usedRelentlessEndurance: boolean;
 }
 
 export function toCombatant(source: Character | Monster, side: Side): Combatant {
@@ -44,6 +51,8 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     id: source.id,
     name: source.name,
     side,
+    raceId: "raceId" in source ? source.raceId : undefined,
+    originFeatId: "originFeatId" in source ? source.originFeatId : undefined,
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,
     hp: source.hp,
@@ -64,6 +73,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     dead: false,
     deathSaveSuccesses: 0,
     deathSaveFailures: 0,
+    usedRelentlessEndurance: false,
   };
 }
 
@@ -136,7 +146,8 @@ export function startCombat(
   const combatants = [...partySource, ...enemySource].map((c) => ({ ...c }));
 
   for (const c of combatants) {
-    c.initiative = rollD20(rng) + abilityMod(c, "dex");
+    const alertBonus = c.originFeatId === "alert" ? c.proficiencyBonus : 0;
+    c.initiative = rollD20(rng) + abilityMod(c, "dex") + alertBonus;
   }
 
   const turnOrder = [...combatants]
@@ -194,6 +205,12 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
     log(state, `${target.name} takes a devastating blow and dies instantly!`);
     return;
   }
+  if (target.raceId === "orc" && !target.usedRelentlessEndurance) {
+    target.usedRelentlessEndurance = true;
+    target.hp = 1;
+    log(state, `${target.name}'s Relentless Endurance kicks in — they stay on their feet at 1 HP!`);
+    return;
+  }
   target.unconscious = true;
   target.stable = false;
   target.deathSaveSuccesses = 0;
@@ -212,7 +229,11 @@ function resolveAttack(
   const disadvantaged = target.dodging;
   const advantaged = target.unconscious;
   const edge = advantaged && disadvantaged ? "none" : advantaged ? "advantage" : disadvantaged ? "disadvantage" : "none";
-  const attackRoll = rollD20WithEdge(edge, rng);
+  let attackRoll = rollD20WithEdge(edge, rng);
+  if (attackRoll === 1 && actor.raceId === "halfling") {
+    log(state, `${actor.name}'s Lucky trait rerolls a natural 1!`);
+    attackRoll = rollD20WithEdge(edge, rng);
+  }
   const mod = abilityMod(actor, action.ability) + actor.proficiencyBonus;
   const total = attackRoll + mod;
   const targetAc = target.armorClass + target.tempArmorClassBonus;
@@ -228,7 +249,13 @@ function resolveAttack(
   // Any hit against an Unconscious target is an automatic Critical Hit.
   const isCrit = attackRoll === 20 || target.unconscious;
 
-  let damage = Math.max(0, rollDice(action.dice!, rng).total + abilityMod(actor, action.ability));
+  let diceTotal = rollDice(action.dice!, rng).total;
+  if (!isCrit && actor.originFeatId === "savageAttacker") {
+    // Savage Attacker: roll the damage dice twice and keep the higher single result, once per turn.
+    const reroll = rollDice(action.dice!, rng).total;
+    diceTotal = Math.max(diceTotal, reroll);
+  }
+  let damage = Math.max(0, diceTotal + abilityMod(actor, action.ability));
   if (isCrit) damage += rollDice(action.dice!, rng).total;
   const damageType = action.damageType ?? "bludgeoning";
   damage = applyDamageModifiers(damage, damageType, target);

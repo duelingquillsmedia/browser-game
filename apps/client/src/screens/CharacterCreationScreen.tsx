@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import {
   ABILITY_KEYS,
   ABILITY_NAMES,
+  BACKGROUNDS,
   CLASSES,
+  ORIGIN_FEATS,
   RACES,
   STANDARD_ARRAY,
   createCharacter,
@@ -60,12 +62,15 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const [name, setName] = useState("");
   const [raceId, setRaceId] = useState("human");
   const [classId, setClassId] = useState("fighter");
+  const [backgroundId, setBackgroundId] = useState("acolyte");
   const [scores, setScores] = useState<AbilityScores>(() => defaultAssignment("fighter"));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const race = RACES[raceId];
   const cls = CLASSES[classId];
+  const background = BACKGROUNDS[backgroundId];
+  const originFeat = ORIGIN_FEATS[background.originFeatId];
 
   const canCreate = name.trim().length > 0;
 
@@ -76,9 +81,10 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
       name: name.trim(),
       raceId,
       classId,
+      backgroundId,
       baseAbilityScores: scores,
     });
-  }, [canCreate, name, raceId, classId, scores]);
+  }, [canCreate, name, raceId, classId, backgroundId, scores]);
 
   function handleClassChange(nextClassId: string) {
     setClassId(nextClassId);
@@ -138,6 +144,24 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
           ))}
           <p className="description">{cls.description}</p>
         </fieldset>
+
+        <fieldset className="picker">
+          <legend>Background</legend>
+          {Object.values(BACKGROUNDS).map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              className={b.id === backgroundId ? "option selected" : "option"}
+              onClick={() => setBackgroundId(b.id)}
+            >
+              {b.name}
+            </button>
+          ))}
+          <p className="description">{background.description}</p>
+          <p className="description">
+            +1 {background.abilityScores.map((k) => ABILITY_NAMES[k]).join(", +1 ")} · Origin Feat: {originFeat.name}
+          </p>
+        </fieldset>
       </div>
 
       <div>
@@ -152,6 +176,9 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
           </h3>
           <p>
             HP {preview.maxHp} · AC {preview.armorClass}
+          </p>
+          <p>
+            {background.name} · {originFeat.name}
           </p>
         </div>
       )}
