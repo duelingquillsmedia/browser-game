@@ -672,12 +672,16 @@ button.ghost {
 /* Combat */
 .combat-screen {
   max-width: 900px;
+  /* Clears the fixed combat log docked to the bottom of the page. */
+  padding-bottom: 200px;
+  /* Clears the fixed health-bar rails anchored to the viewport's edges. */
+  padding-left: 240px;
+  padding-right: 240px;
 }
 
 .battlefield {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.6fr) minmax(140px, 1fr);
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   margin: 1.5rem 0;
 }
@@ -687,6 +691,25 @@ button.ghost {
   flex-direction: column;
   gap: 0.75rem;
   min-width: 0;
+}
+
+/* Anchored to the viewport's edges, independent of the centered content column, so
+   they read as a persistent HUD rather than scrolling with the rest of the screen. */
+.party-rail,
+.enemy-rail {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 200px;
+  z-index: 4;
+}
+
+.party-rail {
+  left: 1.5rem;
+}
+
+.enemy-rail {
+  right: 1.5rem;
 }
 
 .battlefield-arena {
@@ -707,9 +730,14 @@ button.ghost {
   justify-content: center;
 }
 
-@media (max-width: 640px) {
-  .battlefield {
-    grid-template-columns: 1fr;
+@media (max-width: 900px) {
+  /* Not enough room beside the centered column for fixed side rails --
+     fall back to stacking them in the normal document flow instead. */
+  .party-rail,
+  .enemy-rail {
+    position: static;
+    transform: none;
+    width: auto;
   }
 
   .battlefield-rail {
@@ -719,6 +747,11 @@ button.ghost {
 
   .battlefield-rail > * {
     flex: 1 1 200px;
+  }
+
+  .combat-screen {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
@@ -1024,13 +1057,20 @@ button.ghost {
 }
 
 .combat-log {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 3rem));
   height: 160px;
   overflow-y: auto;
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
+  z-index: 5;
 }
 
 .log-entry {
