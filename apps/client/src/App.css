@@ -329,6 +329,97 @@ button.ghost {
   margin-top: 0;
 }
 
+/* Character sheet */
+.character-sheet-screen {
+  max-width: 720px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.trait-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.trait-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.trait-card h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.equipment-slot {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.equipment-slot h3 {
+  margin: 0.2rem 0 0.3rem;
+  font-size: 1rem;
+}
+
+.equipment-slot .ghost {
+  margin-top: 0.6rem;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.inventory-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.inventory-row h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.inventory-row .action-button {
+  flex: none;
+}
+
 /* Combat */
 .combat-screen {
   max-width: 900px;

@@ -7,10 +7,17 @@ export interface TownHubScreenProps {
   character: Character;
   onVentureOut: () => void;
   onRest: () => void;
+  onOpenCharacterSheet: () => void;
   onSwitchCharacter: () => void;
 }
 
-export function TownHubScreen({ character, onVentureOut, onRest, onSwitchCharacter }: TownHubScreenProps) {
+export function TownHubScreen({
+  character,
+  onVentureOut,
+  onRest,
+  onOpenCharacterSheet,
+  onSwitchCharacter,
+}: TownHubScreenProps) {
   const canVenture = character.hp > 0;
   const canRest = character.hp < character.maxHp;
 
@@ -37,6 +44,9 @@ export function TownHubScreen({ character, onVentureOut, onRest, onSwitchCharact
           </button>
           <button type="button" className="action-button" disabled={!canRest} onClick={onRest}>
             Rest at the Waypost
+          </button>
+          <button type="button" className="action-button" onClick={onOpenCharacterSheet}>
+            Character
           </button>
           <button type="button" className="ghost" onClick={onSwitchCharacter}>
             Switch Character

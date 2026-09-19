@@ -29,6 +29,12 @@ client-server milestone (combat is still resolved in the browser for now).
 - A character roster and a home-base hub: sign in, pick or create a
   character, land in Ridgeton (a logging town on the Tameless Shore),
   venture out to fight, and rest to heal between trips.
+- A character sheet: full ability scores, race traits, and current
+  abilities, plus inventory and equipment slots (weapon/armor/accessory).
+  Equipping gear is functional, not cosmetic — it changes AC and the
+  damage die on your basic attack in combat. Every character starts with
+  a class-appropriate weapon and armor already equipped, and a spare
+  accessory to try swapping in.
 - Real accounts (email/password via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
@@ -61,8 +67,9 @@ directly from the client via `@supabase/supabase-js` — no custom server yet.
 
 - **Schema**: one `characters` table (`id`, `user_id`, `data` jsonb, timestamps)
   in the project's `public` schema. `data` holds the full `@eridan/engine`
-  `Character` object; `id`/`user_id` are real Postgres columns for indexing
-  and RLS.
+  `Character` object — including inventory/equipment — as schemaless jsonb,
+  so adding those fields needed no migration; `id`/`user_id` are real
+  Postgres columns for indexing and RLS.
 - **Row-level security**: enabled, with policies restricting select/insert/
   update/delete to rows where `user_id = auth.uid()`. Verified directly
   against Postgres (simulating both the owning user and another user) that
@@ -115,8 +122,9 @@ non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
    a shared zone/world and server-authoritative combat reusing
    `packages/engine` (currently combat still runs client-side).
 3. Guilds, PvP duels/arenas, and group raids.
-4. Expanded content: more races/classes, items and equipment, quests, and
-   the full geography of Eridan.
+4. Expanded content: more races/classes, a larger item catalog (currently
+   10 starter items), currency and a shop, quests, and the full geography
+   of Eridan.
 5. Further art passes: character/monster sprites, and more per-location
    backgrounds as new encounters and locations get added.
 

@@ -1,5 +1,6 @@
 import type { AbilityKey } from "./abilities.js";
 import { BASIC_ATTACK, type CombatActionDef } from "./actions.js";
+import type { ItemSlot } from "./items.js";
 
 export interface CharacterClass {
   id: string;
@@ -9,6 +10,10 @@ export interface CharacterClass {
   primaryAbility: AbilityKey;
   savingThrowProficiencies: AbilityKey[];
   actions: CombatActionDef[];
+  /** Gear a new character of this class starts equipped with. */
+  startingEquipment: Partial<Record<ItemSlot, string>>;
+  /** Extra item ids owned but not equipped at creation (e.g. a spare accessory to try). */
+  startingInventory: string[];
 }
 
 export const CLASSES: Record<string, CharacterClass> = {
@@ -41,6 +46,8 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
       BASIC_ATTACK,
     ],
+    startingEquipment: { weapon: "ironLongsword", armor: "chainShirt" },
+    startingInventory: ["luckyCharm"],
   },
   rogue: {
     id: "rogue",
@@ -69,6 +76,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d4",
       },
     ],
+    startingEquipment: { weapon: "huntersShortbow", armor: "leatherArmor" },
+    startingInventory: ["ringOfWarding"],
   },
   wizard: {
     id: "wizard",
@@ -98,6 +107,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         usesPerCombat: 2,
       },
     ],
+    startingEquipment: { weapon: "oakenStaff", armor: "travelersRobe" },
+    startingInventory: ["luckyCharm"],
   },
   cleric: {
     id: "cleric",
@@ -126,6 +137,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d8",
       },
     ],
+    startingEquipment: { weapon: "ashenMace", armor: "studdedLeather" },
+    startingInventory: ["ringOfWarding"],
   },
 };
 

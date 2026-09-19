@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import type { ActionRequest, Character, CombatState } from "@eridan/engine";
-import { submitPlayerAction } from "@eridan/engine";
+import type { ActionRequest, Character, CombatState, ItemSlot } from "@eridan/engine";
+import { equipItem, submitPlayerAction, unequipItem } from "@eridan/engine";
 import { AuthScreen } from "./screens/AuthScreen";
 import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
 import { TownHubScreen } from "./screens/TownHubScreen";
+import { CharacterSheetScreen } from "./screens/CharacterSheetScreen";
 import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
@@ -20,6 +21,7 @@ type Screen =
   | { kind: "characterSelect" }
   | { kind: "creation" }
   | { kind: "townHub"; character: Character }
+  | { kind: "characterSheet"; character: Character }
   | { kind: "encounterSelect"; character: Character }
   | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter };
 
@@ -129,7 +131,28 @@ function App() {
             console.error("Failed to save rest:", err);
           }
         }}
+        onOpenCharacterSheet={() => setScreen({ kind: "characterSheet", character: screen.character })}
         onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
+      />
+    );
+  }
+
+  if (screen.kind === "characterSheet") {
+    async function persist(next: Character) {
+      setScreen({ kind: "characterSheet", character: next });
+      try {
+        await updateCharacterInRoster(next);
+      } catch (err) {
+        console.error("Failed to save equipment change:", err);
+      }
+    }
+
+    return (
+      <CharacterSheetScreen
+        character={screen.character}
+        onEquip={(itemId) => persist(equipItem(screen.character, itemId))}
+        onUnequip={(slot: ItemSlot) => persist(unequipItem(screen.character, slot))}
+        onBack={() => setScreen({ kind: "townHub", character: screen.character })}
       />
     );
   }
