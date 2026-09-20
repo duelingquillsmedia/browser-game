@@ -68,9 +68,11 @@ client-server milestone (combat is still resolved in the browser for now).
   Origin feat, and current abilities, plus inventory and equipment slots
   (weapon/armor/accessory).
   Equipping gear is functional, not cosmetic — it changes AC and the
-  damage die on your basic attack in combat. Every character starts with
-  a class-appropriate weapon and armor already equipped, and a spare
-  accessory to try swapping in.
+  damage die on your basic attack in combat. At creation, each class
+  offers a choice of SRD-flavored starting loadouts (e.g. a Fighter picks
+  between a longsword with a chain shirt or with lighter studded leather;
+  a Monk stays unarmored either way). Whichever's picked comes already
+  equipped, plus a spare accessory to try swapping in.
 - Real accounts (email/password via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
@@ -159,7 +161,7 @@ non-production branch. Vite inlines `VITE_*` env vars at **build time**, so:
    `packages/engine` (currently combat still runs client-side).
 3. Guilds, PvP duels/arenas, and group raids.
 4. Expanded content: the Encyclopedia's remaining races (Bugbear, Goblin,
-   Kobold), a larger item catalog (currently 12 starter items), currency
+   Kobold), a larger item catalog (currently 13 starter items), currency
    and a shop, quests, and the full geography of Eridan.
 5. Further art passes: character/monster sprites, and more per-location
    backgrounds as new encounters and locations get added.

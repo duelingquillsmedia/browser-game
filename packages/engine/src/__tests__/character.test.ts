@@ -85,6 +85,61 @@ describe("createCharacter", () => {
     expect(strike?.dice).toBe("1d8");
   });
 
+  it("equips the chosen startingEquipmentOptions package instead of the default", () => {
+    const defaultGear = createCharacter({
+      id: "pc-3b",
+      name: "Bram",
+      raceId: "human",
+      classId: "fighter",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+    });
+    expect(defaultGear.equipment.armor).toBe("chainShirt");
+
+    const chosenGear = createCharacter({
+      id: "pc-3c",
+      name: "Bram",
+      raceId: "human",
+      classId: "fighter",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      equipmentOptionId: "sword-and-leather",
+    });
+    expect(chosenGear.equipment.weapon).toBe("ironLongsword");
+    expect(chosenGear.equipment.armor).toBe("studdedLeather");
+    expect(ownsItem(chosenGear, "studdedLeather")).toBe(true);
+
+    // An unrecognized option id falls back to the class's first (default) option rather than throwing.
+    const unknownOption = createCharacter({
+      id: "pc-3d",
+      name: "Bram",
+      raceId: "human",
+      classId: "fighter",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      equipmentOptionId: "nonexistent",
+    });
+    expect(unknownOption.equipment).toEqual(defaultGear.equipment);
+  });
+
+  it("gives every class's every starting equipment option valid, equippable items", () => {
+    for (const cls of Object.values(CLASSES)) {
+      expect(cls.startingEquipmentOptions.length).toBeGreaterThan(0);
+      for (const option of cls.startingEquipmentOptions) {
+        const character = createCharacter({
+          id: `${cls.id}-${option.id}`,
+          name: "Test",
+          raceId: "human",
+          classId: cls.id,
+          backgroundId: "acolyte",
+          baseAbilityScores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+          equipmentOptionId: option.id,
+        });
+        expect(character.equipment).toEqual(option.equipment);
+      }
+    }
+  });
+
   it("throws for an unknown race, class, or background", () => {
     const base = {
       id: "pc-2",

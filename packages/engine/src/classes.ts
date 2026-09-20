@@ -2,6 +2,13 @@ import type { AbilityKey } from "./abilities.js";
 import { BASIC_ATTACK, type CombatActionDef } from "./actions.js";
 import type { ItemSlot } from "./items.js";
 
+export interface StartingEquipmentOption {
+  id: string;
+  /** Short label shown at character creation, e.g. "Longsword & Chain Shirt". */
+  label: string;
+  equipment: Partial<Record<ItemSlot, string>>;
+}
+
 export interface CharacterClass {
   id: string;
   name: string;
@@ -10,8 +17,12 @@ export interface CharacterClass {
   primaryAbility: AbilityKey;
   savingThrowProficiencies: AbilityKey[];
   actions: CombatActionDef[];
-  /** Gear a new character of this class starts equipped with. */
-  startingEquipment: Partial<Record<ItemSlot, string>>;
+  /**
+   * SRD-style "choose (a) or (b)" starting gear, respecting the class's weapon/armor
+   * restrictions (e.g. a Monk stays unarmored; a Wizard carries no martial weapon).
+   * The first option is the default when none is explicitly chosen.
+   */
+  startingEquipmentOptions: StartingEquipmentOption[];
   /** Extra item ids owned but not equipped at creation (e.g. a spare accessory to try). */
   startingInventory: string[];
 }
@@ -47,7 +58,10 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
       BASIC_ATTACK,
     ],
-    startingEquipment: { weapon: "ironLongsword", armor: "chainShirt" },
+    startingEquipmentOptions: [
+      { id: "sword-and-mail", label: "Longsword & Chain Shirt", equipment: { weapon: "ironLongsword", armor: "chainShirt" } },
+      { id: "sword-and-leather", label: "Longsword & Studded Leather", equipment: { weapon: "ironLongsword", armor: "studdedLeather" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   rogue: {
@@ -79,7 +93,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         damageType: "piercing",
       },
     ],
-    startingEquipment: { weapon: "huntersShortbow", armor: "leatherArmor" },
+    startingEquipmentOptions: [
+      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { weapon: "huntersShortbow", armor: "leatherArmor" } },
+      { id: "shortsword", label: "Shortsword & Leather Armor", equipment: { weapon: "shortsword", armor: "leatherArmor" } },
+    ],
     startingInventory: ["ringOfWarding"],
   },
   wizard: {
@@ -125,7 +142,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         cooldown: 2,
       },
     ],
-    startingEquipment: { weapon: "oakenStaff", armor: "travelersRobe" },
+    startingEquipmentOptions: [
+      { id: "staff", label: "Oaken Staff & Traveler's Robe", equipment: { weapon: "oakenStaff", armor: "travelersRobe" } },
+      { id: "dagger", label: "Ritual Dagger & Traveler's Robe", equipment: { weapon: "ritualDagger", armor: "travelersRobe" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   cleric: {
@@ -156,7 +176,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d8",
       },
     ],
-    startingEquipment: { weapon: "ashenMace", armor: "studdedLeather" },
+    startingEquipmentOptions: [
+      { id: "mace-and-leather", label: "Ashen Mace & Studded Leather", equipment: { weapon: "ashenMace", armor: "studdedLeather" } },
+      { id: "mace-and-mail", label: "Ashen Mace & Chain Shirt", equipment: { weapon: "ashenMace", armor: "chainShirt" } },
+    ],
     startingInventory: ["ringOfWarding"],
   },
   barbarian: {
@@ -189,7 +212,10 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
       BASIC_ATTACK,
     ],
-    startingEquipment: { weapon: "ironLongsword", armor: "studdedLeather" },
+    startingEquipmentOptions: [
+      { id: "sword-and-leather", label: "Longsword & Studded Leather", equipment: { weapon: "ironLongsword", armor: "studdedLeather" } },
+      { id: "sword-unburdened", label: "Longsword & Leather Armor", equipment: { weapon: "ironLongsword", armor: "leatherArmor" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   bard: {
@@ -220,7 +246,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d6",
       },
     ],
-    startingEquipment: { weapon: "huntersShortbow", armor: "leatherArmor" },
+    startingEquipmentOptions: [
+      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { weapon: "huntersShortbow", armor: "leatherArmor" } },
+      { id: "shortsword", label: "Shortsword & Leather Armor", equipment: { weapon: "shortsword", armor: "leatherArmor" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   druid: {
@@ -251,7 +280,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d8",
       },
     ],
-    startingEquipment: { weapon: "ashenMace", armor: "leatherArmor" },
+    startingEquipmentOptions: [
+      { id: "mace", label: "Ashen Mace & Leather Armor", equipment: { weapon: "ashenMace", armor: "leatherArmor" } },
+      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { weapon: "huntersShortbow", armor: "leatherArmor" } },
+    ],
     startingInventory: ["ringOfWarding"],
   },
   monk: {
@@ -284,7 +316,10 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
       BASIC_ATTACK,
     ],
-    startingEquipment: { weapon: "practicedKnuckles" },
+    startingEquipmentOptions: [
+      { id: "knuckles", label: "Practiced Knuckles (Unarmed)", equipment: { weapon: "practicedKnuckles" } },
+      { id: "shortsword", label: "Shortsword (Unarmored)", equipment: { weapon: "shortsword" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   paladin: {
@@ -315,7 +350,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d10",
       },
     ],
-    startingEquipment: { weapon: "ironLongsword", armor: "chainShirt" },
+    startingEquipmentOptions: [
+      { id: "sword-and-mail", label: "Longsword & Chain Shirt", equipment: { weapon: "ironLongsword", armor: "chainShirt" } },
+      { id: "sword-and-leather", label: "Longsword & Studded Leather", equipment: { weapon: "ironLongsword", armor: "studdedLeather" } },
+    ],
     startingInventory: ["ringOfWarding"],
   },
   ranger: {
@@ -346,7 +384,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         dice: "1d4",
       },
     ],
-    startingEquipment: { weapon: "huntersShortbow", armor: "leatherArmor" },
+    startingEquipmentOptions: [
+      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { weapon: "huntersShortbow", armor: "leatherArmor" } },
+      { id: "shortsword", label: "Shortsword & Leather Armor", equipment: { weapon: "shortsword", armor: "leatherArmor" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   sorcerer: {
@@ -378,7 +419,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         cooldown: 2,
       },
     ],
-    startingEquipment: { weapon: "ritualDagger", armor: "travelersRobe" },
+    startingEquipmentOptions: [
+      { id: "dagger", label: "Ritual Dagger & Traveler's Robe", equipment: { weapon: "ritualDagger", armor: "travelersRobe" } },
+      { id: "shortbow", label: "Shortbow & Traveler's Robe", equipment: { weapon: "huntersShortbow", armor: "travelersRobe" } },
+    ],
     startingInventory: ["luckyCharm"],
   },
   warlock: {
@@ -410,7 +454,10 @@ export const CLASSES: Record<string, CharacterClass> = {
         cooldown: 2,
       },
     ],
-    startingEquipment: { weapon: "ritualDagger", armor: "travelersRobe" },
+    startingEquipmentOptions: [
+      { id: "dagger", label: "Ritual Dagger & Traveler's Robe", equipment: { weapon: "ritualDagger", armor: "travelersRobe" } },
+      { id: "shortbow", label: "Shortbow & Traveler's Robe", equipment: { weapon: "huntersShortbow", armor: "travelersRobe" } },
+    ],
     startingInventory: ["ringOfWarding"],
   },
 };

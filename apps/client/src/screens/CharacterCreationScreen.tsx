@@ -8,11 +8,21 @@ import {
   RACES,
   STANDARD_ARRAY,
   createCharacter,
+  getItem,
   type AbilityKey,
   type AbilityScores,
   type Character,
+  type ItemSlot,
 } from "@eridan/engine";
 import { BackButton } from "../components/BackButton";
+
+/** e.g. "Iron Longsword, Chain Shirt" for a gear option's equipped items. */
+function describeEquipment(equipment: Partial<Record<ItemSlot, string>>): string {
+  return Object.values(equipment)
+    .filter((id): id is string => Boolean(id))
+    .map((id) => getItem(id).name)
+    .join(", ");
+}
 
 function defaultAssignment(classId: string): AbilityScores {
   const primary = CLASSES[classId].primaryAbility;
@@ -64,6 +74,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const [classId, setClassId] = useState("fighter");
   const [backgroundId, setBackgroundId] = useState("acolyte");
   const [scores, setScores] = useState<AbilityScores>(() => defaultAssignment("fighter"));
+  const [equipmentOptionId, setEquipmentOptionId] = useState(() => CLASSES["fighter"].startingEquipmentOptions[0].id);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,12 +94,14 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
       classId,
       backgroundId,
       baseAbilityScores: scores,
+      equipmentOptionId,
     });
-  }, [canCreate, name, raceId, classId, backgroundId, scores]);
+  }, [canCreate, name, raceId, classId, backgroundId, scores, equipmentOptionId]);
 
   function handleClassChange(nextClassId: string) {
     setClassId(nextClassId);
     setScores(defaultAssignment(nextClassId));
+    setEquipmentOptionId(CLASSES[nextClassId].startingEquipmentOptions[0].id);
   }
 
   async function handleSubmit() {
@@ -160,6 +173,26 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
           <p className="description">{background.description}</p>
           <p className="description">
             +1 {background.abilityScores.map((k) => ABILITY_NAMES[k]).join(", +1 ")} · Origin Feat: {originFeat.name}
+          </p>
+        </fieldset>
+      </div>
+
+      <div>
+        <h2>Starting Gear</h2>
+        <fieldset className="picker">
+          <legend>{cls.name} Equipment</legend>
+          {cls.startingEquipmentOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={option.id === equipmentOptionId ? "option selected" : "option"}
+              onClick={() => setEquipmentOptionId(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+          <p className="description">
+            {describeEquipment(cls.startingEquipmentOptions.find((o) => o.id === equipmentOptionId)!.equipment)}
           </p>
         </fieldset>
       </div>

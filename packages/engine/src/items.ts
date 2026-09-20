@@ -82,6 +82,16 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     damageType: "piercing",
     value: 6,
   },
+  shortsword: {
+    id: "shortsword",
+    name: "Shortsword",
+    description: "A quick, double-edged blade light enough for a fencer's grip.",
+    slot: "weapon",
+    damageDice: "1d6",
+    ability: "dex",
+    damageType: "piercing",
+    value: 10,
+  },
   leatherArmor: {
     id: "leatherArmor",
     name: "Leather Armor",

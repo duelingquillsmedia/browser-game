@@ -134,11 +134,24 @@ export interface CreateCharacterOptions {
   backgroundId: string;
   baseAbilityScores: AbilityScores;
   level?: number;
+  /** Which of the class's startingEquipmentOptions to start with; defaults to the first. */
+  equipmentOptionId?: string;
 }
 
-function buildStartingInventory(cls: CharacterClass): InventoryStack[] {
+/** The class's chosen (or default) starting gear package. Falls back to the first option for an unknown id. */
+export function resolveStartingEquipment(
+  cls: CharacterClass,
+  equipmentOptionId?: string
+): Partial<Record<ItemSlot, string>> {
+  const option = equipmentOptionId
+    ? (cls.startingEquipmentOptions.find((o) => o.id === equipmentOptionId) ?? cls.startingEquipmentOptions[0])
+    : cls.startingEquipmentOptions[0];
+  return option.equipment;
+}
+
+function buildStartingInventory(cls: CharacterClass, equipment: Partial<Record<ItemSlot, string>>): InventoryStack[] {
   const counts = new Map<string, number>();
-  for (const itemId of Object.values(cls.startingEquipment)) {
+  for (const itemId of Object.values(equipment)) {
     counts.set(itemId, (counts.get(itemId) ?? 0) + 1);
   }
   for (const itemId of cls.startingInventory) {
@@ -157,12 +170,13 @@ export function withStartingGearIfMissing(character: Character): Character {
   const cls = getClass(character.classId);
   const race = getRace(character.raceId);
   const backgroundId = character.backgroundId ?? "acolyte";
+  const defaultEquipment = resolveStartingEquipment(cls);
   const withGear: Character = {
     ...character,
     backgroundId,
     originFeatId: character.originFeatId ?? getBackground(backgroundId).originFeatId,
-    inventory: character.inventory ?? buildStartingInventory(cls),
-    equipment: character.equipment ?? { ...cls.startingEquipment },
+    inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
+    equipment: character.equipment ?? { ...defaultEquipment },
   };
   return applyEquipmentEffects(withGear, cls, race);
 }
@@ -180,6 +194,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
 
   const conMod = abilityModifier(abilityScores.con);
   const maxHp = cls.hitDie + conMod + (level - 1) * (Math.ceil(cls.hitDie / 2) + 1 + conMod);
+  const equipment = resolveStartingEquipment(cls, options.equipmentOptionId);
 
   const base: Character = {
     id: options.id,
@@ -196,8 +211,8 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     proficiencyBonus: 2 + Math.floor((level - 1) / 4),
     actions: [],
     actionUses: {},
-    inventory: buildStartingInventory(cls),
-    equipment: { ...cls.startingEquipment },
+    inventory: buildStartingInventory(cls, equipment),
+    equipment: { ...equipment },
   };
 
   const character = applyEquipmentEffects(base, cls, race);
