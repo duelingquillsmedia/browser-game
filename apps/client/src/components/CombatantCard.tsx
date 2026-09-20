@@ -23,6 +23,8 @@ export interface CombatantPortraitTileProps {
   combatant: Combatant;
   isCurrentTurn: boolean;
   isSelectableTarget: boolean;
+  isHovered?: boolean;
+  onHoverChange?: (hovering: boolean) => void;
   effect?: CombatantEffect;
   onSelect?: () => void;
 }
@@ -32,6 +34,8 @@ export function CombatantPortraitTile({
   combatant,
   isCurrentTurn,
   isSelectableTarget,
+  isHovered,
+  onHoverChange,
   effect,
   onSelect,
 }: CombatantPortraitTileProps) {
@@ -39,9 +43,13 @@ export function CombatantPortraitTile({
   const tileClassNames = [
     "combatant-tile",
     combatant.side,
-    isCurrentTurn ? "current-turn" : "",
+    // The party has just one member the player is always looking at, so a permanent
+    // current-turn box around them is clutter rather than information -- reserve it
+    // for enemies, where it's useful to see which one is acting.
+    isCurrentTurn && combatant.side === "enemy" ? "current-turn" : "",
     isDown ? "down" : "",
     isSelectableTarget ? "selectable" : "",
+    isHovered ? "hovered" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -84,12 +92,19 @@ export function CombatantPortraitTile({
   // isSelectableTarget) so React never has to remount this subtree -- a remount would
   // reset CharacterSprite's animation, e.g. replaying a dead combatant's death pose the
   // next time the player opens a target picker.
+  //
+  // Non-actionable tiles are marked aria-disabled (not the native `disabled` attribute):
+  // a genuinely disabled button stops receiving mouse events in most browsers, which would
+  // silently break the hover-to-identify highlight below whenever nothing is targetable.
   return (
     <button
       type="button"
       className={tileClassNames}
-      disabled={!isSelectableTarget}
+      aria-disabled={!isSelectableTarget}
+      tabIndex={isSelectableTarget ? undefined : -1}
       onClick={isSelectableTarget ? onSelect : undefined}
+      onMouseEnter={onHoverChange ? () => onHoverChange(true) : undefined}
+      onMouseLeave={onHoverChange ? () => onHoverChange(false) : undefined}
       aria-label={combatant.name}
     >
       {content}
@@ -100,16 +115,18 @@ export function CombatantPortraitTile({
 export interface CombatantInfoPanelProps {
   combatant: Combatant;
   isCurrentTurn: boolean;
+  isHovered?: boolean;
 }
 
 /** The combatant's name, HP bar, AC and status, shown in the side rail off the battlefield. */
-export function CombatantInfoPanel({ combatant, isCurrentTurn }: CombatantInfoPanelProps) {
+export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: CombatantInfoPanelProps) {
   const isDown = combatant.hp <= 0 || combatant.fled;
   const rowClassNames = [
     "combatant-info-row",
     combatant.side,
-    isCurrentTurn ? "current-turn" : "",
+    isCurrentTurn && combatant.side === "enemy" ? "current-turn" : "",
     isDown ? "down" : "",
+    isHovered ? "hovered" : "",
   ]
     .filter(Boolean)
     .join(" ");

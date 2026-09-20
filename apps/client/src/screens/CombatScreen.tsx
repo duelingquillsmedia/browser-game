@@ -60,6 +60,7 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
 
 export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: CombatScreenProps) {
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
+  const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
   // Starts from each combatant's pre-fight HP and an empty log, rather than the fully
   // resolved state `combat` already carries on mount -- otherwise a bad initiative roll
   // (enemies acting, and possibly winning, before the player's first turn) would already
@@ -200,6 +201,8 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
                   combatant={c}
                   isCurrentTurn={actor?.id === c.id}
                   isSelectableTarget={isSelectable(c)}
+                  isHovered={hoveredEnemyId === c.id}
+                  onHoverChange={(hovering) => setHoveredEnemyId(hovering ? c.id : null)}
                   effect={effects[c.id]}
                   onSelect={() => handlePickTarget(c.id)}
                 />
@@ -209,7 +212,12 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
 
           <div className="battlefield-rail enemy-rail">
             {enemies.map((c) => (
-              <CombatantInfoPanel key={c.id} combatant={c} isCurrentTurn={actor?.id === c.id} />
+              <CombatantInfoPanel
+                key={c.id}
+                combatant={c}
+                isCurrentTurn={actor?.id === c.id}
+                isHovered={hoveredEnemyId === c.id}
+              />
             ))}
           </div>
         </div>

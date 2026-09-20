@@ -764,7 +764,8 @@ button.ghost {
   color: var(--text);
 }
 
-.combatant-info-row.current-turn {
+.combatant-info-row.current-turn,
+.combatant-info-row.hovered {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
@@ -785,7 +786,8 @@ button.ghost {
   cursor: default;
 }
 
-.combatant-tile.current-turn {
+.combatant-tile.current-turn,
+.combatant-tile.hovered {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
