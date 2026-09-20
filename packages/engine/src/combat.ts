@@ -131,9 +131,14 @@ function isUp(c: Combatant): boolean {
   return c.hp > 0 && !c.fled;
 }
 
-/** A valid target for an attack/heal/save — up, or helpless (Unconscious) rather than gone (fled/dead). */
-function isTargetable(c: Combatant): boolean {
-  return !c.fled && !c.dead;
+/**
+ * A valid target for an attack/heal/save — up, or helpless (Unconscious) rather than gone
+ * (fled/dead) or already defeated. Monsters have no Unconscious state of their own (per the
+ * SRD they simply die at 0 HP), so `hp > 0` alone excludes a defeated one; a party member at
+ * 0 HP is still targetable because `unconscious` is set the moment they drop.
+ */
+export function isTargetable(c: Combatant): boolean {
+  return !c.fled && !c.dead && (c.hp > 0 || c.unconscious);
 }
 
 function abilityMod(c: Combatant, key: AbilityKey): number {

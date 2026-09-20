@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActionRequest, CombatActionDef, CombatLogEntry, CombatState } from "@eridan/engine";
-import { currentCombatant } from "@eridan/engine";
+import { currentCombatant, isTargetable, type Combatant } from "@eridan/engine";
 import { CombatantPortraitTile, CombatantInfoPanel, type CombatantEffect } from "../components/CombatantCard";
 import { CombatLog } from "../components/CombatLog";
 import { ActionMenu } from "../components/ActionMenu";
@@ -159,10 +159,10 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
     setPendingAction(null);
   }
 
-  function isSelectable(side: "party" | "enemy"): boolean {
-    if (!pendingAction) return false;
-    if (pendingAction.target === "enemy") return side === "enemy";
-    if (pendingAction.target === "ally") return side === "party";
+  function isSelectable(combatant: Combatant): boolean {
+    if (!pendingAction || !isTargetable(combatant)) return false;
+    if (pendingAction.target === "enemy") return combatant.side === "enemy";
+    if (pendingAction.target === "ally") return combatant.side === "party";
     return false;
   }
 
@@ -187,7 +187,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
                   key={c.id}
                   combatant={c}
                   isCurrentTurn={actor?.id === c.id}
-                  isSelectableTarget={isSelectable("party")}
+                  isSelectableTarget={isSelectable(c)}
                   effect={effects[c.id]}
                   onSelect={() => handlePickTarget(c.id)}
                 />
@@ -199,7 +199,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
                   key={c.id}
                   combatant={c}
                   isCurrentTurn={actor?.id === c.id}
-                  isSelectableTarget={isSelectable("enemy")}
+                  isSelectableTarget={isSelectable(c)}
                   effect={effects[c.id]}
                   onSelect={() => handlePickTarget(c.id)}
                 />

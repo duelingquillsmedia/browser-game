@@ -80,15 +80,21 @@ export function CombatantPortraitTile({
     </div>
   );
 
-  if (isSelectableTarget && onSelect) {
-    return (
-      <button type="button" className={tileClassNames} onClick={onSelect} aria-label={combatant.name}>
-        {content}
-      </button>
-    );
-  }
-
-  return <div className={tileClassNames}>{content}</div>;
+  // Always a <button> (rather than swapping between <button> and <div> depending on
+  // isSelectableTarget) so React never has to remount this subtree -- a remount would
+  // reset CharacterSprite's animation, e.g. replaying a dead combatant's death pose the
+  // next time the player opens a target picker.
+  return (
+    <button
+      type="button"
+      className={tileClassNames}
+      disabled={!isSelectableTarget}
+      onClick={isSelectableTarget ? onSelect : undefined}
+      aria-label={combatant.name}
+    >
+      {content}
+    </button>
+  );
 }
 
 export interface CombatantInfoPanelProps {

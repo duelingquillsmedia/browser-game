@@ -782,6 +782,7 @@ button.ghost {
   padding: 4px;
   color: inherit;
   font-family: inherit;
+  cursor: default;
 }
 
 .combatant-tile.current-turn {
