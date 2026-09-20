@@ -60,10 +60,26 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
 
 export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: CombatScreenProps) {
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
-  const [visualState, setVisualState] = useState<CombatState>(combat);
+  // Starts from each combatant's pre-fight HP and an empty log, rather than the fully
+  // resolved state `combat` already carries on mount -- otherwise a bad initiative roll
+  // (enemies acting, and possibly winning, before the player's first turn) would already
+  // be baked in, and the player would never see it play out.
+  const [visualState, setVisualState] = useState<CombatState>(() => ({
+    ...combat,
+    combatants: combat.combatants.map((c) => ({
+      ...c,
+      hp: combat.initialHp[c.id] ?? c.hp,
+      unconscious: false,
+      dead: false,
+      fled: false,
+      dodging: false,
+      tempArmorClassBonus: 0,
+    })),
+    log: [],
+  }));
   const [isAnimating, setIsAnimating] = useState(false);
   const [effects, setEffects] = useState<Record<string, CombatantEffect>>({});
-  const revealedRef = useRef(combat.log.length);
+  const revealedRef = useRef(0);
   const effectKeyRef = useRef(0);
   const settledFiredRef = useRef(false);
 
@@ -81,7 +97,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
     }
 
     if (combat.log.length <= revealedRef.current) {
-      // First mount, or nothing new to animate -- just sync straight to the authoritative state.
+      // Nothing new to animate -- just sync straight to the authoritative state.
       setVisualState(combat);
       revealedRef.current = combat.log.length;
       finishIfSettled();

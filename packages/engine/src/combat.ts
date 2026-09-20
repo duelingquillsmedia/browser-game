@@ -120,6 +120,8 @@ export interface CombatState {
   round: number;
   log: CombatLogEntry[];
   status: CombatStatus;
+  /** Each combatant's HP the moment the fight started, before any turns (including a bad initiative roll's) resolved. Lets a UI replay the whole fight from the top, not just from whenever it first rendered. */
+  initialHp: Record<string, number>;
 }
 
 const FLEE_DC = 10;
@@ -192,6 +194,7 @@ export function startCombat(
     round: 1,
     log: [],
     status: "active",
+    initialHp: Object.fromEntries(combatants.map((c) => [c.id, c.hp])),
   };
 
   log(state, "The battle begins!", { kind: "info" });
