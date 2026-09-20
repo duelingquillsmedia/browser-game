@@ -828,6 +828,12 @@ button.ghost {
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
 }
 
+/* Sprite art is drawn facing right by default; enemies stand on the right side of the
+   arena, so their sprite is mirrored to face left, toward the party. */
+.combatant-tile.enemy .combatant-sprite-frame {
+  transform: scaleX(-1);
+}
+
 .combatant-initial {
   position: absolute;
   inset: 6px 10px;
