@@ -37,6 +37,10 @@ export interface Character {
   damageResistances?: DamageType[];
   damageVulnerabilities?: DamageType[];
   damageImmunities?: DamageType[];
+  /** This player's six Misfit Six companions, keyed by companion id. Built once via `ensureCompanionRoster`. */
+  companions?: Record<string, Character>;
+  /** Companion ids (up to `MAX_PARTY_SIZE - 1`) joining this player on their next mission. */
+  activePartyIds?: string[];
 }
 
 export function abilityMod(character: Character, key: AbilityKey): number {

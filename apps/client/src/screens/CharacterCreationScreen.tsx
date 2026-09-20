@@ -9,6 +9,7 @@ import {
   STANDARD_ARRAY,
   createCharacter,
   getItem,
+  standardArrayAssignment,
   type AbilityKey,
   type AbilityScores,
   type Character,
@@ -22,16 +23,6 @@ function describeEquipment(equipment: Partial<Record<ItemSlot, string>>): string
     .filter((id): id is string => Boolean(id))
     .map((id) => getItem(id).name)
     .join(", ");
-}
-
-function defaultAssignment(classId: string): AbilityScores {
-  const primary = CLASSES[classId].primaryAbility;
-  const order: AbilityKey[] = [primary, ...ABILITY_KEYS.filter((k) => k !== primary)];
-  const scores = {} as AbilityScores;
-  order.forEach((key, i) => {
-    scores[key] = STANDARD_ARRAY[i];
-  });
-  return scores;
 }
 
 interface AbilityAssignerProps {
@@ -73,7 +64,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const [raceId, setRaceId] = useState("human");
   const [classId, setClassId] = useState("fighter");
   const [backgroundId, setBackgroundId] = useState("acolyte");
-  const [scores, setScores] = useState<AbilityScores>(() => defaultAssignment("fighter"));
+  const [scores, setScores] = useState<AbilityScores>(() => standardArrayAssignment(CLASSES["fighter"].primaryAbility));
   const [equipmentOptionId, setEquipmentOptionId] = useState(() => CLASSES["fighter"].startingEquipmentOptions[0].id);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +91,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
 
   function handleClassChange(nextClassId: string) {
     setClassId(nextClassId);
-    setScores(defaultAssignment(nextClassId));
+    setScores(standardArrayAssignment(CLASSES[nextClassId].primaryAbility));
     setEquipmentOptionId(CLASSES[nextClassId].startingEquipmentOptions[0].id);
   }
 

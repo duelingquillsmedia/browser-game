@@ -6,6 +6,7 @@ import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
 import { TownHubScreen } from "./screens/TownHubScreen";
 import { CharacterSheetScreen } from "./screens/CharacterSheetScreen";
+import { PartyScreen } from "./screens/PartyScreen";
 import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
@@ -22,6 +23,7 @@ type Screen =
   | { kind: "creation" }
   | { kind: "townHub"; character: Character }
   | { kind: "characterSheet"; character: Character }
+  | { kind: "party"; character: Character }
   | { kind: "encounterSelect"; character: Character }
   | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
 
@@ -139,8 +141,28 @@ function App() {
           }
         }}
         onOpenCharacterSheet={() => setScreen({ kind: "characterSheet", character: screen.character })}
+        onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
         onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
         onBack={() => setScreen({ kind: "characterSelect" })}
+      />
+    );
+  }
+
+  if (screen.kind === "party") {
+    async function persist(next: Character) {
+      setScreen({ kind: "party", character: next });
+      try {
+        await updateCharacterInRoster(next);
+      } catch (err) {
+        console.error("Failed to save party:", err);
+      }
+    }
+
+    return (
+      <PartyScreen
+        character={screen.character}
+        onUpdateCharacter={persist}
+        onBack={() => setScreen({ kind: "townHub", character: screen.character })}
       />
     );
   }

@@ -9,6 +9,7 @@ export interface TownHubScreenProps {
   onVentureOut: () => void;
   onRest: () => void;
   onOpenCharacterSheet: () => void;
+  onOpenParty: () => void;
   onSwitchCharacter: () => void;
   onBack: () => void;
 }
@@ -18,6 +19,7 @@ export function TownHubScreen({
   onVentureOut,
   onRest,
   onOpenCharacterSheet,
+  onOpenParty,
   onSwitchCharacter,
   onBack,
 }: TownHubScreenProps) {
@@ -51,6 +53,9 @@ export function TownHubScreen({
           </button>
           <button type="button" className="action-button" onClick={onOpenCharacterSheet}>
             Character
+          </button>
+          <button type="button" className="action-button" onClick={onOpenParty}>
+            Party
           </button>
           <button type="button" className="ghost" onClick={onSwitchCharacter}>
             Switch Character

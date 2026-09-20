@@ -76,6 +76,14 @@ client-server milestone (combat is still resolved in the browser for now).
 - Real accounts (email/password via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
+- The Misfit Six: every player character adventures alongside the six
+  Ridgeton Tales companions (Magnus, Magnar, Kel'dos, Dondalian, Telerek,
+  Valeriek), viewable and configurable from a new Party screen off the town
+  hub. Each companion can be rolled (classic 4d6-drop-lowest) or left at
+  their class's standard-array default, and up to three can be chosen to
+  join the player on a mission — four in the field at once, counting
+  yourself. This first pass covers data and roster only: the active party
+  doesn't fight alongside you in combat yet.
 
 ## Tech stack
 
