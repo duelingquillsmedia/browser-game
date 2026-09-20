@@ -218,7 +218,7 @@ function App() {
       combat={combat}
       encounter={encounter}
       onSubmitAction={handleSubmitAction}
-      onSettled={() => setScreen({ kind: "combat", character, combat, encounter, resultReady: true })}
+      onContinue={() => setScreen({ kind: "combat", character, combat, encounter, resultReady: true })}
     />
   );
 }

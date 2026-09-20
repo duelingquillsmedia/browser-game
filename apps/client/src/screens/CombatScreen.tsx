@@ -11,9 +11,15 @@ export interface CombatScreenProps {
   combat: CombatState;
   encounter: Encounter;
   onSubmitAction: (request: ActionRequest) => void;
-  /** Called once, shortly after a finished fight's last event has finished animating. */
-  onSettled?: () => void;
+  /** Called when the player clicks Continue after a finished fight, once they're done reviewing the battlefield and log. */
+  onContinue?: () => void;
 }
+
+const RESULT_PROMPT: Record<Exclude<CombatState["status"], "active">, string> = {
+  party_won: "Victory! Review the battle, then continue whenever you're ready.",
+  enemies_won: "Defeated. Review the battle, then continue whenever you're ready.",
+  party_fled: "You escaped. Review the battle, then continue whenever you're ready.",
+};
 
 /** How long each new log entry stays on screen before the next one plays. */
 const EVENT_DELAY_MS = 900;
@@ -58,7 +64,7 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
   return effects;
 }
 
-export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: CombatScreenProps) {
+export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: CombatScreenProps) {
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
   // Starts from each combatant's pre-fight HP and an empty log, rather than the fully
@@ -82,26 +88,12 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
   const [effects, setEffects] = useState<Record<string, CombatantEffect>>({});
   const revealedRef = useRef(0);
   const effectKeyRef = useRef(0);
-  const settledFiredRef = useRef(false);
 
   useEffect(() => {
-    // Signals the fight is over only once the LAST queued event has actually finished
-    // playing (not just when `combat.status` first flips), so the result screen never
-    // preempts an in-progress animation. Lives here (not a separate effect keyed off
-    // `isAnimating`) so there's no window where a stale `isAnimating` from a prior
-    // render could race the `combat.status` prop that just updated.
-    function finishIfSettled() {
-      if (combat.status !== "active" && !settledFiredRef.current) {
-        settledFiredRef.current = true;
-        setTimeout(() => onSettled?.(), 400);
-      }
-    }
-
     if (combat.log.length <= revealedRef.current) {
       // Nothing new to animate -- just sync straight to the authoritative state.
       setVisualState(combat);
       revealedRef.current = combat.log.length;
-      finishIfSettled();
       return;
     }
 
@@ -119,7 +111,6 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
         revealedRef.current = combat.log.length;
         setEffects({});
         setIsAnimating(false);
-        finishIfSettled();
         return;
       }
 
@@ -227,6 +218,13 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onSettled }: C
         {isAnimating ? (
           <div className="ability-bar ability-bar-targeting">
             <p className="action-prompt">Resolving…</p>
+          </div>
+        ) : visualState.status !== "active" ? (
+          <div className="ability-bar ability-bar-targeting">
+            <p className="action-prompt">{RESULT_PROMPT[visualState.status]}</p>
+            <button type="button" className="primary" onClick={onContinue}>
+              Continue
+            </button>
           </div>
         ) : (
           actor && (
