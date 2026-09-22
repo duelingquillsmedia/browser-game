@@ -9,12 +9,14 @@ import {
   ORIGIN_FEATS,
   RACES,
   abilityMod,
+  getClassResource,
   getItem,
   type Character,
   type ItemSlot,
   type ItemTemplate,
 } from "@eridan/engine";
 import { HealthBar } from "../components/HealthBar";
+import { ResourceBar } from "../components/ResourceBar";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
 import { ItemIcon } from "../components/ItemIcon";
 import { TabBar } from "../components/TabBar";
@@ -79,6 +81,7 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
   const cls = CLASSES[character.classId];
   const background = BACKGROUNDS[character.backgroundId];
   const originFeat = ORIGIN_FEATS[character.originFeatId];
+  const resourceConfig = getClassResource(character.classId);
 
   const equippedIds = new Set(Object.values(character.equipment));
   const selectedStack = selectedItemId
@@ -99,6 +102,14 @@ export function CharacterSheetScreen({ character, onEquip, onUnequip, onBack }: 
       <h2>Vitals</h2>
       <div className="preview-card">
         <HealthBar hp={character.hp} maxHp={character.maxHp} />
+        {resourceConfig && (
+          <ResourceBar
+            resourceKey={resourceConfig.key}
+            name={resourceConfig.name}
+            value={character.resource ?? 0}
+            max={resourceConfig.max}
+          />
+        )}
         <div className="stat-row">
           <span>Armor Class</span>
           <span>{character.armorClass}</span>

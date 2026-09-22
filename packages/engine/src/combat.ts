@@ -1,11 +1,12 @@
 import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier, rollD20, rollD20WithEdge, rollDice, type RNG } from "./dice.js";
-import { DEFEND_ACTION, type CombatActionDef } from "./actions.js";
+import { BASIC_ATTACK, DEFEND_ACTION, type CombatActionDef } from "./actions.js";
 import type { Character } from "./character.js";
 import { getClass } from "./classes.js";
 import type { Monster } from "./monsters.js";
 import { applyDamageModifiers, type DamageType } from "./damage.js";
 import type { OriginFeatId } from "./feats.js";
+import { getClassResource } from "./resources.js";
 
 export type Side = "party" | "enemy";
 
@@ -35,6 +36,8 @@ export interface Combatant {
   damageResistances: DamageType[];
   damageVulnerabilities: DamageType[];
   damageImmunities: DamageType[];
+  /** Current value in this combatant's class resource pool (Arcane/Divinity/Wylde/Rage/Prowess); undefined if their class has none. */
+  resource?: number;
   /** From buff actions (e.g. Arcane Shield); cleared at the start of this combatant's own next turn. */
   tempArmorClassBonus: number;
   /** From Defend (SRD's Dodge): attacks against this combatant have Disadvantage until their next turn. */
@@ -66,6 +69,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     actions: source.actions,
     actionUses: { ...source.actionUses },
     actionCooldowns: {},
+    resource: "classId" in source ? source.resource ?? getClassResource(source.classId)?.start : undefined,
     savingThrowProficiencies: "classId" in source ? getClass(source.classId).savingThrowProficiencies : [],
     damageResistances: source.damageResistances ?? [],
     damageVulnerabilities: source.damageVulnerabilities ?? [],
@@ -148,11 +152,20 @@ function abilityMod(c: Combatant, key: AbilityKey): number {
   return abilityModifier(c.abilityScores[key]);
 }
 
-/** Whether `actor` can use `action` right now — respects both usesPerCombat and cooldown. */
+/** Whether `actor` can use `action` right now — respects usesPerCombat, cooldown, and resource cost. */
 export function isActionReady(actor: Combatant, action: CombatActionDef, round: number): boolean {
   if (action.usesPerCombat !== undefined && (actor.actionUses[action.id] ?? 0) <= 0) return false;
   if (action.cooldown !== undefined && round < (actor.actionCooldowns[action.id] ?? 0)) return false;
+  if (action.resourceCost !== undefined && (actor.resource ?? 0) < action.resourceCost) return false;
   return true;
+}
+
+/** Applies a resource pool gain, clamped to that resource's max. A no-op if `combatant`'s class has no such pool. */
+function gainResource(combatant: Combatant, amount: number | undefined): void {
+  if (!amount) return;
+  const config = getClassResource(combatant.classId);
+  if (!config) return;
+  combatant.resource = Math.min(config.max, (combatant.resource ?? 0) + amount);
 }
 
 function findCombatant(state: CombatState, id: string): Combatant {
@@ -290,6 +303,7 @@ function resolveAttack(
 
   const hpBefore = target.hp;
   target.hp = Math.max(0, target.hp - damage);
+  gainResource(target, getClassResource(target.classId)?.gainOnBeingStruck);
 
   const crit = isCrit ? " Critical hit!" : "";
   const fell = target.side === "enemy" && target.hp === 0 ? ` ${target.name} falls!` : "";
@@ -326,6 +340,7 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
 
     const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - damage);
+    gainResource(target, getClassResource(target.classId)?.gainOnBeingStruck);
     log(
       state,
       `${target.name} ${succeeded ? "partially resists" : "fails to resist"} ${actor.name}'s ${action.name} ` +
@@ -413,6 +428,20 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     actor.actionCooldowns[action.id] = state.round + action.cooldown;
   }
 
+  if (action.resourceCost !== undefined) {
+    const resourceConfig = getClassResource(actor.classId);
+    const available = actor.resource ?? 0;
+    if (available < action.resourceCost) {
+      throw new Error(`${actor.name} doesn't have enough ${resourceConfig?.name ?? "resource"} to use ${action.name}.`);
+    }
+    actor.resource = available - action.resourceCost;
+  }
+  // The basic weapon Strike builds a class's resource (Fighter's Prowess, Barbarian's
+  // Rage) on use, hit or miss — a class without a matching pool is unaffected.
+  if (action.id === BASIC_ATTACK.id) {
+    gainResource(actor, getClassResource(actor.classId)?.gainOnBasicAttack);
+  }
+
   switch (action.kind) {
     case "attack": {
       if (!request.targetId) throw new Error(`${action.name} requires a target.`);
@@ -458,6 +487,7 @@ function advanceTurn(state: CombatState): void {
     if (isUp(next)) {
       next.tempArmorClassBonus = 0;
       next.dodging = false;
+      gainResource(next, getClassResource(next.classId)?.regenPerTurn);
       return;
     }
   }

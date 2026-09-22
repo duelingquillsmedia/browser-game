@@ -7,6 +7,7 @@ import type { OriginFeatId } from "./feats.js";
 import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
+import { getClassResource } from "./resources.js";
 
 export interface InventoryStack {
   itemId: string;
@@ -37,6 +38,8 @@ export interface Character {
   damageResistances?: DamageType[];
   damageVulnerabilities?: DamageType[];
   damageImmunities?: DamageType[];
+  /** Current value in this class's resource pool (Arcane/Divinity/Wylde/Rage/Prowess), if it has one. */
+  resource?: number;
   /** This player's six Misfit Six companions, keyed by companion id. Built once via `ensureCompanionRoster`. */
   companions?: Record<string, Character>;
   /** Companion ids (up to `MAX_PARTY_SIZE - 1`) joining this player on their next mission. */
@@ -181,6 +184,7 @@ export function withStartingGearIfMissing(character: Character): Character {
     originFeatId: character.originFeatId ?? getBackground(backgroundId).originFeatId,
     inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
     equipment: character.equipment ?? { ...defaultEquipment },
+    resource: character.resource ?? getClassResource(cls.id)?.start,
   };
   return applyEquipmentEffects(withGear, cls, race);
 }
@@ -215,6 +219,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     proficiencyBonus: 2 + Math.floor((level - 1) / 4),
     actions: [],
     actionUses: {},
+    resource: getClassResource(cls.id)?.start,
     inventory: buildStartingInventory(cls, equipment),
     equipment: { ...equipment },
   };

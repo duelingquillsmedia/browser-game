@@ -1,5 +1,6 @@
-import { CLASSES, RACES, type Character } from "@eridan/engine";
+import { CLASSES, RACES, getClassResource, type Character } from "@eridan/engine";
 import { HealthBar } from "../components/HealthBar";
+import { ResourceBar } from "../components/ResourceBar";
 import { LocationBackdrop } from "../components/LocationBackdrop";
 import { BackButton } from "../components/BackButton";
 import { HOME_TOWN_BACKGROUND, HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME } from "../game/lore";
@@ -26,6 +27,7 @@ export function TownHubScreen({
   const companions = Object.values(character.companions ?? {});
   const canVenture = character.hp > 0;
   const canRest = character.hp < character.maxHp || companions.some((c) => c.hp < c.maxHp);
+  const resourceConfig = getClassResource(character.classId);
 
   return (
     <>
@@ -41,6 +43,14 @@ export function TownHubScreen({
             {CLASSES[character.classId]?.name ?? character.classId}
           </h3>
           <HealthBar hp={character.hp} maxHp={character.maxHp} />
+          {resourceConfig && (
+            <ResourceBar
+              resourceKey={resourceConfig.key}
+              name={resourceConfig.name}
+              value={character.resource ?? 0}
+              max={resourceConfig.max}
+            />
+          )}
           <p className="combatant-meta">AC {character.armorClass}</p>
           {!canVenture && <p className="status-tag">Too wounded to venture out — rest first.</p>}
         </div>

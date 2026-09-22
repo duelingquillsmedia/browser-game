@@ -1,5 +1,6 @@
-import type { Combatant } from "@eridan/engine";
+import { getClassResource, type Combatant } from "@eridan/engine";
 import { HealthBar } from "./HealthBar";
+import { ResourceBar } from "./ResourceBar";
 import { CharacterSprite, type SpriteState } from "./CharacterSprite";
 import { getPartySprite, getMonsterSprite } from "../game/sprites";
 import portraitFrameParty from "../assets/ui/portrait-frame-party.png";
@@ -129,6 +130,7 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: Comb
     .join(" ");
 
   const bloodied = combatant.hp > 0 && combatant.hp <= combatant.maxHp / 2;
+  const resourceConfig = getClassResource(combatant.classId);
 
   let statusTag: string | null = null;
   if (combatant.fled) statusTag = "Fled";
@@ -145,6 +147,14 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: Comb
         {bloodied && <span className="badge badge-bloodied">Bloodied</span>}
       </div>
       <HealthBar hp={Math.max(0, combatant.hp)} maxHp={combatant.maxHp} />
+      {resourceConfig && (
+        <ResourceBar
+          resourceKey={resourceConfig.key}
+          name={resourceConfig.name}
+          value={combatant.resource ?? 0}
+          max={resourceConfig.max}
+        />
+      )}
       <div className="combatant-meta">AC {combatant.armorClass + combatant.tempArmorClassBonus}</div>
       {statusTag && <div className="status-tag">{statusTag}</div>}
     </div>

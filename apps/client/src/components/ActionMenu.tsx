@@ -1,4 +1,4 @@
-import type { Combatant, CombatActionDef } from "@eridan/engine";
+import { getClassResource, type Combatant, type CombatActionDef } from "@eridan/engine";
 
 export interface ActionMenuProps {
   actor: Combatant;
@@ -32,6 +32,8 @@ export function ActionMenu({ actor, round, pendingActionId, onSelectAction, onCa
     );
   }
 
+  const resourceConfig = getClassResource(actor.classId);
+
   return (
     <div className="ability-bar">
       <p className="actor-turn-label">{actor.name}'s Turn</p>
@@ -40,19 +42,27 @@ export function ActionMenu({ actor, round, pendingActionId, onSelectAction, onCa
         const roundsUntilReady =
           action.cooldown !== undefined ? Math.max(0, (actor.actionCooldowns[action.id] ?? 0) - round) : 0;
         const onCooldown = roundsUntilReady > 0;
-        const disabled = (usesLeft !== null && usesLeft <= 0) || onCooldown;
+        const canAfford = action.resourceCost === undefined || (actor.resource ?? 0) >= action.resourceCost;
+        const disabled = (usesLeft !== null && usesLeft <= 0) || onCooldown || !canAfford;
+        const title =
+          action.resourceCost !== undefined && resourceConfig
+            ? `${action.name} — ${action.description} (${action.resourceCost} ${resourceConfig.name})`
+            : `${action.name} — ${action.description}`;
         return (
           <button
             key={action.id}
             type="button"
             className="ability-slot"
             disabled={disabled}
-            title={`${action.name} — ${action.description}`}
+            title={title}
             onClick={() => onSelectAction(action)}
           >
             <span className="ability-icon">{iconGlyph(action.name)}</span>
             <span className="ability-name">{action.name}</span>
             {usesLeft !== null && <span className="ability-badge">{usesLeft}</span>}
+            {action.resourceCost !== undefined && (
+              <span className={`ability-cost-badge${canAfford ? "" : " unaffordable"}`}>{action.resourceCost}</span>
+            )}
             {onCooldown && (
               <>
                 <span className="ability-cooldown-overlay" />

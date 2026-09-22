@@ -41,6 +41,8 @@ export interface CombatActionDef {
    * combat degenerates into repeating the same action.
    */
   cooldown?: number;
+  /** Resource cost (from the actor's class resource pool — Arcane, Divinity, Wylde, Rage, or Prowess) to use this action. */
+  resourceCost?: number;
 }
 
 export const BASIC_ATTACK: CombatActionDef = {
