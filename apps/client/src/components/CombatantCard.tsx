@@ -43,10 +43,7 @@ export function CombatantPortraitTile({
   const tileClassNames = [
     "combatant-tile",
     combatant.side,
-    // The party has just one member the player is always looking at, so a permanent
-    // current-turn box around them is clutter rather than information -- reserve it
-    // for enemies, where it's useful to see which one is acting.
-    isCurrentTurn && combatant.side === "enemy" ? "current-turn" : "",
+    isCurrentTurn ? "current-turn" : "",
     isDown ? "down" : "",
     isSelectableTarget ? "selectable" : "",
     isHovered ? "hovered" : "",
@@ -124,7 +121,7 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: Comb
   const rowClassNames = [
     "combatant-info-row",
     combatant.side,
-    isCurrentTurn && combatant.side === "enemy" ? "current-turn" : "",
+    isCurrentTurn ? "current-turn" : "",
     isDown ? "down" : "",
     isHovered ? "hovered" : "",
   ]

@@ -11,7 +11,7 @@ import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { WORLD_INTRO, WORLD_NAME, type Encounter } from "./game/lore";
-import { beginEncounter } from "./game/setup";
+import { applyCombatResults, beginEncounter, restParty } from "./game/setup";
 import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
 import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
 import "./App.css";
@@ -132,7 +132,7 @@ function App() {
         character={screen.character}
         onVentureOut={() => setScreen({ kind: "encounterSelect", character: screen.character })}
         onRest={async () => {
-          const rested = { ...screen.character, hp: screen.character.maxHp };
+          const rested = restParty(screen.character);
           setScreen({ kind: "townHub", character: rested });
           try {
             await updateCharacterInRoster(rested);
@@ -216,8 +216,7 @@ function App() {
   }
 
   if (combat.status !== "active" && screen.resultReady) {
-    const survivor = combat.combatants.find((c) => c.side === "party");
-    const updatedCharacter = survivor ? { ...character, hp: survivor.hp } : character;
+    const updatedCharacter = applyCombatResults(character, combat);
 
     return (
       <ResultScreen

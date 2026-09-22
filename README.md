@@ -82,8 +82,15 @@ client-server milestone (combat is still resolved in the browser for now).
   hub. Each companion can be rolled (classic 4d6-drop-lowest) or left at
   their class's standard-array default, and up to three can be chosen to
   join the player on a mission — four in the field at once, counting
-  yourself. This first pass covers data and roster only: the active party
-  doesn't fight alongside you in combat yet.
+  yourself.
+- Real multi-character combat: your active party now fights together, not
+  just the player alone. Turn order interleaves every party member and every
+  enemy by initiative, the ability bar and "whose turn" label switch to
+  match whichever combatant is up, and a fight only ends in defeat once the
+  *whole* party is down — one companion dropping doesn't end the mission.
+  Each fighter's HP carries back to the town hub afterward (including
+  companions who didn't fight), and resting heals the whole roster, not
+  just the player.
 
 ## Tech stack
 

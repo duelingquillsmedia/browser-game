@@ -874,6 +874,7 @@ button.ghost {
 .combatant-initial {
   position: absolute;
   inset: 6px 10px;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1155,6 +1156,16 @@ button.ghost {
   border: 1px solid var(--border);
   border-radius: 8px;
   z-index: 5;
+}
+
+.actor-turn-label {
+  flex-basis: 100%;
+  margin: 0 0 2px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .ability-bar-targeting {

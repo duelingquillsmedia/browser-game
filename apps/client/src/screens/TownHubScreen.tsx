@@ -23,8 +23,9 @@ export function TownHubScreen({
   onSwitchCharacter,
   onBack,
 }: TownHubScreenProps) {
+  const companions = Object.values(character.companions ?? {});
   const canVenture = character.hp > 0;
-  const canRest = character.hp < character.maxHp;
+  const canRest = character.hp < character.maxHp || companions.some((c) => c.hp < c.maxHp);
 
   return (
     <>

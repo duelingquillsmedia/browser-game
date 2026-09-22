@@ -34,6 +34,7 @@ export function ActionMenu({ actor, round, pendingActionId, onSelectAction, onCa
 
   return (
     <div className="ability-bar">
+      <p className="actor-turn-label">{actor.name}'s Turn</p>
       {actor.actions.map((action) => {
         const usesLeft = action.usesPerCombat !== undefined ? actor.actionUses[action.id] ?? 0 : null;
         const roundsUntilReady =

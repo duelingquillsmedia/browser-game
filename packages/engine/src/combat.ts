@@ -74,7 +74,10 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     dodging: false,
     initiative: 0,
     fled: false,
-    unconscious: false,
+    // A party member who enters a fight already at 0 HP (e.g. a companion left
+    // unhealed since their last mission) starts Unconscious rather than "up" —
+    // monsters have no equivalent state, so this never applies to them.
+    unconscious: side === "party" && source.hp <= 0,
     dead: false,
     usedRelentlessEndurance: false,
   };
@@ -488,15 +491,23 @@ function runEnemyTurn(state: CombatState, rng: RNG): void {
 
 /**
  * After state mutation, refreshes status and auto-resolves anything that
- * doesn't need player input (enemy turns), stopping the moment a party
- * member is ready to act. A party member who drops to 0 HP goes Unconscious,
- * which alone ends the fight in defeat, so there's nothing left to
- * auto-resolve for them.
+ * doesn't need player input (enemy turns and any party member who can't act),
+ * stopping the moment a party member is ready to act. A party member who
+ * drops to 0 HP goes Unconscious, which alone ends the fight in defeat, so
+ * there's nothing left to auto-resolve for them mid-fight — but one CAN
+ * start a fight already Unconscious (e.g. an unhealed companion) and land
+ * first in turn order, so this has to skip a not-up party member too, not
+ * just hand them the ability bar and wait forever.
  */
 function advancePastDeadOrEnemies(state: CombatState, rng: RNG): CombatState {
   state.status = computeStatus(state);
   while (state.status === "active") {
     const actor = currentCombatant(state);
+    if (!isUp(actor)) {
+      advanceTurn(state);
+      state.status = computeStatus(state);
+      continue;
+    }
     if (actor.side === "enemy") {
       runEnemyTurn(state, rng);
     } else {

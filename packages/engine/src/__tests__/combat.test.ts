@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { startCombat, submitPlayerAction, type Combatant } from "../combat.js";
+import { startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
 import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION } from "../actions.js";
+import { createCharacter } from "../character.js";
 import { forD20, forDie, sequenceRng } from "./testUtils.js";
 
 function makeHero(overrides: Partial<Combatant> = {}): Combatant {
@@ -378,5 +379,81 @@ describe("combat engine", () => {
 
     expect(state.log.some((entry) => entry.message.includes("Stab"))).toBe(true);
     expect(state.log.some((entry) => entry.message.includes("Jab"))).toBe(false);
+  });
+});
+
+describe("toCombatant", () => {
+  function makeFighter(hp?: number) {
+    const character = createCharacter({
+      id: "pc-1",
+      name: "Bram",
+      raceId: "human",
+      classId: "fighter",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+    });
+    return hp === undefined ? character : { ...character, hp };
+  }
+
+  it("starts a party member Unconscious if they're already at 0 HP", () => {
+    const combatant = toCombatant(makeFighter(0), "party");
+    expect(combatant.unconscious).toBe(true);
+  });
+
+  it("starts a party member up normally when they have HP left", () => {
+    const combatant = toCombatant(makeFighter(), "party");
+    expect(combatant.unconscious).toBe(false);
+  });
+
+  it("never marks a monster Unconscious, even at 0 HP", () => {
+    const combatant = toCombatant(makeFighter(0), "enemy");
+    expect(combatant.unconscious).toBe(false);
+  });
+});
+
+describe("multi-member party", () => {
+  it("skips straight past a downed party member who wins initiative, instead of stalling on their turn", () => {
+    const up = makeHero({ id: "up", name: "Up" });
+    const down = makeHero({ id: "down", name: "Down", hp: 0, unconscious: true });
+    // down (init 17) would go first, but can't act; foe (init 10) auto-resolves
+    // (targets up, rolls a 2, misses); up (init 7) is left waiting for input.
+    const state = startCombat(
+      [up, down],
+      [makeFoe()],
+      sequenceRng([forD20(5), forD20(15), forD20(10), 0, forD20(2)])
+    );
+    expect(state.turnOrder).toEqual(["down", "foe", "up"]);
+    expect(state.turnIndex).toBe(2);
+    expect(state.status).toBe("active");
+    expect(state.combatants.find((c) => c.id === "up")!.hp).toBe(20);
+  });
+
+  it("ends in defeat only once every party member is down, not just one", () => {
+    const down = makeHero({ id: "down", name: "Down", hp: 0, unconscious: true });
+    const state = startCombat([down], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(state.status).toBe("enemies_won");
+  });
+
+  it("lets an enemy target and auto-crit an Unconscious party member even when others are still up", () => {
+    const up = makeHero({ id: "up", name: "Up" });
+    const down = makeHero({ id: "down", name: "Down", hp: 0, unconscious: true });
+    const state = startCombat(
+      [up, down],
+      [makeFoe()],
+      sequenceRng([
+        forD20(5), // up init
+        forD20(5), // down init
+        forD20(15), // foe init -> foe goes first
+        0.75, // enemy AI target pick -> index 1 of [up, down] = down
+        forD20(15), // advantage roll a (unconscious grants the attacker advantage)
+        forD20(15), // advantage roll b
+        forDie(4, 4), // damage die
+        forDie(4, 4), // crit bonus die
+      ])
+    );
+    const hit = state.log.find((entry) => entry.targetId === "down" && entry.kind === "hit");
+    expect(hit?.crit).toBe(true);
+    expect(state.status).toBe("active");
+    expect(state.combatants.find((c) => c.id === "up")!.hp).toBe(20);
   });
 });
