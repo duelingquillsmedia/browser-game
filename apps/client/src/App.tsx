@@ -4,13 +4,15 @@ import { equipItem, submitPlayerAction, unequipItem } from "@eridan/engine";
 import { AuthScreen } from "./screens/AuthScreen";
 import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
-import { TownHubScreen } from "./screens/TownHubScreen";
+import { TitleScreen } from "./screens/TitleScreen";
+import { HomeScreen } from "./screens/HomeScreen";
+import { GameShell } from "./components/GameShell";
 import { CharacterSheetScreen } from "./screens/CharacterSheetScreen";
 import { PartyScreen } from "./screens/PartyScreen";
 import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
-import { WORLD_INTRO, WORLD_NAME, type Encounter } from "./game/lore";
+import { GAME_NAME, WORLD_NAME, type Encounter } from "./game/lore";
 import { applyCombatResults, beginEncounter, restParty } from "./game/setup";
 import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
 import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
@@ -21,7 +23,7 @@ type Screen =
   | { kind: "auth" }
   | { kind: "characterSelect" }
   | { kind: "creation" }
-  | { kind: "townHub"; character: Character }
+  | { kind: "home"; character: Character }
   | { kind: "characterSheet"; character: Character }
   | { kind: "party"; character: Character }
   | { kind: "encounterSelect"; character: Character }
@@ -79,19 +81,7 @@ function App() {
   }
 
   if (screen.kind === "intro") {
-    return (
-      <div className="screen intro-screen">
-        <h1>{WORLD_NAME}</h1>
-        {WORLD_INTRO.map((paragraph, i) => (
-          <p key={i} className="subtitle">
-            {paragraph}
-          </p>
-        ))}
-        <button type="button" className="primary" onClick={handleBegin}>
-          Begin
-        </button>
-      </div>
-    );
+    return <TitleScreen gameName={GAME_NAME} tagline={`A turn-based chronicle of ${WORLD_NAME}`} onContinue={handleBegin} />;
   }
 
   if (screen.kind === "auth") {
@@ -106,7 +96,7 @@ function App() {
   if (screen.kind === "characterSelect") {
     return (
       <CharacterSelectScreen
-        onSelect={(character) => setScreen({ kind: "townHub", character })}
+        onSelect={(character) => setScreen({ kind: "home", character })}
         onCreateNew={() => setScreen({ kind: "creation" })}
         onSignedOut={() => setScreen({ kind: "intro" })}
         onBack={() => setScreen({ kind: "intro" })}
@@ -119,32 +109,42 @@ function App() {
       <CharacterCreationScreen
         onComplete={async (character) => {
           const saved = await addCharacterToRoster(character);
-          setScreen({ kind: "townHub", character: saved });
+          setScreen({ kind: "home", character: saved });
         }}
         onBack={() => setScreen({ kind: "characterSelect" })}
       />
     );
   }
 
-  if (screen.kind === "townHub") {
+  if (screen.kind === "home") {
+    function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
+      if (screen.kind !== "home") return;
+      if (id === "character" || id === "inventory" || id === "skills") {
+        setScreen({ kind: "characterSheet", character: screen.character });
+      } else if (id === "map") {
+        setScreen({ kind: "encounterSelect", character: screen.character });
+      }
+    }
+
     return (
-      <TownHubScreen
-        character={screen.character}
-        onVentureOut={() => setScreen({ kind: "encounterSelect", character: screen.character })}
-        onRest={async () => {
-          const rested = restParty(screen.character);
-          setScreen({ kind: "townHub", character: rested });
-          try {
-            await updateCharacterInRoster(rested);
-          } catch (err) {
-            console.error("Failed to save rest:", err);
-          }
-        }}
-        onOpenCharacterSheet={() => setScreen({ kind: "characterSheet", character: screen.character })}
-        onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
-        onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
-        onBack={() => setScreen({ kind: "characterSelect" })}
-      />
+      <GameShell gameName={GAME_NAME} character={screen.character} active="home" onNavigate={handleNavigate}>
+        <HomeScreen
+          character={screen.character}
+          onVentureOut={() => setScreen({ kind: "encounterSelect", character: screen.character })}
+          onRest={async () => {
+            const rested = restParty(screen.character);
+            setScreen({ kind: "home", character: rested });
+            try {
+              await updateCharacterInRoster(rested);
+            } catch (err) {
+              console.error("Failed to save rest:", err);
+            }
+          }}
+          onOpenCharacterSheet={() => setScreen({ kind: "characterSheet", character: screen.character })}
+          onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
+          onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
+        />
+      </GameShell>
     );
   }
 
@@ -162,7 +162,7 @@ function App() {
       <PartyScreen
         character={screen.character}
         onUpdateCharacter={persist}
-        onBack={() => setScreen({ kind: "townHub", character: screen.character })}
+        onBack={() => setScreen({ kind: "home", character: screen.character })}
       />
     );
   }
@@ -182,7 +182,7 @@ function App() {
         character={screen.character}
         onEquip={(itemId) => persist(equipItem(screen.character, itemId))}
         onUnequip={(slot: ItemSlot) => persist(unequipItem(screen.character, slot))}
-        onBack={() => setScreen({ kind: "townHub", character: screen.character })}
+        onBack={() => setScreen({ kind: "home", character: screen.character })}
       />
     );
   }
@@ -199,7 +199,7 @@ function App() {
             combat: beginEncounter(screen.character, encounter),
           })
         }
-        onBack={() => setScreen({ kind: "townHub", character: screen.character })}
+        onBack={() => setScreen({ kind: "home", character: screen.character })}
       />
     );
   }
@@ -222,7 +222,7 @@ function App() {
       <ResultScreen
         status={combat.status}
         onContinue={async () => {
-          setScreen({ kind: "townHub", character: updatedCharacter });
+          setScreen({ kind: "home", character: updatedCharacter });
           try {
             await updateCharacterInRoster(updatedCharacter);
           } catch (err) {

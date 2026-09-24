@@ -3,6 +3,9 @@ import tiuvForestBg from "../assets/backgrounds/tiuv-forest.jpg";
 import collmhorWoodBg from "../assets/backgrounds/collmhor-wood.jpg";
 import ridgetonBg from "../assets/backgrounds/ridgeton.jpg";
 
+/** The game's own title/branding — distinct from Eridan, the continent it's set on. */
+export const GAME_NAME = "Age of Broken Wings";
+
 export const WORLD_NAME = "Eridan";
 
 export const WORLD_INTRO = [

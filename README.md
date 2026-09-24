@@ -1,7 +1,18 @@
-# Eridan
+# Age of Broken Wings
 
 A browser-based, D&D SRD-inspired MMORPG set in the world of Eridan. Turn-based
 combat, multiple fantasy races, and (eventually) guilds, PvP, and raids.
+
+**A UI and combat overhaul is underway.** A full design handoff (out-of-combat
+menus: Title, Home, Character, Inventory, Skills, Talents, World Map) lives in
+`Fantasy Combat Game UI/design_handoff_aetherwyn_ui/` — see its own README for
+the full spec. "Aetherwyn" in those files is this project's working title
+before the game was renamed; treat it as synonymous with Age of Broken Wings.
+The plan is to rebuild the out-of-combat UI to match that design one page at a
+time (Title + Home shipped so far — see below), then design a lighter-weight,
+still-turn-based combat system to replace the current D&D-SRD math. The
+sections below describe what's live today, which still reflects the older
+SRD-based systems except where noted.
 
 ## Status: Milestone 1.5 — real accounts + persistent characters
 
@@ -101,6 +112,16 @@ client-server milestone (combat is still resolved in the browser for now).
   ability bar slot shows its cost and grays out when it isn't affordable.
   Other classes (Rogue, Bard, Monk, Ranger, Sorcerer, Warlock) don't have a
   resource pool yet.
+- **New UI, first slice**: a Title screen and a Home dashboard rebuilt to
+  match the Aetherwyn design handoff — dark-arcane theme (Cinzel/Alegreya
+  Sans/JetBrains Mono/Noto Sans Runic, ember accent), a persistent header +
+  left nav (`GameShell`), and a Home page with Character/World
+  Map/Inventory/Skills/Talents cards. This replaces the old Town Hub screen.
+  World Map and Inventory/Skills cards currently bridge to the existing
+  encounter-select and character-sheet screens (not yet rebuilt in the new
+  style); Talents has no backing system yet and shows "Coming soon." The
+  World Map card's background is the real Eridan map art from the design
+  handoff.
 
 ## Tech stack
 

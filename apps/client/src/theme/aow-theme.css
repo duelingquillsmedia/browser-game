@@ -1,0 +1,161 @@
+/*
+ * Design tokens for the new "Age of Broken Wings" out-of-combat UI, ported
+ * from the Aetherwyn design handoff. Namespaced with --aow- so it can live
+ * alongside the older App.css palette (--accent, --bg, etc.) used by combat
+ * and the screens not yet rebuilt in this style.
+ */
+:root {
+  --aow-bg: #0b090e;
+  --aow-header-gradient: radial-gradient(ellipse 80% 50% at 50% -10%, #1d1420 0%, #0b090e 70%);
+  --aow-panel: #141118;
+  --aow-inset: #100d13;
+  --aow-inset-deep: #0e0c11;
+  --aow-chip-bg: #120f16;
+  --aow-diamond-fill: #1a1216;
+  --aow-panel-border: rgba(232, 200, 170, 0.11);
+  --aow-divider: rgba(232, 200, 170, 0.08);
+  --aow-divider-soft: rgba(232, 200, 170, 0.05);
+  --aow-control-border: rgba(232, 200, 170, 0.15);
+  --aow-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  --aow-ink: #f3ece4;
+  --aow-body: #ece6df;
+  --aow-secondary: #d8cfc6;
+  --aow-tertiary: #cfc6bd;
+  --aow-muted: #a39a93;
+  --aow-faint: #8a817b;
+  --aow-disabled: #6b625c;
+
+  --aow-ember: #e08a72;
+  --aow-ember-deep: #b85c4a;
+  --aow-ember-hover: #f2b3a1;
+  --aow-hp: #d0604a;
+  --aow-hp-deep: #7a2f22;
+  --aow-mana: #5fc4d6;
+  --aow-mana-deep: #1f5f6b;
+  --aow-gold: #d9b865;
+  --aow-gold-deep: #8a6f35;
+  --aow-green: #86c46f;
+  --aow-violet: #b287e6;
+  --aow-frost: #8fc6e6;
+
+  --aow-rarity-common: #a8a29c;
+  --aow-rarity-uncommon: #86c46f;
+  --aow-rarity-rare: #6aa7e6;
+  --aow-rarity-epic: #b287e6;
+  --aow-rarity-legendary: #e6a64e;
+
+  --aow-font-display: "Cinzel", serif;
+  --aow-font-body: "Alegreya Sans", sans-serif;
+  --aow-font-mono: "JetBrains Mono", monospace;
+  --aow-font-runic: "Noto Sans Runic", sans-serif;
+
+  --aow-card-hover-border: rgba(224, 138, 114, 0.55);
+  --aow-card-hover-shadow: 0 0 0 1px rgba(224, 138, 114, 0.2), 0 10px 30px rgba(0, 0, 0, 0.35),
+    0 0 24px rgba(184, 92, 74, 0.18);
+}
+
+.aow {
+  font-family: var(--aow-font-body);
+  color: var(--aow-body);
+  background: var(--aow-bg);
+}
+
+.aow-eyebrow {
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aow-muted);
+}
+
+.aow-panel {
+  background: var(--aow-panel);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  box-shadow: var(--aow-panel-shadow);
+}
+
+.aow-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  font-family: var(--aow-font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--aow-secondary);
+  border-bottom: 1px solid var(--aow-divider);
+}
+
+.aow-panel-header::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--aow-ember-deep);
+  transform: rotate(45deg);
+}
+
+.aow-panel-header .aow-open {
+  margin-left: auto;
+  color: var(--aow-ember);
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.aow-diamond {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+}
+
+.aow-keycap {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid var(--aow-control-border);
+  border-radius: 3px;
+  padding: 3px 5px;
+  color: var(--aow-faint);
+}
+
+.aow-bar-track {
+  position: relative;
+  height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--aow-inset);
+}
+
+.aow-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.aow-bar-fill.hp {
+  background: linear-gradient(90deg, var(--aow-hp-deep), var(--aow-hp));
+}
+
+.aow-bar-fill.mana {
+  background: linear-gradient(90deg, var(--aow-mana-deep), var(--aow-mana));
+}
+
+.aow-bar-fill.gold {
+  background: linear-gradient(90deg, var(--aow-gold-deep), var(--aow-gold));
+}
+
+.aow-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  color: var(--aow-muted);
+  margin-bottom: 3px;
+}

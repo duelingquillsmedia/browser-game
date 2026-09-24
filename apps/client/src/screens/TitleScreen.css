@@ -1,0 +1,116 @@
+.aow-title {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 60% at 50% 40%, #1d1420 0%, var(--aow-bg) 70%);
+}
+
+.aow-title-rings {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 50% 45%, transparent 0, transparent 220px, rgba(224, 138, 114, 0.08) 221px, rgba(224, 138, 114, 0.08) 222px, transparent 223px),
+    radial-gradient(circle at 50% 45%, transparent 0, transparent 340px, rgba(224, 138, 114, 0.05) 341px, rgba(224, 138, 114, 0.05) 342px, transparent 343px);
+  pointer-events: none;
+}
+
+.aow-title-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 480px;
+}
+
+.aow-title-divider {
+  font-family: var(--aow-font-runic);
+  color: var(--aow-ember-deep);
+  letter-spacing: 0.5em;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.aow-title-wordmark {
+  font-family: var(--aow-font-display);
+  font-weight: 800;
+  font-size: clamp(40px, 7vw, 72px);
+  letter-spacing: 0.06em;
+  color: var(--aow-ink);
+  text-shadow: 0 0 30px rgba(224, 138, 114, 0.5);
+  margin: 0;
+}
+
+.aow-title-tagline {
+  font-family: var(--aow-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--aow-muted);
+  margin: 8px 0 48px;
+}
+
+.aow-title-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aow-title-item {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: var(--aow-font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--aow-secondary);
+  cursor: pointer;
+}
+
+.aow-title-item:hover {
+  color: var(--aow-ember-hover);
+}
+
+.aow-title-item.primary {
+  border-color: var(--aow-ember-deep);
+  background: rgba(184, 92, 74, 0.1);
+  color: var(--aow-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aow-title-item-sub {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--aow-muted);
+  text-transform: uppercase;
+}
+
+.aow-toast {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--aow-panel);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-family: var(--aow-font-body);
+  font-size: 13px;
+  color: var(--aow-secondary);
+  z-index: 2;
+}
+
+.aow-title-footer {
+  position: absolute;
+  bottom: 16px;
+  left: 20px;
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  color: var(--aow-faint);
+  letter-spacing: 0.08em;
+}
