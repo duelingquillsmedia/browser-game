@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=Cinzel:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+Runic&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#050407;color:#ece6df;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}a{color:#e08a72;text-decoration:none}a:hover{color:#f2b3a1}button,input{font:inherit;color:inherit}input::placeholder{color:#5a5158}</style>
+</helmet>
+<div style="position:fixed;inset:0;background:#050407;overflow:hidden">
+<div data-screen-label="Character Creation" style="position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale({{ scale }});display:grid;grid-template-rows:64px minmax(0,1fr) 76px;background:radial-gradient(ellipse 70% 60% at 70% 0%, #1d1420 0%, #0b090e 65%);overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:18px;padding:0 28px;border-bottom:1px solid rgba(232,200,170,.1)">
+    <a href="./Aetherwyn Title.dc.html" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a39a93">‹ TITLE</a>
+    <div style="width:1px;height:22px;background:rgba(232,200,170,.12)"></div>
+    <div style="width:13px;height:13px;border:1.5px solid #e08a72;transform:rotate(45deg);box-shadow:0 0 10px rgba(224,138,114,.5)"></div>
+    <div style="font:700 16px 'Cinzel',serif;letter-spacing:.24em;color:#f3ece4;text-shadow:0 0 14px rgba(224,138,114,.45)">AETHERWYN</div>
+    <div style="flex:1"></div>
+    <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#8a817b">NEW GAME · CREATE YOUR CHARACTER</div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:240px minmax(0,1fr) 440px;min-height:0">
+
+    <nav style="display:flex;flex-direction:column;gap:4px;padding:28px 18px;border-right:1px solid rgba(232,200,170,.08)">
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="5">
+        <button onClick="{{ st.go }}" style="display:flex;align-items:center;gap:14px;padding:12px;border:none;border-left:2px solid {{ st.bar }};border-radius:0 3px 3px 0;background:{{ st.bg }};cursor:{{ st.cursor }};text-align:left;opacity:{{ st.opacity }}">
+          <div style="position:relative;width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;inset:5px;transform:rotate(45deg);border:1px solid {{ st.ring }};background:{{ st.fill }};box-shadow:{{ st.glow }}"></div>
+            <span style="position:relative;font:600 10px 'Cinzel',serif;color:{{ st.numColor }}">{{ st.n }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+            <span style="font:600 12px 'Cinzel',serif;letter-spacing:.14em;color:{{ st.color }}">{{ st.label }}</span>
+            <span style="font:400 13px 'Alegreya Sans',sans-serif;color:#8a817b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.value }}</span>
+          </div>
+        </button>
+      </sc-for>
+    </nav>
+
+    <section style="display:flex;flex-direction:column;gap:22px;padding:30px 36px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8a817b">STEP {{ stepNum }} OF 5</div>
+        <div style="font:700 28px/1.1 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4;text-shadow:0 0 18px rgba(224,138,114,.3)">{{ stepTitle }}</div>
+        <div style="font:400 15px 'Alegreya Sans',sans-serif;color:#a39a93;max-width:640px;text-wrap:pretty">{{ stepSub }}</div>
+      </div>
+
+      <sc-if value="{{ isRace }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+          <sc-for list="{{ races }}" as="r" hint-placeholder-count="3">
+            <button onClick="{{ r.pick }}" style="display:flex;flex-direction:column;gap:14px;padding:20px 18px;border:1px solid {{ r.border }};border-radius:4px;background:{{ r.bg }};box-shadow:{{ r.glow }};cursor:pointer;text-align:left;transition:border-color .15s, box-shadow .15s" style-hover="border-color:rgba(224,138,114,.45)">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="width:52px;height:52px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid {{ r.border }};border-radius:3px;background:#120f16;font:400 28px 'Noto Sans Runic',sans-serif;color:#e08a72;text-shadow:0 0 12px rgba(224,138,114,.7)">{{ r.g }}</div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <div style="font:700 20px 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4">{{ r.name }}</div>
+                  <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a39a93">{{ r.tag }}</div>
+                </div>
+              </div>
+              <div style="font:400 14px/1.4 'Alegreya Sans',sans-serif;color:#cfc6bd;text-wrap:pretty;min-height:78px">{{ r.desc }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px">
+                <sc-for list="{{ r.bonus }}" as="b" hint-placeholder-count="3">
+                  <span style="flex:none;white-space:nowrap;padding:3px 7px;border:1px solid {{ b.border }};border-radius:3px;font:500 11px 'JetBrains Mono',monospace;color:{{ b.color }}">{{ b.text }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:3px;background:#100d13;border:1px solid rgba(232,200,170,.06)">
+                <div style="font:600 11px 'Cinzel',serif;letter-spacing:.12em;color:#e08a72">{{ r.trait }}</div>
+                <div style="font:400 13px/1.35 'Alegreya Sans',sans-serif;color:#a39a93">{{ r.traitDesc }}</div>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isClass }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;min-height:0">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <sc-for list="{{ classes }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.pick }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid {{ c.border }};border-radius:4px;background:{{ c.bg }};box-shadow:{{ c.glow }};cursor:pointer;text-align:left" style-hover="border-color:rgba(224,138,114,.45)">
+                <div style="width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid {{ c.color }};border-radius:3px;background:#120f16;font:400 22px 'Noto Sans Runic',sans-serif;color:{{ c.color }};text-shadow:0 0 10px {{ c.color }}">{{ c.g }}</div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="font:700 15px 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4">{{ c.name }}</div>
+                  <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#a39a93">{{ c.role }}</div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ hasClass }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px;padding:20px 22px;border:1px solid rgba(232,200,170,.11);border-radius:4px;background:#141118;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)">
+              <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+                <div style="font:700 24px 'Cinzel',serif;letter-spacing:.06em;color:{{ cls.color }};text-shadow:0 0 14px {{ cls.color }}">{{ cls.name }}</div>
+                <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#a39a93">{{ cls.role }}</div>
+              </div>
+              <div style="font:400 15px/1.45 'Alegreya Sans',sans-serif;color:#cfc6bd;text-wrap:pretty">{{ cls.desc }}</div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+                <div style="display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:3px;background:#100d13"><span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">PRIMARY</span><span style="font:600 14px 'Cinzel',serif;color:#f3ece4">{{ cls.primary }}</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:3px;background:#100d13"><span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">RESOURCE</span><span style="font:600 14px 'Cinzel',serif;color:#f3ece4">{{ cls.resource }}</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:3px;background:#100d13"><span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">ARMOR</span><span style="font:600 14px 'Cinzel',serif;color:#f3ece4">{{ cls.armor }}</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a"></div><div style="font:600 11px 'Cinzel',serif;letter-spacing:.16em;color:#d8cfc6">STARTING SKILLS</div></div>
+                <sc-for list="{{ cls.skills }}" as="k" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:3px;background:#100d13;border:1px solid rgba(232,200,170,.06)">
+                    <div style="width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid rgba(232,200,170,.16);border-radius:3px;background:#120f16;font:400 20px 'Noto Sans Runic',sans-serif;color:{{ cls.color }};text-shadow:0 0 8px {{ cls.color }}">{{ k.g }}</div>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                      <div style="font:700 14px 'Alegreya Sans',sans-serif;color:#ece6df">{{ k.name }}</div>
+                      <div style="font:400 13px 'Alegreya Sans',sans-serif;color:#a39a93">{{ k.desc }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noClass }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;justify-content:center;border:1px dashed rgba(232,200,170,.14);border-radius:4px;font:italic 400 15px 'Alegreya Sans',sans-serif;color:#6b625c">Select a class to see its path.</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAttr }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:16px">
+          <div style="display:flex;flex-direction:column;border:1px solid rgba(232,200,170,.11);border-radius:4px;background:#141118">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 50px 60px 60px 160px;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(232,200,170,.08);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">
+              <span>ATTRIBUTE</span><span style="text-align:right">BASE</span><span style="text-align:right">{{ raceShort }}</span><span style="text-align:right">{{ classShort }}</span><span style="text-align:right">TOTAL</span>
+            </div>
+            <sc-for list="{{ attrs }}" as="a" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 50px 60px 60px 160px;gap:10px;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(232,200,170,.05)">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font:600 14px 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4">{{ a.name }}</span>
+                  <span style="font:400 12px 'Alegreya Sans',sans-serif;color:#8a817b">{{ a.hint }}</span>
+                </div>
+                <span style="text-align:right;font:500 13px 'JetBrains Mono',monospace;color:#a39a93">{{ a.base }}</span>
+                <span style="text-align:right;font:500 13px 'JetBrains Mono',monospace;color:{{ a.rc }}">{{ a.race }}</span>
+                <span style="text-align:right;font:500 13px 'JetBrains Mono',monospace;color:{{ a.cc }}">{{ a.cls }}</span>
+                <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end">
+                  <div style="width:100px;height:5px;border-radius:2px;background:#0e0c11;overflow:hidden"><div style="height:100%;width:{{ a.pct }};background:linear-gradient(90deg,#8a6f35,#d9b865);box-shadow:0 0 6px rgba(217,184,101,.5)"></div></div>
+                  <span style="width:28px;text-align:right;font:600 17px 'Cinzel',serif;color:#f3ece4">{{ a.total }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ derived }}" as="d" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid rgba(232,200,170,.11);border-radius:4px;background:#141118">
+                <span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">{{ d.label }}</span>
+                <span style="font:700 22px 'Cinzel',serif;color:{{ d.color }}">{{ d.value }}</span>
+              </div>
+            </sc-for>
+            <div style="font:italic 400 13px/1.4 'Alegreya Sans',sans-serif;color:#8a817b;padding:4px 2px">Attributes come from your race and class. You earn points to spend as you level.</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isLook }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+          <sc-for list="{{ looks }}" as="l" hint-placeholder-count="6">
+            <button onClick="{{ l.pick }}" style="display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid {{ l.border }};border-radius:4px;background:{{ l.bg }};box-shadow:{{ l.glow }};cursor:pointer;text-align:left" style-hover="border-color:rgba(224,138,114,.45)">
+              <div style="display:flex;gap:6px">
+                <div style="flex:2;height:44px;border-radius:3px;background:{{ l.skin }}"></div>
+                <div style="flex:1;height:44px;border-radius:3px;background:{{ l.hair }}"></div>
+                <div style="flex:1;height:44px;border-radius:3px;background:#120f16;display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;transform:rotate(45deg);background:{{ l.eyes }};box-shadow:0 0 10px {{ l.eyes }}"></div></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+                <span style="font:700 15px 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4">{{ l.name }}</span>
+                <span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">SKIN · HAIR · EYES</span>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+        <div style="font:400 14px 'Alegreya Sans',sans-serif;color:#8a817b">Drop your own portrait into the frame on the right. The preset sets your in-game colouring.</div>
+      </sc-if>
+
+      <sc-if value="{{ isName }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:620px">
+          <div style="display:flex;gap:10px">
+            <input value="{{ name }}" onChange="{{ onName }}" maxLength="18" placeholder="Enter a name" style="flex:1;min-width:0;height:58px;padding:0 18px;border:1px solid rgba(224,138,114,.45);border-radius:4px;background:#100d13;outline:none;font:700 24px 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4;box-shadow:0 0 18px rgba(184,92,74,.15)">
+            <button onClick="{{ randomName }}" style="display:flex;align-items:center;gap:10px;height:58px;padding:0 18px;border:1px solid rgba(232,200,170,.18);border-radius:4px;background:#141118;cursor:pointer" style-hover="border-color:rgba(224,138,114,.55)">
+              <span style="font:400 20px 'Noto Sans Runic',sans-serif;color:#e08a72">ᚷ</span>
+              <span style="font:600 12px 'Cinzel',serif;letter-spacing:.14em;color:#d8cfc6">RANDOM</span>
+            </button>
+          </div>
+          <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ nameHintColor }}">{{ nameHint }}</div>
+          <div style="display:flex;flex-direction:column;border:1px solid rgba(232,200,170,.11);border-radius:4px;background:#141118">
+            <sc-for list="{{ summary }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:12px 16px;border-bottom:1px solid rgba(232,200,170,.05)">
+                <span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">{{ s.k }}</span>
+                <span style="font:600 14px 'Cinzel',serif;letter-spacing:.04em;color:#ece6df">{{ s.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+
+    <aside style="display:flex;flex-direction:column;gap:16px;padding:28px 28px 20px;border-left:1px solid rgba(232,200,170,.08);background:linear-gradient(180deg, rgba(20,17,24,.6), rgba(11,9,14,.2));min-height:0">
+      <div style="position:relative;flex:1;min-height:0;border-radius:4px;border:1px solid {{ frameBorder }};box-shadow:{{ frameGlow }};overflow:hidden">
+        <image-slot id="cc-portrait" placeholder="Drop a portrait" style="display:block;width:100%;height:100%"></image-slot>
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:40px 18px 16px;background:linear-gradient(180deg,transparent,rgba(11,9,14,.92));pointer-events:none;display:flex;flex-direction:column;gap:6px">
+          <div style="font:700 26px/1.05 'Cinzel',serif;letter-spacing:.05em;color:{{ previewNameColor }};text-shadow:0 0 16px rgba(224,138,114,.35)">{{ previewName }}</div>
+          <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#cfc6bd">{{ previewLine }}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+        <sc-for list="{{ miniStats }}" as="m" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:3px;background:#100d13;border:1px solid rgba(232,200,170,.06)">
+            <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">{{ m.label }}</span>
+            <span style="font:600 16px 'Cinzel',serif;color:{{ m.color }}">{{ m.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="display:flex;align-items:center;gap:16px;padding:0 28px;border-top:1px solid rgba(232,200,170,.1);background:#100d13">
+    <button onClick="{{ back }}" style="height:44px;min-width:130px;padding:0 18px;border:1px solid rgba(232,200,170,.18);border-radius:3px;background:#141118;cursor:pointer;font:600 12px 'Cinzel',serif;letter-spacing:.16em;color:#d8cfc6" style-hover="border-color:rgba(224,138,114,.55)">{{ backLabel }}</button>
+    <div style="flex:1;display:flex;justify-content:center;gap:12px">
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="5">
+        <div style="width:9px;height:9px;transform:rotate(45deg);border:1px solid {{ st.ring }};background:{{ st.fill }}"></div>
+      </sc-for>
+    </div>
+    <button onClick="{{ next }}" style="height:48px;min-width:240px;padding:0 24px;white-space:nowrap;border:1px solid {{ nextBorder }};border-radius:3px;background:{{ nextBg }};box-shadow:{{ nextGlow }};cursor:{{ nextCursor }};display:flex;align-items:center;justify-content:center;gap:10px">
+      <span style="font:700 13px 'Cinzel',serif;letter-spacing:.18em;color:{{ nextColor }}">{{ nextLabel }}</span>
+      <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(243,236,228,.6)">ENTER</span>
+    </button>
+  </footer>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RACES=[
+{id:'elf',name:'Elf',g:'ᛖ',tag:'LONG-LIVED · ATTUNED',desc:'Keepers of the old groves of Eridan. Quick of hand and deep of spirit, though slighter in frame than their neighbours.',b:{DEX:2,WIS:2,INT:1,VIT:-1},trait:'Silverleaf Step',traitDesc:'Once per combat, your first skill costs 1 less AP.'},
+{id:'human',name:'Human',g:'ᛗ',tag:'ADAPTABLE · WIDESPREAD',desc:'The most numerous folk of the realm, found in every port and hill-town from Ashvale to Praldosta.',b:{STR:1,DEX:1,INT:1,WIS:1,VIT:1,SPI:1},trait:'Many Roads',traitDesc:'Earn 10% more experience from all sources.'},
+{id:'dwarf',name:'Dwarf',g:'ᛟ',tag:'STOUT · STONE-BORN',desc:'Delvers and smiths of the grey peaks. Slow to move and slower to fall.',b:{VIT:3,STR:2,DEX:-1},trait:'Stoneblood',traitDesc:'Ignore the first Burning or Poison applied to you each combat.'}];
+const CLASSES=[
+{id:'cleric',name:'Cleric',g:'ᛋ',color:'#d9b865',role:'HEALER · RADIANT CASTER',primary:'Wisdom',resource:'Mana + Faith',armor:'Cloth / Mail',hp:30,b:{WIS:4,SPI:3,VIT:1},desc:'A vessel of the dawn. Clerics mend wounds, shield themselves in light, and build Faith to unleash radiant judgment.',skills:[{g:'ᛋ',name:'Smite',desc:'Radiant damage. Generates 1 Faith.'},{g:'ᛚ',name:'Mend',desc:'Heal yourself for a large amount.'},{g:'ᛉ',name:'Aegis Ward',desc:'Absorb damage until your next turn.'}]},
+{id:'warrior',name:'Warrior',g:'ᛏ',color:'#d0604a',role:'FRONT-LINE · MELEE',primary:'Strength',resource:'Rage',armor:'Plate',hp:60,b:{STR:4,VIT:3,DEX:1},desc:'Steel and stubbornness. Warriors build Rage by dealing and taking blows, then spend it on crushing strikes.',skills:[{g:'ᛏ',name:'Cleave',desc:'Strike the target and one adjacent enemy.'},{g:'ᛉ',name:'Shield Wall',desc:'Halve damage taken until your next turn.'},{g:'ᚺ',name:'Battle Cry',desc:'+15% damage for 2 turns. Builds Rage.'}]},
+{id:'rogue',name:'Rogue',g:'ᚾ',color:'#b287e6',role:'STRIKER · MELEE',primary:'Dexterity',resource:'Energy + Combo',armor:'Leather',hp:20,b:{DEX:5,INT:2,STR:1},desc:'Quick blades from the shadows. Rogues stack combo points and cash them in for burst damage.',skills:[{g:'ᚾ',name:'Backstab',desc:'Heavy damage. Doubled against rooted foes.'},{g:'ᛇ',name:'Smoke Veil',desc:'+40% evasion for 2 turns.'},{g:'ᛃ',name:'Poisoned Blade',desc:'Poison deals 20 damage for 3 turns.'}]},
+{id:'mage',name:'Mage',g:'ᚨ',color:'#5fc4d6',role:'CASTER · RANGED',primary:'Intellect',resource:'Mana',armor:'Cloth',hp:0,b:{INT:5,SPI:3},desc:'Scholars of the arcane. Fragile, but able to strike whole ranks with fire and frost.',skills:[{g:'ᚲ',name:'Firebolt',desc:'Fire damage. May apply Burning.'},{g:'ᛁ',name:'Frost Nova',desc:'Damage and slow the whole front rank.'},{g:'ᚨ',name:'Arcane Shield',desc:'Absorb 150 damage.'}]},
+{id:'druid',name:'Druid',g:'ᛜ',color:'#86c46f',role:'HYBRID · NATURE',primary:'Wisdom',resource:'Mana',armor:'Leather',hp:30,b:{WIS:3,SPI:2,VIT:2,DEX:1},desc:'Wardens of root and bloom. Druids bind enemies in place and heal over time.',skills:[{g:'ᚱ',name:'Rootbind',desc:'The target loses its next 2 turns.'},{g:'ᛜ',name:'Verdant Bloom',desc:'Heal over 3 turns.'},{g:'ᚦ',name:'Thornlash',desc:'Nature damage to the target and its neighbours.'}]}];
+const ATTRS=[['STR','Strength','Melee power and carry weight'],['DEX','Dexterity','Evasion and critical strikes'],['INT','Intellect','Spell power and mana pool'],['WIS','Wisdom','Healing and radiant power'],['VIT','Vitality','Health'],['SPI','Spirit','Mana and mana regeneration']];
+const LOOKS={
+elf:[['Silverwood','#e9d8c6','#d9d4cc','#86c46f'],['Duskbark','#8a6a58','#1e1a1c','#d9b865'],['Moonpale','#f1e6dc','#f3ece4','#8fc6e6'],['Emberleaf','#d8b49a','#b85c4a','#86c46f'],['Thornveil','#b8977c','#3a2d2a','#b287e6'],['Frostglade','#e6dccf','#9fb8c6','#5fc4d6']],
+human:[['Highland','#e2c1a4','#6b4a32','#6aa7e6'],['Coastborn','#c79a78','#2a211c','#86c46f'],['Sunreach','#a8704f','#141012','#d9b865'],['Ashvale','#d9b89c','#8a3a22','#a39a93'],['Marchwarden','#b88a68','#4a3a2e','#6aa7e6'],['Praldosta','#8a5a3e','#1a1416','#d9b865']],
+dwarf:[['Ironhearth','#d6a888','#8a3a22','#6aa7e6'],['Deepstone','#b88a6c','#2a2320','#d9b865'],['Greybeard','#e0bfa4','#b8b2aa','#8fc6e6'],['Coppervein','#c89878','#c8703a','#86c46f'],['Ashforge','#a87a5c','#1a1618','#e08a72'],['Frostpeak','#e6ccb4','#e6dcd0','#5fc4d6']]};
+const NAMES={elf:["Kel'hos",'Aelira','Thaelis','Sylvaren','Iriel','Faelan','Naeris','Loriath'],human:['Aldric','Maren','Corwin','Isolde','Tobias','Wren','Edda','Garrick'],dwarf:['Thrain','Dagna','Borin','Helga','Kazrik','Runa','Gorrim','Brenna']};
+const STEPS=[['RACE','Choose your race','Your people shape your body, your gifts, and how the world first sees you.'],['CLASS','Choose your class','Your class decides how you fight and which skills you begin with.'],['ATTRIBUTES','Review your attributes','Your starting attributes come from your race and class.'],['APPEARANCE','Choose your appearance','Pick a colouring preset for your character.'],['NAME','Name your character','This is the name the realm will remember.']];
+const SEL='rgba(184,92,74,.12)',CARD='#141118',BORD='rgba(232,200,170,.11)';
+const sgn=v=>v>0?'+'+v:v<0?String(v):'—';
+
+class Component extends DCLogic {
+  state={step:0,visited:0,race:null,cls:null,look:0,name:''};
+  componentDidMount(){
+    this.fit=()=>this.setState({scale:Math.min(window.innerWidth/1600,window.innerHeight/900)});
+    window.addEventListener('resize',this.fit);this.fit();
+    this.onKey=e=>{if(e.key==='Enter'){e.preventDefault();this.next();}else if(e.key==='Escape'&&e.target.tagName!=='INPUT')this.back();};
+    window.addEventListener('keydown',this.onKey);
+  }
+  componentWillUnmount(){window.removeEventListener('resize',this.fit);window.removeEventListener('keydown',this.onKey);}
+  valid(i){const s=this.state;return i===0?!!s.race:i===1?!!s.cls:i===4?s.name.trim().length>=2:true;}
+  go(i){if(i<=this.state.visited)this.setState({step:i});}
+  back(){if(this.state.step===0){location.href='./Aetherwyn Title.dc.html';return;}this.setState(s=>({step:s.step-1}));}
+  next(){
+    const s=this.state;if(!this.valid(s.step))return;
+    if(s.step===4){
+      try{localStorage.setItem('aetherwyn-newchar',JSON.stringify({name:s.name.trim(),race:s.race,cls:s.cls,look:LOOKS[s.race][s.look][0]}));}catch(e){}
+      location.href='./Aetherwyn Prototype.dc.html?page=home';return;
+    }
+    this.setState(t=>({step:t.step+1,visited:Math.max(t.visited,t.step+1)}));
+  }
+  totals(){const s=this.state,r=RACES.find(x=>x.id===s.race),c=CLASSES.find(x=>x.id===s.cls);
+    return ATTRS.map(([k])=>({k,base:10,r:(r&&r.b[k])||0,c:(c&&c.b[k])||0})).map(a=>({...a,t:a.base+a.r+a.c}));}
+  renderVals(){
+    const s=this.state,r=RACES.find(x=>x.id===s.race),c=CLASSES.find(x=>x.id===s.cls),tot=this.totals(),T={};tot.forEach(a=>T[a.k]=a.t);
+    const hp=100+T.VIT*10+(c?c.hp:0),mp=c&&c.id!=='warrior'?80+T.SPI*8+T.INT*4:0,resLabel=c?(c.id==='warrior'?'RAGE':c.id==='rogue'?'ENERGY':'MANA'):'MANA';
+    const values=[r?r.name:'—',c?c.name:'—',r&&c?tot.reduce((a,b)=>a+b.t,0)+' total points':'—',r&&s.visited>=3?LOOKS[s.race][s.look][0]:'—',s.name.trim()||'—'];
+    const steps=STEPS.map((st,i)=>{const cur=i===s.step,done=i<s.step||(i<=s.visited&&this.valid(i)&&i!==s.step),reach=i<=s.visited;
+      return {n:i+1,label:st[0],value:values[i],go:()=>this.go(i),bar:cur?'#e08a72':'transparent',bg:cur?'rgba(184,92,74,.14)':'transparent',cursor:reach?'pointer':'default',opacity:reach?1:.45,
+        ring:cur||done?'#e08a72':'#3a333f',fill:done?'#b85c4a':cur?'#1a1216':'transparent',glow:cur?'0 0 10px rgba(224,138,114,.5)':'none',numColor:cur||done?'#f3ece4':'#8a817b',color:cur?'#f3ece4':'#cfc6bd'};});
+    const card=(on,color)=>({border:on?(color||'#e08a72'):BORD,bg:on?SEL:CARD,glow:on?'0 0 0 1px '+(color||'#e08a72')+', 0 0 24px rgba(184,92,74,.2)':'inset 0 1px 0 rgba(255,255,255,.03)'});
+    const races=RACES.map(x=>({...x,...card(s.race===x.id),pick:()=>this.setState({race:x.id,look:0}),
+      bonus:Object.entries(x.b).map(([k,v])=>({text:k+' '+sgn(v),color:v>0?'#86c46f':'#d0604a',border:v>0?'rgba(134,196,111,.35)':'rgba(208,96,74,.35)'}))}));
+    const classes=CLASSES.map(x=>({...x,...card(s.cls===x.id,x.color),pick:()=>this.setState({cls:x.id})}));
+    const attrs=tot.map((a,i)=>({name:ATTRS[i][1],hint:ATTRS[i][2],base:a.base,race:sgn(a.r),cls:sgn(a.c),total:a.t,
+      rc:a.r>0?'#86c46f':a.r<0?'#d0604a':'#5a5158',cc:a.c>0?'#86c46f':'#5a5158',pct:Math.min(100,a.t/16*100)+'%'}));
+    const looks=r?LOOKS[r.id].map((l,i)=>({name:l[0],skin:l[1],hair:l[2],eyes:l[3],...card(s.look===i),pick:()=>this.setState({look:i})})):[];
+    const nameOk=s.name.trim().length>=2;
+    const can=this.valid(s.step);
+    return {
+      scale:s.scale||1,steps,stepNum:s.step+1,stepTitle:STEPS[s.step][1],stepSub:STEPS[s.step][2],
+      isRace:s.step===0,isClass:s.step===1,isAttr:s.step===2,isLook:s.step===3,isName:s.step===4,
+      races,classes,hasClass:!!c,noClass:!c,cls:c||{skills:[]},
+      attrs,raceShort:(r?r.name:'RACE').toUpperCase(),classShort:(c?c.name:'CLASS').toUpperCase(),
+      derived:[{label:'HEALTH',value:hp,color:'#d0604a'},{label:resLabel,value:mp||100,color:c&&c.id==='warrior'?'#d0604a':c&&c.id==='rogue'?'#d9b865':'#5fc4d6'},{label:'PRIMARY',value:c?c.primary:'—',color:'#f3ece4'},{label:'RACIAL TRAIT',value:r?r.trait:'—',color:'#e08a72'}],
+      looks,
+      name:s.name,onName:e=>this.setState({name:e.target.value.replace(/[^A-Za-z' -]/g,'')}),
+      randomName:()=>{const pool=NAMES[s.race||'human'];let n;do{n=pool[Math.floor(Math.random()*pool.length)];}while(n===s.name&&pool.length>1);this.setState({name:n});},
+      nameHint:nameOk?'NAME ACCEPTED':'AT LEAST 2 LETTERS · LETTERS, SPACES, APOSTROPHES',nameHintColor:nameOk?'#86c46f':'#8a817b',
+      summary:[{k:'RACE',v:r?r.name+' · '+r.trait:'—'},{k:'CLASS',v:c?c.name+' · '+c.role:'—'},{k:'APPEARANCE',v:r?LOOKS[r.id][s.look][0]:'—'},{k:'STARTS IN',v:'Ridgeton · Day 1'}],
+      frameBorder:c?c.color:BORD,frameGlow:c?'0 0 0 1px '+c.color+'55, 0 0 30px '+c.color+'22':'none',
+      previewName:s.name.trim()||'Unnamed',previewNameColor:s.name.trim()?'#f3ece4':'#6b625c',
+      previewLine:['LV 1',r?r.name.toUpperCase():null,c?c.name.toUpperCase():null].filter(Boolean).join(' · '),
+      miniStats:[{label:'HEALTH',value:hp,color:'#d0604a'},{label:resLabel,value:mp||100,color:'#5fc4d6'},{label:c?c.primary.slice(0,3).toUpperCase():'PRIMARY',value:c?T[{Wisdom:'WIS',Strength:'STR',Dexterity:'DEX',Intellect:'INT'}[c.primary]]:'—',color:'#d9b865'}],
+      back:()=>this.back(),backLabel:s.step===0?'‹ TITLE':'‹ BACK',next:()=>this.next(),
+      nextLabel:s.step===4?'BEGIN JOURNEY':'CONTINUE',nextBorder:can?'#e08a72':'rgba(232,200,170,.14)',nextBg:can?'#b85c4a':'#141118',
+      nextGlow:can?'0 0 18px rgba(184,92,74,.35)':'none',nextCursor:can?'pointer':'not-allowed',nextColor:can?'#f3ece4':'#6b625c'
+    };
+  }
+}
+</script>
+</body>
+</html>
