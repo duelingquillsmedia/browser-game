@@ -18,31 +18,6 @@
   min-height: 200px;
 }
 
-.aow-filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.aow-filter-tab {
-  background: var(--aow-inset);
-  border: 1px solid var(--aow-control-border);
-  color: var(--aow-muted);
-  font-family: var(--aow-font-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  border-radius: 3px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.aow-filter-tab.active {
-  background: rgba(184, 92, 74, 0.18);
-  border-color: var(--aow-ember);
-  color: var(--aow-ember);
-}
-
 .aow-bag-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
@@ -94,13 +69,6 @@
   color: var(--aow-secondary);
 }
 
-.aow-item-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
 .aow-item-icon {
   width: 40px;
   height: 40px;
@@ -118,32 +86,10 @@
   height: 30px;
 }
 
-.aow-item-name {
-  font-family: var(--aow-font-display);
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--aow-ink);
-}
-
-.aow-item-type-line {
-  font-family: var(--aow-font-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--aow-muted);
-  text-transform: uppercase;
-}
-
 .aow-item-stats {
   font-size: 12px;
   color: var(--aow-frost);
   margin: 0 0 8px;
-}
-
-.aow-item-flavor {
-  font-style: italic;
-  font-size: 12px;
-  color: var(--aow-tertiary);
-  margin: 0 0 10px;
 }
 
 .aow-item-compare {

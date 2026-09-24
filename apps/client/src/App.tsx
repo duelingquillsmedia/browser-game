@@ -9,6 +9,7 @@ import { HomeScreen } from "./screens/HomeScreen";
 import { GameShell } from "./components/GameShell";
 import { CharacterScreen } from "./screens/CharacterScreen";
 import { InventoryScreen } from "./screens/InventoryScreen";
+import { SkillsScreen } from "./screens/SkillsScreen";
 import { PartyScreen } from "./screens/PartyScreen";
 import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
@@ -27,6 +28,7 @@ type Screen =
   | { kind: "home"; character: Character }
   | { kind: "character"; character: Character }
   | { kind: "inventory"; character: Character }
+  | { kind: "skills"; character: Character }
   | { kind: "party"; character: Character }
   | { kind: "encounterSelect"; character: Character }
   | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
@@ -123,7 +125,9 @@ function App() {
       if (screen.kind !== "home") return;
       if (id === "inventory") {
         setScreen({ kind: "inventory", character: screen.character });
-      } else if (id === "character" || id === "skills") {
+      } else if (id === "skills") {
+        setScreen({ kind: "skills", character: screen.character });
+      } else if (id === "character") {
         setScreen({ kind: "character", character: screen.character });
       } else if (id === "map") {
         setScreen({ kind: "encounterSelect", character: screen.character });
@@ -146,6 +150,7 @@ function App() {
           }}
           onOpenCharacterSheet={() => setScreen({ kind: "character", character: screen.character })}
           onOpenInventory={() => setScreen({ kind: "inventory", character: screen.character })}
+          onOpenSkills={() => setScreen({ kind: "skills", character: screen.character })}
           onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
           onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
         />
@@ -186,6 +191,7 @@ function App() {
       if (screen.kind !== "character") return;
       if (id === "home") setScreen({ kind: "home", character: screen.character });
       else if (id === "inventory") setScreen({ kind: "inventory", character: screen.character });
+      else if (id === "skills") setScreen({ kind: "skills", character: screen.character });
       else if (id === "map") setScreen({ kind: "encounterSelect", character: screen.character });
     }
 
@@ -209,13 +215,30 @@ function App() {
     function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
       if (screen.kind !== "inventory") return;
       if (id === "home") setScreen({ kind: "home", character: screen.character });
-      else if (id === "character" || id === "skills") setScreen({ kind: "character", character: screen.character });
+      else if (id === "character") setScreen({ kind: "character", character: screen.character });
+      else if (id === "skills") setScreen({ kind: "skills", character: screen.character });
       else if (id === "map") setScreen({ kind: "encounterSelect", character: screen.character });
     }
 
     return (
       <GameShell gameName={GAME_NAME} character={screen.character} active="inventory" onNavigate={handleNavigate}>
         <InventoryScreen character={screen.character} onUpdateCharacter={persist} />
+      </GameShell>
+    );
+  }
+
+  if (screen.kind === "skills") {
+    function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
+      if (screen.kind !== "skills") return;
+      if (id === "home") setScreen({ kind: "home", character: screen.character });
+      else if (id === "character") setScreen({ kind: "character", character: screen.character });
+      else if (id === "inventory") setScreen({ kind: "inventory", character: screen.character });
+      else if (id === "map") setScreen({ kind: "encounterSelect", character: screen.character });
+    }
+
+    return (
+      <GameShell gameName={GAME_NAME} character={screen.character} active="skills" onNavigate={handleNavigate}>
+        <SkillsScreen character={screen.character} />
       </GameShell>
     );
   }

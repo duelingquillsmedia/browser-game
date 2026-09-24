@@ -124,15 +124,14 @@ client-server milestone (combat is still resolved in the browser for now).
 - **New Character page**: replaces the old character sheet, in the same
   visual system as Home. Identity + a 6-attribute list (with a one-line hint
   of what each governs), a 14-slot equipment paper-doll matching the design's
-  layout, and Background/Traits and Actions panels below. Only 3 of the 14
+  layout, and a Background/Traits panel below. Only 3 of the 14
   slots are backed by real items today (Main Hand, Chest, Trinket) — the
   rest render as disabled placeholders rather than fake gear; equip/unequip/
   swap is fully functional on the 3 real slots via a small dropdown per
   slot. The Combat panel shows real derived stats (AC, Proficiency, DEX-based
   Initiative, Speed, equipped weapon) rather than the design's AP/tile stats,
   since combat itself hasn't been redesigned yet. Resistances/Vulnerabilities/
-  Immunities are read from the character's real data. Skills nav item/card
-  still points here (there's no separate action-bar page yet).
+  Immunities are read from the character's real data.
 - **New Inventory page**: a bag grid (20 cells) plus an item detail panel,
   in the same visual system. Filter tabs are by real item slot (All/Weapon/
   Armor/Accessory) rather than the design's Gear/Consumables/Materials/Quest
@@ -145,6 +144,21 @@ client-server milestone (combat is still resolved in the browser for now).
   economy, so those actions aren't offered. The design's 4-slot "Combat
   Belt" for battle-usable items is omitted — it depends on the AP-based
   combat system, which doesn't exist yet.
+- **New Skills page**: a spellbook list plus a detail panel, in the same
+  visual system, now the real destination for the Skills nav item/card
+  (previously a bridge to the Character page). Filter tabs group abilities
+  by their real `ActionKind` (Attack, Heal, Buff, Utility) instead of the
+  design's Radiant/Nature/Protection/Racial "schools," which have no
+  mechanical equivalent. Each skill's cost line reads from its actual
+  resource cost and the caster's class resource name (e.g. "4 Arcane"),
+  falling back to "At-will" for free actions, with cooldown/uses-per-fight
+  shown when set — replacing the design's AP/MP/Faith costs and
+  locked-by-level slots, since there's no AP system, Faith resource, or
+  leveling-gated ability unlocks yet. The detail panel's stat grid (ability,
+  target, dice, damage type, effect value) is built entirely from real
+  `CombatActionDef` fields. The design's 6-slot manual action-bar assignment
+  and talent-modifier sub-list are both omitted: real combat already shows
+  every known action with no hotbar limit, and there's no talent system yet.
 
 ## Tech stack
 

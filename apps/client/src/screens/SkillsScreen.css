@@ -1,0 +1,130 @@
+.aow-skills {
+  color: var(--aow-body);
+}
+
+.aow-skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.aow-skills-list-panel {
+  flex: 1.6 1 420px;
+}
+
+.aow-skill-detail-panel {
+  flex: 1 1 300px;
+  min-height: 200px;
+}
+
+.aow-skill-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aow-skill-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-divider);
+  border-radius: 3px;
+  padding: 8px 10px;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.aow-skill-row.active {
+  border-color: var(--aow-ember);
+  box-shadow: 0 0 0 1px var(--aow-ember);
+}
+
+.aow-skill-glyph {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--aow-chip-bg);
+  border: 1px solid var(--aow-control-border);
+}
+
+.aow-skill-glyph-lg {
+  width: 40px;
+  height: 40px;
+  font-size: 13px;
+}
+
+.aow-skill-glyph-attack {
+  color: var(--aow-hp);
+  border-color: rgba(208, 96, 74, 0.4);
+}
+
+.aow-skill-glyph-heal {
+  color: var(--aow-green);
+  border-color: rgba(134, 196, 111, 0.4);
+}
+
+.aow-skill-glyph-buff {
+  color: var(--aow-frost);
+  border-color: rgba(143, 198, 230, 0.4);
+}
+
+.aow-skill-glyph-utility {
+  color: var(--aow-muted);
+}
+
+.aow-skill-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aow-skill-row-name {
+  font-family: var(--aow-font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--aow-secondary);
+}
+
+.aow-skill-row-meta {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  color: var(--aow-faint);
+}
+
+.aow-skill-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.aow-skill-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-divider);
+  border-radius: 3px;
+  padding: 6px 9px;
+  font-size: 13px;
+  color: var(--aow-secondary);
+}
+
+.aow-skill-stat-label {
+  font-family: var(--aow-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--aow-faint);
+}

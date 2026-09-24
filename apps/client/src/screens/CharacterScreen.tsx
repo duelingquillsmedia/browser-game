@@ -328,18 +328,6 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
           ))}
         </div>
       </div>
-
-      <div className="aow-panel aow-full-width">
-        <div className="aow-panel-header">ACTIONS</div>
-        <div className="aow-card-body aow-trait-grid">
-          {character.actions.map((action) => (
-            <div key={action.id} className="aow-trait-card">
-              <h3>{action.name}</h3>
-              <p>{action.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
