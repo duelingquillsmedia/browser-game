@@ -217,20 +217,6 @@
   border: 1px solid var(--aow-control-border);
 }
 
-.aow-resist-good {
-  color: var(--aow-green);
-  border-color: rgba(134, 196, 111, 0.4);
-}
-
-.aow-resist-bad {
-  color: var(--aow-hp);
-  border-color: rgba(208, 96, 74, 0.4);
-}
-
-.aow-resist-immune {
-  color: var(--aow-violet);
-  border-color: rgba(178, 135, 230, 0.4);
-}
 
 @media (max-width: 900px) {
   .aow-equipment-columns {

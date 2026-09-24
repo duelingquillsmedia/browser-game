@@ -8,6 +8,7 @@ import { TitleScreen } from "./screens/TitleScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { GameShell } from "./components/GameShell";
 import { CharacterScreen } from "./screens/CharacterScreen";
+import { InventoryScreen } from "./screens/InventoryScreen";
 import { PartyScreen } from "./screens/PartyScreen";
 import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
@@ -25,6 +26,7 @@ type Screen =
   | { kind: "creation" }
   | { kind: "home"; character: Character }
   | { kind: "character"; character: Character }
+  | { kind: "inventory"; character: Character }
   | { kind: "party"; character: Character }
   | { kind: "encounterSelect"; character: Character }
   | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
@@ -119,7 +121,9 @@ function App() {
   if (screen.kind === "home") {
     function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
       if (screen.kind !== "home") return;
-      if (id === "character" || id === "inventory" || id === "skills") {
+      if (id === "inventory") {
+        setScreen({ kind: "inventory", character: screen.character });
+      } else if (id === "character" || id === "skills") {
         setScreen({ kind: "character", character: screen.character });
       } else if (id === "map") {
         setScreen({ kind: "encounterSelect", character: screen.character });
@@ -141,6 +145,7 @@ function App() {
             }
           }}
           onOpenCharacterSheet={() => setScreen({ kind: "character", character: screen.character })}
+          onOpenInventory={() => setScreen({ kind: "inventory", character: screen.character })}
           onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
           onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
         />
@@ -180,12 +185,37 @@ function App() {
     function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
       if (screen.kind !== "character") return;
       if (id === "home") setScreen({ kind: "home", character: screen.character });
+      else if (id === "inventory") setScreen({ kind: "inventory", character: screen.character });
       else if (id === "map") setScreen({ kind: "encounterSelect", character: screen.character });
     }
 
     return (
       <GameShell gameName={GAME_NAME} character={screen.character} active="character" onNavigate={handleNavigate}>
         <CharacterScreen character={screen.character} onUpdateCharacter={persist} />
+      </GameShell>
+    );
+  }
+
+  if (screen.kind === "inventory") {
+    async function persist(next: Character) {
+      setScreen({ kind: "inventory", character: next });
+      try {
+        await updateCharacterInRoster(next);
+      } catch (err) {
+        console.error("Failed to save equipment change:", err);
+      }
+    }
+
+    function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
+      if (screen.kind !== "inventory") return;
+      if (id === "home") setScreen({ kind: "home", character: screen.character });
+      else if (id === "character" || id === "skills") setScreen({ kind: "character", character: screen.character });
+      else if (id === "map") setScreen({ kind: "encounterSelect", character: screen.character });
+    }
+
+    return (
+      <GameShell gameName={GAME_NAME} character={screen.character} active="inventory" onNavigate={handleNavigate}>
+        <InventoryScreen character={screen.character} onUpdateCharacter={persist} />
       </GameShell>
     );
   }

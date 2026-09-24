@@ -249,6 +249,30 @@
   cursor: not-allowed;
 }
 
+.aow-button-primary {
+  background: var(--aow-ember-deep);
+  border: 1px solid var(--aow-ember-deep);
+  color: var(--aow-ink);
+  font-family: var(--aow-font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.aow-button-primary:hover:not(:disabled) {
+  background: var(--aow-ember);
+  border-color: var(--aow-ember);
+}
+
+.aow-button-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .aow-trait-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -274,4 +298,19 @@
   font-size: 12px;
   color: var(--aow-tertiary);
   line-height: 1.4;
+}
+
+.aow-resist-good {
+  color: var(--aow-green);
+  border-color: rgba(134, 196, 111, 0.4);
+}
+
+.aow-resist-bad {
+  color: var(--aow-hp);
+  border-color: rgba(208, 96, 74, 0.4);
+}
+
+.aow-resist-immune {
+  color: var(--aow-violet);
+  border-color: rgba(178, 135, 230, 0.4);
 }

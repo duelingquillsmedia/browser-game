@@ -16,6 +16,7 @@ export interface HomeScreenProps {
   onVentureOut: () => void;
   onRest: () => void;
   onOpenCharacterSheet: () => void;
+  onOpenInventory: () => void;
   onOpenParty: () => void;
   onSwitchCharacter: () => void;
 }
@@ -25,6 +26,7 @@ export function HomeScreen({
   onVentureOut,
   onRest,
   onOpenCharacterSheet,
+  onOpenInventory,
   onOpenParty,
   onSwitchCharacter,
 }: HomeScreenProps) {
@@ -139,7 +141,7 @@ export function HomeScreen({
         <div className="aow-panel aow-card aow-card-small">
           <div className="aow-panel-header">
             INVENTORY
-            <button type="button" className="aow-open" onClick={onOpenCharacterSheet}>
+            <button type="button" className="aow-open" onClick={onOpenInventory}>
               OPEN ›
             </button>
           </div>

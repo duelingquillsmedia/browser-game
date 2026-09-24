@@ -131,9 +131,20 @@ client-server milestone (combat is still resolved in the browser for now).
   slot. The Combat panel shows real derived stats (AC, Proficiency, DEX-based
   Initiative, Speed, equipped weapon) rather than the design's AP/tile stats,
   since combat itself hasn't been redesigned yet. Resistances/Vulnerabilities/
-  Immunities are read from the character's real data. Inventory and Skills
-  nav items/cards now also point here (there's no separate bag-grid or
-  action-bar page yet).
+  Immunities are read from the character's real data. Skills nav item/card
+  still points here (there's no separate action-bar page yet).
+- **New Inventory page**: a bag grid (20 cells) plus an item detail panel,
+  in the same visual system. Filter tabs are by real item slot (All/Weapon/
+  Armor/Accessory) rather than the design's Gear/Consumables/Materials/Quest
+  split, since every item in the catalog today is equippable gear — there
+  are no consumables, materials, or quest items yet. No rarity tiers or item
+  levels either (the catalog doesn't have them), so items show in plain
+  ink rather than rarity colors. The detail panel does show a real
+  "vs. equipped" comparison (an AC delta for armor/accessories, dice/type
+  for weapons) and fully-working Equip/Unequip. There's no sell/drop/gold
+  economy, so those actions aren't offered. The design's 4-slot "Combat
+  Belt" for battle-usable items is omitted — it depends on the AP-based
+  combat system, which doesn't exist yet.
 
 ## Tech stack
 
