@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import type { ActionRequest, Character, CombatState, ItemSlot } from "@eridan/engine";
-import { equipItem, submitPlayerAction, unequipItem } from "@eridan/engine";
+import type { ActionRequest, Character, CombatState } from "@eridan/engine";
+import { submitPlayerAction } from "@eridan/engine";
 import { AuthScreen } from "./screens/AuthScreen";
 import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
 import { TitleScreen } from "./screens/TitleScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { GameShell } from "./components/GameShell";
-import { CharacterSheetScreen } from "./screens/CharacterSheetScreen";
+import { CharacterScreen } from "./screens/CharacterScreen";
 import { PartyScreen } from "./screens/PartyScreen";
 import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
 import { CombatScreen } from "./screens/CombatScreen";
@@ -24,7 +24,7 @@ type Screen =
   | { kind: "characterSelect" }
   | { kind: "creation" }
   | { kind: "home"; character: Character }
-  | { kind: "characterSheet"; character: Character }
+  | { kind: "character"; character: Character }
   | { kind: "party"; character: Character }
   | { kind: "encounterSelect"; character: Character }
   | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
@@ -120,7 +120,7 @@ function App() {
     function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
       if (screen.kind !== "home") return;
       if (id === "character" || id === "inventory" || id === "skills") {
-        setScreen({ kind: "characterSheet", character: screen.character });
+        setScreen({ kind: "character", character: screen.character });
       } else if (id === "map") {
         setScreen({ kind: "encounterSelect", character: screen.character });
       }
@@ -140,7 +140,7 @@ function App() {
               console.error("Failed to save rest:", err);
             }
           }}
-          onOpenCharacterSheet={() => setScreen({ kind: "characterSheet", character: screen.character })}
+          onOpenCharacterSheet={() => setScreen({ kind: "character", character: screen.character })}
           onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
           onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
         />
@@ -167,9 +167,9 @@ function App() {
     );
   }
 
-  if (screen.kind === "characterSheet") {
+  if (screen.kind === "character") {
     async function persist(next: Character) {
-      setScreen({ kind: "characterSheet", character: next });
+      setScreen({ kind: "character", character: next });
       try {
         await updateCharacterInRoster(next);
       } catch (err) {
@@ -177,13 +177,16 @@ function App() {
       }
     }
 
+    function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
+      if (screen.kind !== "character") return;
+      if (id === "home") setScreen({ kind: "home", character: screen.character });
+      else if (id === "map") setScreen({ kind: "encounterSelect", character: screen.character });
+    }
+
     return (
-      <CharacterSheetScreen
-        character={screen.character}
-        onEquip={(itemId) => persist(equipItem(screen.character, itemId))}
-        onUnequip={(slot: ItemSlot) => persist(unequipItem(screen.character, slot))}
-        onBack={() => setScreen({ kind: "home", character: screen.character })}
-      />
+      <GameShell gameName={GAME_NAME} character={screen.character} active="character" onNavigate={handleNavigate}>
+        <CharacterScreen character={screen.character} onUpdateCharacter={persist} />
+      </GameShell>
     );
   }
 

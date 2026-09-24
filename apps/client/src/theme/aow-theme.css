@@ -159,3 +159,119 @@
   color: var(--aow-muted);
   margin-bottom: 3px;
 }
+
+.aow-h1 {
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: var(--aow-ink);
+  text-shadow: 0 0 18px rgba(224, 138, 114, 0.35);
+  margin: 4px 0 20px;
+}
+
+.aow-card-body {
+  padding: 14px 16px;
+}
+
+.aow-full-width {
+  margin-top: 14px;
+}
+
+.aow-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.aow-level-diamond {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--aow-diamond-fill);
+  border: 1px solid var(--aow-ember-deep);
+  transform: rotate(45deg);
+  margin: 4px;
+}
+
+.aow-level-diamond span {
+  transform: rotate(-45deg);
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  color: var(--aow-ember);
+}
+
+.aow-character-name {
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--aow-ink);
+}
+
+.aow-character-sub {
+  font-family: var(--aow-font-body);
+  font-size: 13px;
+  color: var(--aow-tertiary);
+}
+
+.aow-muted-text {
+  color: var(--aow-faint);
+  font-size: 13px;
+  margin: 0;
+}
+
+.aow-button-ghost {
+  background: none;
+  border: 1px solid var(--aow-control-border);
+  color: var(--aow-secondary);
+  font-family: var(--aow-font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.aow-button-ghost:hover:not(:disabled) {
+  border-color: var(--aow-ember);
+  color: var(--aow-ember);
+}
+
+.aow-button-ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.aow-trait-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.aow-trait-card {
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-divider);
+  border-radius: 3px;
+  padding: 10px 12px;
+}
+
+.aow-trait-card h3 {
+  margin: 0 0 4px;
+  font-family: var(--aow-font-display);
+  font-size: 13px;
+  color: var(--aow-ember);
+}
+
+.aow-trait-card p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--aow-tertiary);
+  line-height: 1.4;
+}

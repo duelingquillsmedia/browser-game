@@ -117,11 +117,23 @@ client-server milestone (combat is still resolved in the browser for now).
   Sans/JetBrains Mono/Noto Sans Runic, ember accent), a persistent header +
   left nav (`GameShell`), and a Home page with Character/World
   Map/Inventory/Skills/Talents cards. This replaces the old Town Hub screen.
-  World Map and Inventory/Skills cards currently bridge to the existing
-  encounter-select and character-sheet screens (not yet rebuilt in the new
-  style); Talents has no backing system yet and shows "Coming soon." The
-  World Map card's background is the real Eridan map art from the design
-  handoff.
+  World Map currently bridges to the existing encounter-select screen (not
+  yet rebuilt in the new style); Talents has no backing system yet and shows
+  "Coming soon." The World Map card's background is the real Eridan map art
+  from the design handoff.
+- **New Character page**: replaces the old character sheet, in the same
+  visual system as Home. Identity + a 6-attribute list (with a one-line hint
+  of what each governs), a 14-slot equipment paper-doll matching the design's
+  layout, and Background/Traits and Actions panels below. Only 3 of the 14
+  slots are backed by real items today (Main Hand, Chest, Trinket) — the
+  rest render as disabled placeholders rather than fake gear; equip/unequip/
+  swap is fully functional on the 3 real slots via a small dropdown per
+  slot. The Combat panel shows real derived stats (AC, Proficiency, DEX-based
+  Initiative, Speed, equipped weapon) rather than the design's AP/tile stats,
+  since combat itself hasn't been redesigned yet. Resistances/Vulnerabilities/
+  Immunities are read from the character's real data. Inventory and Skills
+  nav items/cards now also point here (there's no separate bag-grid or
+  action-bar page yet).
 
 ## Tech stack
 
