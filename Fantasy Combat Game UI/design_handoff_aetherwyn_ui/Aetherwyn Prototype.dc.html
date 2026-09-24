@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<script src="./image-slot.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=Cinzel:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+Runic&amp;display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box}html,body{margin:0;background:#0b090e;color:#ece6df;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#e08a72}a:hover{color:#f2b3a1}button{font-family:inherit}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:#0b090e}::-webkit-scrollbar-thumb{background:#2a2430;border-radius:4px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(ellipse 80% 50% at 50% -10%,#1d1420 0%,#0b090e 70%)">
+
+<header style="display:flex;align-items:center;gap:14px;padding:0 18px;height:56px;border-bottom:1px solid rgba(232,200,170,.1);background:rgba(11,9,14,.88);position:sticky;top:0;z-index:5;backdrop-filter:blur(6px)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="width:13px;height:13px;transform:rotate(45deg);border:1px solid #e08a72;box-shadow:0 0 10px rgba(224,138,114,.7),inset 0 0 6px rgba(224,138,114,.6)"></span>
+    <span style="font:700 16px/1 Cinzel,serif;letter-spacing:.24em;color:#f3ece4;text-shadow:0 0 14px rgba(224,138,114,.45)">AETHERWYN</span>
+  </div>
+  <div style="flex:1"></div>
+  <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;gap:10px;padding:5px 12px 5px 5px;border:1px solid rgba(232,200,170,.1);border-radius:4px;background:#120f16">
+      <div style="width:34px;height:34px;border:1px solid #e08a72;border-radius:3px;background:repeating-linear-gradient(135deg,#1d1922 0 4px,#241e2a 4px 8px);display:flex;align-items:center;justify-content:center;font:700 13px/1 Cinzel,serif;color:#f3ece4">K</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;gap:8px;align-items:baseline"><span style="font:600 13px/1 Cinzel,serif;color:#f3ece4">Kel'hos</span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#a39a93">LV 23 CLERIC</span></div>
+        <div style="display:flex;gap:4px">
+          <div style="width:64px;height:4px;background:#0b090e;border-radius:2px;overflow:hidden"><div style="width:88%;height:100%;background:#d0604a;box-shadow:0 0 6px #d0604a"></div></div>
+          <div style="width:64px;height:4px;background:#0b090e;border-radius:2px;overflow:hidden"><div style="width:87%;height:100%;background:#5fc4d6;box-shadow:0 0 6px #5fc4d6"></div></div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <div style="display:flex;align-items:center;gap:14px;font:500 12px/1 'JetBrains Mono',monospace;color:#ece6df">
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;transform:rotate(45deg);background:#d9b865;box-shadow:0 0 6px #d9b865"></span>12,480</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;transform:rotate(45deg);background:#5fc4d6;box-shadow:0 0 6px #5fc4d6"></span>36</span>
+    <span style="color:#a39a93">DAY {{ day }}</span>
+  </div>
+</header>
+
+<div style="flex:1;display:flex;min-height:0">
+  <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+    <nav style="width:196px;flex:none;padding:16px 10px;border-right:1px solid rgba(232,200,170,.08);display:flex;flex-direction:column;gap:2px;position:sticky;top:56px;height:calc(100vh - 56px)">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div onClick="{{ n.go }}" style="display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;border-left:2px solid {{ n.bar }};background:{{ n.bg }};border-radius:0 3px 3px 0;cursor:pointer" style-hover="background:rgba(232,200,170,.05)">
+          <span style="width:20px;text-align:center;font:400 18px/1 'Noto Sans Runic',serif;color:{{ n.gc }};text-shadow:{{ n.gt }}">{{ n.glyph }}</span>
+          <span style="flex:1;font:600 12px/1 Cinzel,serif;letter-spacing:.12em;text-transform:uppercase;color:{{ n.color }}">{{ n.label }}</span>
+          <span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;border:1px solid rgba(232,200,170,.12);border-radius:3px;padding:3px 5px">{{ n.key }}</span>
+        </div>
+      </sc-for>
+    </nav>
+  </sc-if>
+
+  <main style="flex:1;min-width:0;padding:{{ pad }}">
+  <div style="max-width:1320px;margin:0 auto">
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a39a93;text-transform:uppercase">{{ eyebrow }}</div>
+      <h1 style="margin:7px 0 0;font:700 26px/1.1 Cinzel,serif;letter-spacing:.06em;color:#f3ece4;text-shadow:0 0 18px rgba(224,138,114,.35)">{{ title }}</h1>
+    </div>
+    <sc-if value="{{ isTalents }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="text-align:right"><div style="font:500 10px/1 'JetBrains Mono',monospace;color:#a39a93;letter-spacing:.1em">POINTS AVAILABLE</div><div style="margin-top:5px;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">{{ talSpentTxt }}</div></div>
+        <div style="width:42px;height:42px;transform:rotate(45deg);border:1px solid #e08a72;background:#1a1216;box-shadow:0 0 16px rgba(224,138,114,.45);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);font:700 18px/1 Cinzel,serif;color:#f3ece4">{{ talAvail }}</span></div>
+        <button onClick="{{ resetTal }}" style="margin-left:6px;padding:8px 12px;background:transparent;border:1px solid rgba(232,200,170,.18);border-radius:3px;color:#d8cfc6;font:600 11px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer" style-hover="border-color:#e08a72;color:#f3ece4">RESET</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isInventory }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:18px;font:500 12px/1.3 'JetBrains Mono',monospace;color:#a39a93">
+        <span>BAG <span style="color:#f3ece4">45 / 60</span></span>
+        <span>GOLD <span style="color:#d9b865">12,480</span></span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isMap }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:18px;font:500 12px/1.3 'JetBrains Mono',monospace;color:#a39a93">
+        <span>PARTY AT <span style="color:#f3ece4">{{ partyWhere }}</span></span>
+        <span>DAY <span style="color:#f3ece4">{{ day }}</span></span>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- HOME -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:stretch">
+
+    <div onClick="{{ goCharacter }}" style="flex:1 1 360px;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,box-shadow .15s" style-hover="border-color:rgba(224,138,114,.55);box-shadow:0 0 0 1px rgba(224,138,114,.2),0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(184,92,74,.18)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>CHARACTER<span style="flex:1"></span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;border:1px solid rgba(232,200,170,.12);border-radius:3px;padding:3px 5px">C</span><span style="font:600 10px/1 Cinzel,serif;letter-spacing:.14em;color:#e08a72">OPEN ›</span></div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;flex:1">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="width:40px;height:40px;margin:4px;flex:none;display:flex;align-items:center;justify-content:center;transform:rotate(45deg);border:1px solid #e08a72;box-shadow:0 0 14px rgba(224,138,114,.5);background:#1a1216"><span style="transform:rotate(-45deg);font:700 15px/1 Cinzel,serif;color:#f3ece4">23</span></div>
+          <div><div style="font:700 22px/1 Cinzel,serif;letter-spacing:.04em;color:#f3ece4;text-shadow:0 0 18px rgba(224,138,114,.4)">Kel'hos</div><div style="margin-top:6px;font:500 14px/1.2 'Alegreya Sans',sans-serif;color:#a39a93">Elf · Cleric · Verdant Grace</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>HEALTH</span><span style="color:#ece6df">412 / 468</span></div><div style="height:8px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:88%;height:100%;background:linear-gradient(90deg,#7a2f22,#d0604a);box-shadow:0 0 10px #d0604a"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>MANA</span><span style="color:#ece6df">530 / 610</span></div><div style="height:8px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:87%;height:100%;background:linear-gradient(90deg,#1f5f6b,#5fc4d6);box-shadow:0 0 10px #5fc4d6"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>EXPERIENCE</span><span style="color:#ece6df">18,420 / 24,000</span></div><div style="height:5px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:77%;height:100%;background:linear-gradient(90deg,#8a6f35,#d9b865);box-shadow:0 0 10px #d9b865"></div></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:rgba(232,200,170,.08);border:1px solid rgba(232,200,170,.08);border-radius:3px;overflow:hidden;margin-top:auto">
+          <sc-for list="{{ attrs }}" as="a" hint-placeholder-count="6">
+            <div style="background:#100d13;padding:9px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:6px"><span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:#e08a72">{{ a.abbr }}</span><span style="font:600 17px/1 Cinzel,serif;color:#f3ece4">{{ a.total }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div onClick="{{ goMap }}" style="flex:1.5 1 460px;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,box-shadow .15s" style-hover="border-color:rgba(224,138,114,.55);box-shadow:0 0 0 1px rgba(224,138,114,.2),0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(184,92,74,.18)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>WORLD MAP<span style="flex:1"></span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;border:1px solid rgba(232,200,170,.12);border-radius:3px;padding:3px 5px">M</span><span style="font:600 10px/1 Cinzel,serif;letter-spacing:.14em;color:#e08a72">OPEN ›</span></div>
+      <div style="position:relative;flex:1;min-height:260px;overflow:hidden;background-color:#3d5a63">
+        <img src="assets/eridan.jpg" alt="" draggable="false" style="position:absolute;left:50%;top:50%;width:{{ hmW }}px;height:{{ hmH }}px;max-width:none;transform:{{ hmTf }};pointer-events:none">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 40%,rgba(11,9,14,.75) 100%);pointer-events:none"></div>
+        <div style="position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#e08a72;border:2px solid #f3ece4;box-shadow:0 0 0 5px rgba(224,138,114,.3),0 0 22px #e08a72"></div>
+        <div style="position:absolute;left:12px;bottom:12px;right:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="padding:9px 12px;background:rgba(11,9,14,.85);border:1px solid rgba(232,200,170,.14);border-radius:3px">
+            <div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a39a93">PARTY AT · DAY {{ day }}</div>
+            <div style="margin-top:6px;font:700 16px/1 Cinzel,serif;letter-spacing:.06em;color:#f3ece4">{{ hmWhere }}</div>
+            <div style="margin-top:5px;font:500 12px/1.2 'Alegreya Sans',sans-serif;color:#cfc6bd">{{ hmRegion }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1px;background:rgba(232,200,170,.1);border:1px solid rgba(232,200,170,.14);border-radius:3px;overflow:hidden;min-width:180px">
+            <sc-for list="{{ hmNear }}" as="n" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(11,9,14,.88)"><span style="width:12px;text-align:center;font:700 11px/1 'Alegreya Sans',sans-serif;color:{{ n.col }}">{{ n.g }}</span><span style="flex:1;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:#ece6df">{{ n.name }}</span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#a39a93">{{ n.d }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:stretch">
+    <div onClick="{{ goInventory }}" style="flex:1 1 280px;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,box-shadow .15s" style-hover="border-color:rgba(224,138,114,.55);box-shadow:0 0 0 1px rgba(224,138,114,.2),0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(184,92,74,.18)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>INVENTORY<span style="flex:1"></span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;border:1px solid rgba(232,200,170,.12);border-radius:3px;padding:3px 5px">I</span><span style="font:600 10px/1 Cinzel,serif;letter-spacing:.14em;color:#e08a72">OPEN ›</span></div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:12px;flex:1">
+        <div style="position:relative;width:{{ hbW }}px;height:{{ hbH }}px;max-width:100%;background-color:#0e0c11;background-image:linear-gradient(rgba(232,200,170,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(232,200,170,.06) 1px,transparent 1px);background-size:{{ hbCell }}px {{ hbCell }}px;border:1px solid rgba(232,200,170,.1);border-radius:2px;align-self:center">
+          <sc-for list="{{ hbItems }}" as="it" hint-placeholder-count="0">
+            <div style="position:absolute;left:{{ it.l }}px;top:{{ it.t }}px;width:{{ it.w }}px;height:{{ it.h }}px;border:1px solid {{ it.col }};background:{{ it.bg }};border-radius:2px"></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:10px;font:500 11px/1.3 'JetBrains Mono',monospace;color:#a39a93;margin-top:auto">
+          <span>BAG <span style="color:#f3ece4">45 / 60</span></span><span>GOLD <span style="color:#d9b865">12,480</span></span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{ hbCounts }}" as="rc" hint-placeholder-count="4">
+            <span style="display:flex;align-items:center;gap:5px;font:500 10px/1 'JetBrains Mono',monospace;color:#a39a93"><span style="width:7px;height:7px;transform:rotate(45deg);background:{{ rc.col }};box-shadow:0 0 5px {{ rc.col }}"></span>{{ rc.n }} {{ rc.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div onClick="{{ goSkills }}" style="flex:1 1 280px;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,box-shadow .15s" style-hover="border-color:rgba(224,138,114,.55);box-shadow:0 0 0 1px rgba(224,138,114,.2),0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(184,92,74,.18)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>SKILLS<span style="flex:1"></span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;border:1px solid rgba(232,200,170,.12);border-radius:3px;padding:3px 5px">K</span><span style="font:600 10px/1 Cinzel,serif;letter-spacing:.14em;color:#e08a72">OPEN ›</span></div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:12px;flex:1">
+        <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#a39a93">ACTION BAR</div>
+        <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">
+          <sc-for list="{{ bar }}" as="b" hint-placeholder-count="6">
+            <div style="position:relative;aspect-ratio:1;border:1px solid {{ b.bcol }};border-radius:3px;background:#100d13;box-shadow:inset 0 0 14px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center">
+              <span style="font:400 22px/1 'Noto Sans Runic',serif;color:{{ b.col }};text-shadow:0 0 10px {{ b.col }}">{{ b.g }}</span>
+              <span style="position:absolute;left:3px;top:3px;font:500 9px/1 'JetBrains Mono',monospace;color:#8a817b">{{ b.key }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1px;margin-top:auto">
+          <sc-for list="{{ hsBar }}" as="k" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid rgba(232,200,170,.05)"><span style="width:6px;height:6px;transform:rotate(45deg);background:{{ k.col }}"></span><span style="flex:1;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:#ece6df">{{ k.name }}</span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#a39a93">{{ k.meta }}</span></div>
+          </sc-for>
+        </div>
+        <div style="font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">{{ hsKnown }}</div>
+      </div>
+    </div>
+
+    <div onClick="{{ goTalents }}" style="flex:1 1 280px;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,box-shadow .15s" style-hover="border-color:rgba(224,138,114,.55);box-shadow:0 0 0 1px rgba(224,138,114,.2),0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(184,92,74,.18)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>TALENTS<span style="flex:1"></span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;border:1px solid rgba(232,200,170,.12);border-radius:3px;padding:3px 5px">N</span><span style="font:600 10px/1 Cinzel,serif;letter-spacing:.14em;color:#e08a72">OPEN ›</span></div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:14px;flex:1">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:34px;height:34px;margin:4px;transform:rotate(45deg);border:1px solid #e08a72;background:#1a1216;box-shadow:0 0 14px rgba(224,138,114,.45);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);font:700 15px/1 Cinzel,serif;color:#f3ece4">{{ talAvail }}</span></div>
+          <div><div style="font:600 13px/1 Cinzel,serif;letter-spacing:.08em;color:#f3ece4">{{ htAvailTxt }}</div><div style="margin-top:5px;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">{{ talSpentTxt }}</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px;margin-top:auto">
+          <sc-for list="{{ htTrees }}" as="t" hint-placeholder-count="3">
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font:600 12px/1 Cinzel,serif;letter-spacing:.1em;color:{{ t.col }}">{{ t.nameU }}</span><span style="font:500 11px/1 'JetBrains Mono',monospace;color:#ece6df">{{ t.pts }}</span></div>
+              <div style="height:5px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:{{ t.pct }};height:100%;background:{{ t.col }};box-shadow:0 0 8px {{ t.col }}"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  </sc-if>
+
+  <!-- CHARACTER · PAPER DOLL -->
+  <sc-if value="{{ showCharA }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+    <div style="flex:1 1 270px;min-width:0;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="width:40px;height:40px;margin:4px;flex:none;display:flex;align-items:center;justify-content:center;transform:rotate(45deg);border:1px solid #e08a72;box-shadow:0 0 14px rgba(224,138,114,.5);background:#1a1216"><span style="transform:rotate(-45deg);font:700 15px/1 Cinzel,serif;color:#f3ece4">23</span></div>
+          <div><div style="font:700 24px/1 Cinzel,serif;letter-spacing:.04em;color:#f3ece4;text-shadow:0 0 18px rgba(224,138,114,.4)">Kel'hos</div><div style="margin-top:6px;font:500 14px/1.2 'Alegreya Sans',sans-serif;color:#a39a93">Elf · Cleric · Verdant Grace</div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>EXPERIENCE</span><span style="color:#ece6df">18,420 / 24,000</span></div>
+          <div style="height:6px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:77%;height:100%;background:linear-gradient(90deg,#8a6f35,#d9b865);box-shadow:0 0 10px #d9b865"></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>HEALTH</span><span style="color:#ece6df">412 / 468</span></div><div style="height:10px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:88%;height:100%;background:linear-gradient(90deg,#7a2f22,#d0604a);box-shadow:0 0 10px #d0604a"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>MANA</span><span style="color:#ece6df">530 / 610</span></div><div style="height:10px;background:#0b090e;border:1px solid rgba(232,200,170,.1);border-radius:2px;overflow:hidden"><div style="width:87%;height:100%;background:linear-gradient(90deg,#1f5f6b,#5fc4d6);box-shadow:0 0 10px #5fc4d6"></div></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">FAITH</span>
+            <div style="display:flex;gap:8px;padding-right:3px">
+              <span style="width:9px;height:9px;transform:rotate(45deg);background:#d9b865;box-shadow:0 0 8px #d9b865"></span><span style="width:9px;height:9px;transform:rotate(45deg);background:#d9b865;box-shadow:0 0 8px #d9b865"></span><span style="width:9px;height:9px;transform:rotate(45deg);background:#d9b865;box-shadow:0 0 8px #d9b865"></span><span style="width:9px;height:9px;transform:rotate(45deg);border:1px solid #6b5a33"></span><span style="width:9px;height:9px;transform:rotate(45deg);border:1px solid #6b5a33"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>ATTRIBUTES</div>
+        <sc-for list="{{ attrs }}" as="a" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid rgba(232,200,170,.06)">
+            <span style="font:500 11px/1 'JetBrains Mono',monospace;color:#e08a72;letter-spacing:.06em">{{ a.abbr }}</span>
+            <div style="min-width:0"><div style="font:500 14px/1.2 'Alegreya Sans',sans-serif;color:#ece6df">{{ a.name }}</div><div style="font:400 12px/1.3 'Alegreya Sans',sans-serif;color:#a39a93">{{ a.hint }}</div></div>
+            <div style="text-align:right"><div style="font:600 18px/1 Cinzel,serif;color:#f3ece4">{{ a.total }}</div><div style="margin-top:3px;font:500 10px/1 'JetBrains Mono',monospace;color:#86c46f">{{ a.gearTxt }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1.5 1 420px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>EQUIPMENT<span style="flex:1"></span><span style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;color:#a39a93">ITEM LEVEL <span style="color:#f3ece4">211</span></span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,210px) minmax(0,1fr);gap:12px;padding:14px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ eqL }}" as="e" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;min-height:44px">
+              <sc-if value="{{ showEqNames }}" hint-placeholder-val="{{ true }}"><div style="text-align:right;min-width:0"><div style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;letter-spacing:.06em">{{ e.slotU }}</div><div style="margin-top:4px;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:{{ e.col }}">{{ e.name }}</div></div></sc-if>
+              <div style="width:44px;height:44px;flex:none;border:1px solid {{ e.col }};background:{{ e.bg }};box-shadow:{{ e.glow }};border-radius:3px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font:500 8px/1 'JetBrains Mono',monospace;color:{{ e.col }}">{{ e.abbr }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:relative;min-height:380px;border:1px solid rgba(232,200,170,.12);border-radius:3px;background:repeating-linear-gradient(135deg,#17131c 0 8px,#1c1722 8px 16px);display:flex;align-items:flex-end;justify-content:center;padding:12px;box-shadow:inset 0 0 60px rgba(95,196,214,.08)">
+          <span style="font:500 10px/1.5 'JetBrains Mono',monospace;color:#a39a93;text-align:center">full-body art<br>Kel'hos, elf cleric</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ eqR }}" as="e" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:10px;min-height:44px">
+              <div style="width:44px;height:44px;flex:none;border:1px solid {{ e.col }};background:{{ e.bg }};box-shadow:{{ e.glow }};border-radius:3px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font:500 8px/1 'JetBrains Mono',monospace;color:{{ e.col }}">{{ e.abbr }}</div>
+              <sc-if value="{{ showEqNames }}" hint-placeholder-val="{{ true }}"><div style="min-width:0"><div style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;letter-spacing:.06em">{{ e.slotU }}</div><div style="margin-top:4px;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:{{ e.col }}">{{ e.name }}</div></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;padding:0 14px 16px">
+        <sc-for list="{{ eqW }}" as="e" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border:1px solid rgba(232,200,170,.08);border-radius:3px;background:#100d13">
+            <div style="width:52px;height:52px;flex:none;border:1px solid {{ e.col }};background:{{ e.bg }};box-shadow:{{ e.glow }};border-radius:3px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font:500 8px/1 'JetBrains Mono',monospace;color:{{ e.col }}">{{ e.abbr }}</div>
+            <div><div style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;letter-spacing:.06em">{{ e.slotU }}</div><div style="margin-top:4px;font:500 14px/1.2 'Alegreya Sans',sans-serif;color:{{ e.col }}">{{ e.name }}</div><div style="margin-top:3px;font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b">ILVL {{ e.il }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>COMBAT</div>
+        <sc-for list="{{ combat }}" as="g" hint-placeholder-count="3">
+          <div style="padding:8px 14px 10px;border-top:1px solid rgba(232,200,170,.06)">
+            <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#e08a72;margin:4px 0 6px">{{ g.gU }}</div>
+            <sc-for list="{{ g.rows }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;font:400 14px/1.3 'Alegreya Sans',sans-serif;color:#cfc6bd"><span>{{ row.k }}</span><span style="font:500 12px/1.5 'JetBrains Mono',monospace;color:#f3ece4">{{ row.v }}</span></div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);padding-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>RESISTANCES</div>
+        <sc-for list="{{ resist }}" as="rs" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:64px minmax(0,1fr) 28px;align-items:center;gap:10px;padding:5px 14px">
+            <span style="font:400 13px/1 'Alegreya Sans',sans-serif;color:#cfc6bd">{{ rs.name }}</span>
+            <div style="height:5px;background:#0b090e;border-radius:2px;overflow:hidden"><div style="width:{{ rs.pct }};height:100%;background:{{ rs.col }};box-shadow:0 0 8px {{ rs.col }}"></div></div>
+            <span style="text-align:right;font:500 12px/1 'JetBrains Mono',monospace;color:{{ rs.col }}">{{ rs.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- CHARACTER · CODEX -->
+  <sc-if value="{{ showCharB }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="position:relative;overflow:hidden;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);padding:18px;display:flex;flex-wrap:wrap;gap:22px;align-items:stretch">
+      <div style="width:150px;height:190px;flex:none;border:1px solid #e08a72;border-radius:3px;background:repeating-linear-gradient(135deg,#17131c 0 8px,#1c1722 8px 16px);box-shadow:0 0 22px rgba(224,138,114,.25);display:flex;align-items:flex-end;justify-content:center;padding:10px"><span style="font:500 10px/1.4 'JetBrains Mono',monospace;color:#a39a93;text-align:center">portrait<br>Kel'hos</span></div>
+      <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+        <div>
+          <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.14em;color:#e08a72">LEVEL 23 · ELF · CLERIC</div>
+          <div style="margin-top:8px;font:700 38px/1 Cinzel,serif;letter-spacing:.05em;color:#f3ece4;text-shadow:0 0 24px rgba(224,138,114,.4)">Kel'hos</div>
+          <div style="margin-top:8px;font:italic 400 15px/1.4 'Alegreya Sans',sans-serif;color:#a39a93">Warden of the Moonwell · Verdant Grace</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>HEALTH</span><span style="color:#ece6df">412/468</span></div><div style="height:8px;background:#0b090e;border-radius:2px;overflow:hidden"><div style="width:88%;height:100%;background:#d0604a;box-shadow:0 0 10px #d0604a"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>MANA</span><span style="color:#ece6df">530/610</span></div><div style="height:8px;background:#0b090e;border-radius:2px;overflow:hidden"><div style="width:87%;height:100%;background:#5fc4d6;box-shadow:0 0 10px #5fc4d6"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93;margin-bottom:6px"><span>XP</span><span style="color:#ece6df">77%</span></div><div style="height:8px;background:#0b090e;border-radius:2px;overflow:hidden"><div style="width:77%;height:100%;background:#d9b865;box-shadow:0 0 10px #d9b865"></div></div></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="padding:6px 10px;border:1px solid rgba(232,200,170,.14);border-radius:3px;font:500 12px/1 'JetBrains Mono',monospace;color:#ece6df">4 AP / TURN</span>
+          <span style="padding:6px 10px;border:1px solid rgba(232,200,170,.14);border-radius:3px;font:500 12px/1 'JetBrains Mono',monospace;color:#ece6df">INITIATIVE 27</span>
+          <span style="padding:6px 10px;border:1px solid rgba(217,184,101,.4);border-radius:3px;font:500 12px/1 'JetBrains Mono',monospace;color:#d9b865">FAITH 3 / 5</span>
+          <span style="padding:6px 10px;border:1px solid rgba(232,200,170,.14);border-radius:3px;font:500 12px/1 'JetBrains Mono',monospace;color:#ece6df">ITEM LEVEL 211</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start">
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding-bottom:6px">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 44px 44px 48px;gap:6px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span>ATTRIBUTES</span><span style="text-align:right;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8a817b">BASE</span><span style="text-align:right;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8a817b">GEAR</span><span style="text-align:right;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8a817b">TOTAL</span></div>
+        <sc-for list="{{ attrs }}" as="a" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 44px 44px 48px;gap:6px;align-items:center;padding:7px 14px;font:500 12px/1 'JetBrains Mono',monospace">
+            <span style="font:500 14px/1.2 'Alegreya Sans',sans-serif;color:#ece6df">{{ a.name }}</span>
+            <span style="text-align:right;color:#a39a93">{{ a.base }}</span>
+            <span style="text-align:right;color:#86c46f">{{ a.gearTxt }}</span>
+            <span style="text-align:right;font:600 15px/1 Cinzel,serif;color:#f3ece4">{{ a.total }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <sc-for list="{{ combat }}" as="g" hint-placeholder-count="3">
+        <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>{{ g.gU }}</div>
+          <sc-for list="{{ g.rows }}" as="row" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;gap:10px;padding:6px 14px;font:400 14px/1.3 'Alegreya Sans',sans-serif;color:#cfc6bd"><span>{{ row.k }}</span><span style="font:500 13px/1.4 'JetBrains Mono',monospace;color:#f3ece4">{{ row.v }}</span></div>
+          </sc-for>
+        </div>
+      </sc-for>
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>RESISTANCES</div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px">
+          <sc-for list="{{ resist }}" as="rs" hint-placeholder-count="6">
+            <div style="padding:10px 8px;border:1px solid rgba(232,200,170,.08);border-radius:3px;background:#100d13;text-align:center">
+              <div style="font:600 22px/1 Cinzel,serif;color:{{ rs.col }};text-shadow:0 0 12px {{ rs.col }}">{{ rs.v }}</div>
+              <div style="margin-top:6px;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:#a39a93">{{ rs.nameU }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>EQUIPMENT</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:2px 16px;padding:8px 14px 12px">
+        <sc-for list="{{ eqAll }}" as="e" hint-placeholder-count="14">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(232,200,170,.05)">
+            <div style="width:30px;height:30px;flex:none;border:1px solid {{ e.col }};background:{{ e.bg }};border-radius:3px"></div>
+            <span style="width:70px;flex:none;font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b;letter-spacing:.04em">{{ e.slotU }}</span>
+            <span style="flex:1;min-width:0;font:500 14px/1.2 'Alegreya Sans',sans-serif;color:{{ e.col }}">{{ e.name }}</span>
+            <span style="font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">{{ e.il }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- INVENTORY -->
+  <sc-if value="{{ isInventory }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+    <div style="flex:0 1 auto;min-width:0;max-width:100%;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>BAG OF HOLDING<span style="flex:1"></span><span style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;color:#a39a93">10 × 6</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 0">
+        <sc-for list="{{ invTabs }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.click }}" style="padding:7px 10px;background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:3px;color:{{ t.col }};font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer">{{ t.label }} <span style="color:#8a817b">{{ t.count }}</span></button>
+        </sc-for>
+      </div>
+      <div style="padding:12px;overflow-x:auto">
+        <div style="position:relative;width:{{ bagW }}px;height:{{ bagH }}px;background-color:#0e0c11;background-image:linear-gradient(rgba(232,200,170,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(232,200,170,.07) 1px,transparent 1px);background-size:{{ cell }}px {{ cell }}px;border:1px solid rgba(232,200,170,.12);box-shadow:inset 0 0 30px rgba(0,0,0,.6)">
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="0">
+            <div onClick="{{ it.click }}" style="position:absolute;left:{{ it.l }}px;top:{{ it.t }}px;width:{{ it.w }}px;height:{{ it.h }}px;border:1px solid {{ it.col }};background:{{ it.bg }};box-shadow:{{ it.sh }};opacity:{{ it.op }};border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="filter:brightness(1.3)">
+              <span style="font:500 {{ it.fs }}px/1 'JetBrains Mono',monospace;color:{{ it.col }};letter-spacing:.04em">{{ it.short }}</span>
+              <sc-if value="{{ it.hasQty }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:3px;bottom:2px;font:500 10px/1 'JetBrains Mono',monospace;color:#f3ece4">{{ it.qty }}</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px 14px;border-top:1px solid rgba(232,200,170,.08)">
+        <div><div style="font:600 11px/1 Cinzel,serif;letter-spacing:.14em;color:#d8cfc6">COMBAT BELT</div><div style="margin-top:5px;font:400 12px/1.2 'Alegreya Sans',sans-serif;color:#a39a93">Usable in battle for 1 AP</div></div>
+        <div style="display:flex;gap:6px">
+          <div style="width:44px;height:44px;border:1px solid #a8a29c;border-radius:3px;background:repeating-linear-gradient(135deg,rgba(168,162,156,.12) 0 4px,transparent 4px 8px),#120f16;position:relative;display:flex;align-items:center;justify-content:center;font:500 8px/1 'JetBrains Mono',monospace;color:#a8a29c">HEAL<span style="position:absolute;right:3px;bottom:2px;font-size:10px;color:#f3ece4">×8</span></div>
+          <div style="width:44px;height:44px;border:1px solid #86c46f;border-radius:3px;background:repeating-linear-gradient(135deg,rgba(134,196,111,.12) 0 4px,transparent 4px 8px),#120f16;position:relative;display:flex;align-items:center;justify-content:center;font:500 8px/1 'JetBrains Mono',monospace;color:#86c46f">MANA<span style="position:absolute;right:3px;bottom:2px;font-size:10px;color:#f3ece4">×5</span></div>
+          <div style="width:44px;height:44px;border:1px dashed rgba(232,200,170,.18);border-radius:3px"></div>
+          <div style="width:44px;height:44px;border:1px dashed rgba(232,200,170,.18);border-radius:3px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 300px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>ITEM</div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="width:68px;height:68px;flex:none;border:1px solid {{ sel.col }};border-radius:3px;background:{{ sel.bg }};box-shadow:{{ sel.glow }};display:flex;align-items:center;justify-content:center;font:500 9px/1 'JetBrains Mono',monospace;color:{{ sel.col }}">{{ sel.short }}</div>
+          <div style="min-width:0">
+            <div style="font:700 19px/1.15 Cinzel,serif;color:{{ sel.col }};text-shadow:{{ sel.tglow }}">{{ sel.name }}</div>
+            <div style="margin-top:6px;font:500 10px/1.3 'JetBrains Mono',monospace;letter-spacing:.08em;color:#a39a93">{{ sel.typeLine }}</div>
+            <sc-if value="{{ sel.hasIl }}" hint-placeholder-val="{{ true }}"><div style="margin-top:4px;font:500 11px/1.3 'JetBrains Mono',monospace;color:#d9b865">{{ sel.ilvl }}</div></sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ sel.hasLines }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <sc-for list="{{ sel.lines }}" as="ln" hint-placeholder-count="3"><div style="font:500 15px/1.3 'Alegreya Sans',sans-serif;color:#ece6df">{{ ln }}</div></sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ sel.hasEffect }}" hint-placeholder-val="{{ true }}"><div style="font:500 14px/1.4 'Alegreya Sans',sans-serif;color:#86c46f">{{ sel.effect }}</div></sc-if>
+        <sc-if value="{{ sel.hasFlavor }}" hint-placeholder-val="{{ true }}"><div style="font:italic 400 14px/1.4 'Alegreya Sans',sans-serif;color:#b3a99f">“{{ sel.flavor }}”</div></sc-if>
+        <sc-if value="{{ sel.hasCompare }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:10px 12px;border:1px solid rgba(232,200,170,.1);border-radius:3px;background:#100d13">
+            <div style="font:500 10px/1.3 'JetBrains Mono',monospace;letter-spacing:.08em;color:#a39a93">VS. EQUIPPED · <span style="color:#ece6df">{{ sel.cmpWithU }}</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px">
+              <sc-for list="{{ sel.compare }}" as="cp" hint-placeholder-count="3"><span style="font:500 12px/1.3 'JetBrains Mono',monospace;color:{{ cp.col }}">{{ cp.t }}</span></sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <div style="font:500 11px/1.4 'JetBrains Mono',monospace;color:#a39a93">{{ sel.meta }}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button style="padding:10px 18px;background:#b85c4a;border:1px solid #e08a72;border-radius:3px;color:#fff;font:600 12px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer;box-shadow:0 0 16px rgba(224,138,114,.35)" style-hover="background:#c96a57">{{ sel.actionU }}</button>
+          <button style="padding:10px 16px;background:transparent;border:1px solid rgba(232,200,170,.18);border-radius:3px;color:#d8cfc6;font:600 12px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer" style-hover="border-color:#e08a72">DROP</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- SKILLS -->
+  <sc-if value="{{ isSkills }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);padding:14px;display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+      <div style="min-width:170px">
+        <div style="font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6">ACTION BAR</div>
+        <div style="margin-top:6px;font:400 13px/1.3 'Alegreya Sans',sans-serif;color:{{ barHintCol }}">{{ barHint }}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ bar }}" as="b" hint-placeholder-count="6">
+          <div onClick="{{ b.click }}" style="position:relative;width:64px;height:64px;border:1px {{ b.bstyle }} {{ b.bcol }};border-radius:4px;background:#0f0d12;box-shadow:{{ b.glow }};display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="filter:brightness(1.25)">
+            <span style="position:absolute;left:4px;top:4px;font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b">{{ b.key }}</span>
+            <span style="font:400 26px/1 'Noto Sans Runic',serif;color:{{ b.col }};text-shadow:0 0 10px {{ b.col }}">{{ b.g }}</span>
+            <span style="position:absolute;right:4px;bottom:3px;font:500 9px/1 'JetBrains Mono',monospace;color:#cfc6bd">{{ b.ap }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:18px;font:500 11px/1.4 'JetBrains Mono',monospace;color:#a39a93"><span>AP / TURN <span style="color:#f3ece4">4</span></span><span>FAITH <span style="color:#d9b865">3 / 5</span></span></div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+      <div style="flex:1.6 1 440px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>SPELLBOOK</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 0">
+          <sc-for list="{{ skTabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.click }}" style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:3px;color:{{ t.col }};font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer"><span style="width:6px;height:6px;transform:rotate(45deg);background:{{ t.dot }}"></span>{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;padding:12px">
+          <sc-for list="{{ skills }}" as="s" hint-placeholder-count="8">
+            <div onClick="{{ s.click }}" style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid {{ s.border }};background:{{ s.bg }};border-radius:4px;cursor:pointer;opacity:{{ s.op }}" style-hover="filter:brightness(1.2)">
+              <div style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid {{ s.col }};background:#0f0d12;box-shadow:inset 0 0 12px {{ s.colA }},0 0 10px {{ s.colA }};border-radius:4px;font:400 22px/1 'Noto Sans Runic',serif;color:{{ s.col }};text-shadow:0 0 8px {{ s.col }}">{{ s.g }}</div>
+              <div style="min-width:0;flex:1">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><span style="font:600 13px/1.2 Cinzel,serif;color:#f3ece4">{{ s.name }}</span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#e08a72">{{ s.slotLabel }}</span></div>
+                <div style="margin-top:5px;font:500 11px/1.2 'JetBrains Mono',monospace;color:#a39a93">{{ s.meta }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1 1 300px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>SKILL</div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:14px;align-items:center">
+            <div style="width:68px;height:68px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid {{ sk.col }};background:#0f0d12;box-shadow:inset 0 0 18px {{ sk.colA }},0 0 18px {{ sk.colA }};border-radius:5px;font:400 34px/1 'Noto Sans Runic',serif;color:{{ sk.col }};text-shadow:0 0 12px {{ sk.col }}">{{ sk.g }}</div>
+            <div>
+              <div style="font:700 20px/1.1 Cinzel,serif;color:#f3ece4">{{ sk.name }}</div>
+              <div style="margin-top:6px;font:500 10px/1.3 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ sk.col }}">{{ sk.line }}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(232,200,170,.08);border:1px solid rgba(232,200,170,.08);border-radius:3px;overflow:hidden">
+            <sc-for list="{{ sk.stats }}" as="st" hint-placeholder-count="6">
+              <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">{{ st.k }}</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ st.v }}</div></div>
+            </sc-for>
+          </div>
+          <div style="font:400 15px/1.45 'Alegreya Sans',sans-serif;color:#ece6df;text-wrap:pretty">{{ sk.desc }}</div>
+          <div>
+            <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#e08a72;margin-bottom:8px">UPGRADED BY TALENTS</div>
+            <sc-if value="{{ sk.hasMods }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ sk.mods }}" as="m" hint-placeholder-count="2">
+                  <div style="padding:8px 10px;border:1px solid {{ m.border }};border-radius:3px;background:#100d13">
+                    <div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 12px/1.2 Cinzel,serif;color:{{ m.col }}">{{ m.name }}</span><span style="font:500 10px/1.2 'JetBrains Mono',monospace;color:#a39a93">{{ m.rk }}</span></div>
+                    <div style="margin-top:4px;font:400 13px/1.35 'Alegreya Sans',sans-serif;color:#cfc6bd">{{ m.text }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sk.noMods }}" hint-placeholder-val="{{ false }}"><div style="font:400 13px/1.35 'Alegreya Sans',sans-serif;color:#a39a93">No talents modify this skill.</div></sc-if>
+          </div>
+          <button onClick="{{ arm }}" style="padding:10px 16px;background:{{ armBg }};border:1px solid #e08a72;border-radius:3px;color:#fff;font:600 12px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer;opacity:{{ armOp }}">{{ armLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- TALENTS -->
+  <sc-if value="{{ isTalents }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <sc-if value="{{ focusMode }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+        <sc-for list="{{ specTabs }}" as="t" hint-placeholder-count="3">
+          <div onClick="{{ t.click }}" style="padding:12px 14px;border:1px solid {{ t.border }};background:{{ t.bg }};box-shadow:{{ t.glow }};border-radius:4px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font:700 14px/1.1 Cinzel,serif;letter-spacing:.06em;color:{{ t.col }}">{{ t.name }}</span><span style="font:500 13px/1 'JetBrains Mono',monospace;color:#f3ece4">{{ t.pts }}</span></div>
+            <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><div style="margin-top:5px;font:400 13px/1.2 'Alegreya Sans',sans-serif;color:#a39a93">{{ t.sub }}</div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+      <sc-for list="{{ trees }}" as="tr" hint-placeholder-count="3">
+        <div style="flex:{{ treeFlex }};min-width:0;max-width:100%;background:#141118;border:1px solid rgba(232,200,170,.11);border-top:1px solid {{ tr.colA }};border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(232,200,170,.08)">
+            <span style="width:7px;height:7px;transform:rotate(45deg);background:{{ tr.col }};box-shadow:0 0 10px {{ tr.col }}"></span>
+            <div style="flex:1;min-width:0"><div style="font:700 13px/1.1 Cinzel,serif;letter-spacing:.12em;color:{{ tr.col }}">{{ tr.nameU }}</div><div style="margin-top:4px;font:400 12px/1.2 'Alegreya Sans',sans-serif;color:#a39a93">{{ tr.sub }}</div></div>
+            <span style="font:600 18px/1 Cinzel,serif;color:#f3ece4">{{ tr.pts }}</span>
+          </div>
+          <div style="padding:14px 12px 12px;overflow-x:auto;display:flex;justify-content:center">
+            <div style="position:relative;flex:none;width:{{ tr.bw }}px;height:{{ tr.bh }}px">
+              <sc-for list="{{ tr.tiers }}" as="ti" hint-placeholder-count="5">
+                <div style="position:absolute;left:0;top:{{ ti.y }}px;width:{{ ti.w }}px;text-align:left;font:600 10px/1 Cinzel,serif;color:{{ ti.col }}">{{ ti.label }}<div style="margin-top:3px;font:500 9px/1 'JetBrains Mono',monospace;color:{{ ti.col }}">{{ ti.req }}</div></div>
+              </sc-for>
+              <sc-for list="{{ tr.links }}" as="l" hint-placeholder-count="0">
+                <div style="position:absolute;left:{{ l.x }}px;top:{{ l.y }}px;width:2px;height:{{ l.h }}px;background:{{ l.col }};box-shadow:{{ l.glow }}"></div>
+              </sc-for>
+              <sc-for list="{{ tr.nodes }}" as="n" hint-placeholder-count="0">
+                <div onClick="{{ n.click }}" onContextMenu="{{ n.unclick }}" onMouseEnter="{{ n.hover }}" style="position:absolute;left:{{ n.x }}px;top:{{ n.y }}px;width:{{ n.s }}px;height:{{ n.s }}px;cursor:pointer">
+                  <div style="position:absolute;inset:0;transform:{{ n.rot }};border:1px solid {{ n.border }};background:{{ n.bg }};box-shadow:{{ n.glow }};outline:{{ n.outline }};outline-offset:3px;border-radius:5px;opacity:{{ n.op }}"></div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:400 {{ n.fs }}px/1 'Noto Sans Runic',serif;color:{{ n.gc }};text-shadow:{{ n.gt }};opacity:{{ n.op }}">{{ n.g }}</div>
+                  <div style="position:absolute;right:-8px;bottom:-7px;padding:2px 4px;background:#0b090e;border:1px solid {{ n.border }};border-radius:3px;font:500 9px/1 'JetBrains Mono',monospace;color:{{ n.bc }}">{{ n.rk }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="flex:1 1 260px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>TALENT</div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div style="font:700 19px/1.15 Cinzel,serif;color:{{ tal.col }};text-shadow:0 0 14px {{ tal.colA }}">{{ tal.name }}</div>
+            <div style="margin-top:6px;font:500 10px/1.3 'JetBrains Mono',monospace;letter-spacing:.08em;color:#a39a93">{{ tal.line }}</div>
+            <div style="margin-top:4px;font:500 12px/1.3 'JetBrains Mono',monospace;color:#f3ece4">{{ tal.rankTxt }}</div>
+          </div>
+          <sc-if value="{{ tal.hasMod }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(232,200,170,.1);border-radius:3px;background:#100d13">
+              <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid {{ tal.modCol }};border-radius:3px;font:400 16px/1 'Noto Sans Runic',serif;color:{{ tal.modCol }};text-shadow:0 0 8px {{ tal.modCol }}">{{ tal.modG }}</span>
+              <div><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">UPGRADES SKILL</div><div style="margin-top:4px;font:600 13px/1.1 Cinzel,serif;color:#f3ece4">{{ tal.modName }}</div></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ tal.hasCur }}" hint-placeholder-val="{{ true }}">
+            <div><div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#86c46f;margin-bottom:5px">CURRENT</div><div style="font:400 15px/1.4 'Alegreya Sans',sans-serif;color:#ece6df">{{ tal.cur }}</div></div>
+          </sc-if>
+          <sc-if value="{{ tal.hasNext }}" hint-placeholder-val="{{ false }}">
+            <div><div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#a39a93;margin-bottom:5px">{{ tal.nextLabel }}</div><div style="font:400 15px/1.4 'Alegreya Sans',sans-serif;color:#cfc6bd">{{ tal.next }}</div></div>
+          </sc-if>
+          <sc-if value="{{ tal.hasLock }}" hint-placeholder-val="{{ false }}"><div style="font:500 13px/1.35 'Alegreya Sans',sans-serif;color:#e08a72">{{ tal.lock }}</div></sc-if>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ tal.learn }}" style="padding:9px 16px;background:{{ tal.lBg }};border:1px solid {{ tal.lBorder }};border-radius:3px;color:{{ tal.lCol }};font:600 11px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer">LEARN</button>
+            <button onClick="{{ tal.unlearn }}" style="padding:9px 14px;background:transparent;border:1px solid rgba(232,200,170,.18);border-radius:3px;color:{{ tal.uCol }};font:600 11px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer">UNLEARN</button>
+          </div>
+          <div style="font:400 12px/1.4 'Alegreya Sans',sans-serif;color:#8a817b">Click a talent to learn a rank. Right-click to unlearn. Each tier needs 4 more points spent in the tiers above it.</div>
+          <sc-if value="{{ focusMode }}" hint-placeholder-val="{{ false }}">
+            <div style="border-top:1px solid rgba(232,200,170,.08);padding-top:12px">
+              <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#e08a72;margin-bottom:8px">LEARNED IN {{ focusNameU }}</div>
+              <sc-for list="{{ learned }}" as="lr" hint-placeholder-count="4">
+                <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;font:400 14px/1.3 'Alegreya Sans',sans-serif;color:#cfc6bd"><span>{{ lr.name }}</span><span style="font:500 11px/1.5 'JetBrains Mono',monospace;color:{{ lr.col }}">{{ lr.rk }}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- WORLD MAP · ERIDAN -->
+  <sc-if value="{{ showEridan }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+    <div style="flex:1 1 640px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6;flex-wrap:wrap"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>THE CONTINENT OF ERIDAN<span style="flex:1"></span><span style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;color:#a39a93">1 HEX = 1 DAY</span>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button onClick="{{ zoomOut }}" style="padding:6px 9px;background:transparent;border:1px solid rgba(232,200,170,.16);border-radius:3px;color:#d8cfc6;font:500 11px/1 'JetBrains Mono',monospace;cursor:pointer" style-hover="border-color:#e08a72;color:#f3ece4">−</button>
+          <span style="min-width:34px;text-align:center;font:500 11px/1 'JetBrains Mono',monospace;color:#ece6df">{{ zoomTxt }}</span>
+          <button onClick="{{ zoomIn }}" style="padding:6px 9px;background:transparent;border:1px solid rgba(232,200,170,.16);border-radius:3px;color:#d8cfc6;font:500 11px/1 'JetBrains Mono',monospace;cursor:pointer" style-hover="border-color:#e08a72;color:#f3ece4">+</button>
+          <button onClick="{{ centerParty }}" style="padding:6px 9px;background:transparent;border:1px solid rgba(232,200,170,.16);border-radius:3px;color:#d8cfc6;font:500 11px/1 'JetBrains Mono',monospace;cursor:pointer;margin-left:4px;letter-spacing:.06em" style-hover="border-color:#e08a72;color:#f3ece4">FIND PARTY</button>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div ref="{{ mapRef }}" onPointerDown="{{ mDown }}" onPointerMove="{{ mMove }}" onPointerUp="{{ mUp }}" onPointerLeave="{{ mLeave }}" onScroll="{{ mScroll }}" style="height:{{ mapVH }};overflow:auto;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;background:#3d5a63">
+          <div style="position:relative;width:{{ eW }}px;height:{{ eH }}px">
+            <img src="assets/eridan.jpg" alt="Map of the continent of Eridan" draggable="false" style="position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none">
+            <svg ref="{{ svgRef }}" width="{{ eW }}" height="{{ eH }}" style="position:absolute;left:0;top:0;display:block">
+              <g transform="{{ gScale }}">
+                <sc-for list="{{ tints }}" as="t" hint-placeholder-count="0"><path d="{{ t.d }}" style="fill:{{ t.col }};fill-opacity:{{ tintOp }}"></path></sc-for>
+                <path d="{{ fogD }}" style="fill:#0b090e;fill-opacity:.84"></path>
+                <path d="{{ gridD }}" style="fill:none;stroke:rgba(24,16,10,.55);stroke-width:.7"></path>
+                <polygon ref="{{ hoverRef }}" points="0,0" style="fill:rgba(243,236,228,.1);stroke:rgba(243,236,228,.9);stroke-width:1.1;pointer-events:none"></polygon>
+                <line x1="{{ route.x1 }}" y1="{{ route.y1 }}" x2="{{ route.x2 }}" y2="{{ route.y2 }}" style="stroke:#e08a72;stroke-width:1.4;stroke-dasharray:3 3;opacity:{{ route.op }}"></line>
+                <polygon points="{{ partyPts }}" style="fill:rgba(224,138,114,.14);stroke:#e08a72;stroke-width:1.4"></polygon>
+                <polygon points="{{ selPts }}" style="fill:rgba(217,184,101,.16);stroke:#d9b865;stroke-width:1.8"></polygon>
+              </g>
+            </svg>
+            <div style="position:absolute;left:{{ tokX }}px;top:{{ tokY }}px;width:20px;height:20px;border-radius:50%;background:#e08a72;border:2px solid #f3ece4;box-shadow:0 0 0 5px rgba(224,138,114,.3),0 0 22px #e08a72;pointer-events:none;display:flex;align-items:center;justify-content:center;font:700 10px/1 Cinzel,serif;color:#1a1216">K</div>
+          </div>
+        </div>
+        <div style="position:absolute;left:12px;top:12px;pointer-events:none;padding:6px 9px;background:rgba(11,9,14,.82);border:1px solid rgba(232,200,170,.12);border-radius:3px;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:#d8cfc6">DRAG TO EXPLORE · CLICK A HEX</div>
+        <div onClick="{{ miniClick }}" style="position:absolute;right:12px;bottom:12px;width:{{ miniW }}px;height:{{ miniH }}px;border:1px solid rgba(232,200,170,.35);border-radius:3px;overflow:hidden;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.6);background:#0b090e">
+          <img src="assets/eridan.jpg" alt="" draggable="false" style="width:100%;height:100%;display:block;opacity:.85;pointer-events:none">
+          <div ref="{{ miniRef }}" style="position:absolute;left:0;top:0;width:20px;height:20px;border:1.5px solid #f3ece4;box-shadow:0 0 0 999px rgba(11,9,14,.35);pointer-events:none"></div>
+          <div style="position:absolute;left:{{ miniPX }}px;top:{{ miniPY }}px;width:6px;height:6px;border-radius:50%;background:#e08a72;box-shadow:0 0 6px #e08a72;pointer-events:none"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;padding:12px 14px;border-top:1px solid rgba(232,200,170,.08);font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">
+        <sc-for list="{{ eLegend }}" as="lg" hint-placeholder-count="7">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ lg.col }}"></span>{{ lg.name }}</span>
+        </sc-for>
+        <span style="flex:1"></span>
+        <span>{{ terStatus }}</span>
+      </div>
+    </div>
+
+    <div style="flex:0 1 310px;min-width:260px;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>SELECTED<span style="flex:1"></span><span style="font:500 11px/1 'JetBrains Mono',monospace;color:#8a817b">{{ ex.coord }}</span></div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+          <sc-if value="{{ ex.hasPoi }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="font:700 18px/1.15 Cinzel,serif;color:#f3ece4;text-shadow:0 0 14px rgba(224,138,114,.35)">{{ ex.poiName }}</div>
+              <div style="margin-top:5px;font:500 10px/1.3 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ex.poiCol }}">{{ ex.poiType }}</div>
+              <div style="margin-top:8px;font:400 14px/1.4 'Alegreya Sans',sans-serif;color:#cfc6bd">{{ ex.poiDesc }}</div>
+            </div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(232,200,170,.08);border:1px solid rgba(232,200,170,.08);border-radius:3px;overflow:hidden">
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">REGION</div><div style="margin-top:5px;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:#f3ece4">{{ ex.region }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">TERRAIN</div><div style="margin-top:5px;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:#f3ece4">{{ ex.terrain }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">LEVELS</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ ex.lv }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">DANGER</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:{{ ex.dCol }}">{{ ex.danger }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">ENCOUNTERS</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ ex.enc }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">DISTANCE</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ ex.dist }}</div></div>
+          </div>
+          <button onClick="{{ ex.travel }}" style="padding:11px 16px;background:{{ ex.tBg }};border:1px solid {{ ex.tBorder }};border-radius:3px;color:{{ ex.tCol }};font:600 12px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer;box-shadow:{{ ex.tGlow }}">{{ ex.tLabel }}</button>
+        </div>
+      </div>
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>PLACES<span style="flex:1"></span><span style="font:500 10px/1 'JetBrains Mono',monospace;color:#8a817b">DAYS AWAY</span></div>
+        <sc-for list="{{ ePlaces }}" as="pl" hint-placeholder-count="8">
+          <div onClick="{{ pl.click }}" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid rgba(232,200,170,.05);cursor:pointer;background:{{ pl.bg }}" style-hover="background:rgba(232,200,170,.04)">
+            <span style="width:14px;text-align:center;font:700 12px/1 'Alegreya Sans',sans-serif;color:{{ pl.col }};text-shadow:0 0 6px {{ pl.col }}">{{ pl.g }}</span>
+            <span style="flex:1;min-width:0;font:500 14px/1.2 'Alegreya Sans',sans-serif;color:#ece6df">{{ pl.name }}</span>
+            <span style="font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">{{ pl.d }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- WORLD MAP -->
+  <sc-if value="{{ showOldMap }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+    <div style="flex:1 1 640px;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+      <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>THE KNOWN REALMS<span style="flex:1"></span><sc-if value="{{ showHexMap }}" hint-placeholder-val="{{ true }}"><span style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;color:#a39a93">1 HEX = 1 DAY</span></sc-if><sc-if value="{{ showCustomMap }}" hint-placeholder-val="{{ false }}"><span style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;color:#a39a93">CUSTOM MAP · DOUBLE-CLICK TO REFRAME</span></sc-if></div>
+      <sc-if value="{{ showCustomMap }}" hint-placeholder-val="{{ false }}">
+      <div style="position:relative;aspect-ratio:{{ customMapRatio }};background:radial-gradient(ellipse at 50% 50%,#101c2a 0%,#0b1119 80%)">
+        <image-slot id="world-map" shape="rect" fit="contain" placeholder="Drop your world map image"></image-slot>
+      </div>
+      </sc-if>
+      <sc-if value="{{ showHexMap }}" hint-placeholder-val="{{ true }}">
+      <div style="overflow:auto;padding:16px;background:radial-gradient(ellipse at 50% 50%,#101c2a 0%,#0b1119 80%)">
+        <div style="position:relative;margin:0 auto;width:{{ mapW }}px;height:{{ mapH }}px">
+          <sc-for list="{{ hexes }}" as="h" hint-placeholder-count="0">
+            <div onClick="{{ h.click }}" style="position:absolute;left:{{ h.x }}px;top:{{ h.y }}px;width:{{ h.w }}px;height:{{ h.hh }}px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:{{ h.rim }};cursor:pointer" style-hover="filter:brightness(1.35)">
+              <div style="position:absolute;inset:{{ h.inset }}px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:{{ h.fill }};display:flex;align-items:center;justify-content:center;font:700 {{ h.fs }}px/1 'Alegreya Sans',sans-serif;color:{{ h.gc }};text-shadow:{{ h.gt }}">{{ h.g }}</div>
+            </div>
+          </sc-for>
+          <sc-for list="{{ regionLabels }}" as="rl" hint-placeholder-count="0">
+            <div style="position:absolute;left:{{ rl.x }}px;top:{{ rl.y }}px;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;font:700 {{ rl.fs }}px/1 Cinzel,serif;letter-spacing:.22em;color:#efe6dc;text-shadow:0 0 6px #000,0 0 14px #000,0 1px 2px #000">{{ rl.name }}</div>
+          </sc-for>
+          <div style="position:absolute;left:{{ partyX }}px;top:{{ partyY }}px;width:16px;height:16px;border-radius:50%;background:#e08a72;border:2px solid #f3ece4;box-shadow:0 0 0 4px rgba(224,138,114,.3),0 0 18px #e08a72;pointer-events:none"></div>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ showHexMap }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;padding:12px 14px;border-top:1px solid rgba(232,200,170,.08);font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#1f3b2c"></span>FOREST</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#153a3a"></span>ELDERWOOD</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#3a4829"></span>PLAINS</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#5f6a77"></span>SNOW</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#5a251b"></span>VOLCANIC</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#26382f"></span>MARSH</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#141118;border:1px solid #3a333f"></span>UNEXPLORED</span>
+        <span style="flex:1"></span>
+        <span><span style="color:#d9b865">◆</span> TOWN</span><span><span style="color:#d9b865">!</span> QUEST</span><span><span style="color:#e08a72">▼</span> DUNGEON</span><span><span style="color:#d0604a">▲</span> LAIR</span><span><span style="color:#5fc4d6">✧</span> SHRINE</span>
+      </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:0 1 310px;min-width:260px;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>SELECTED<span style="flex:1"></span><span style="font:500 11px/1 'JetBrains Mono',monospace;color:#8a817b">{{ hx.coord }}</span></div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+          <sc-if value="{{ hx.hasPoi }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="font:700 18px/1.15 Cinzel,serif;color:#f3ece4;text-shadow:0 0 14px rgba(224,138,114,.35)">{{ hx.poiName }}</div>
+              <div style="margin-top:5px;font:500 10px/1.3 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ hx.poiCol }}">{{ hx.poiType }}</div>
+              <div style="margin-top:8px;font:400 14px/1.4 'Alegreya Sans',sans-serif;color:#cfc6bd">{{ hx.poiDesc }}</div>
+            </div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(232,200,170,.08);border:1px solid rgba(232,200,170,.08);border-radius:3px;overflow:hidden">
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">REGION</div><div style="margin-top:5px;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:#f3ece4">{{ hx.region }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">TERRAIN</div><div style="margin-top:5px;font:500 13px/1.2 'Alegreya Sans',sans-serif;color:#f3ece4">{{ hx.terrain }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">LEVELS</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ hx.lv }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">DANGER</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:{{ hx.dCol }}">{{ hx.danger }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">ENCOUNTERS</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ hx.enc }}</div></div>
+            <div style="background:#100d13;padding:8px 10px"><div style="font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">DISTANCE</div><div style="margin-top:5px;font:500 13px/1.2 'JetBrains Mono',monospace;color:#f3ece4">{{ hx.dist }}</div></div>
+          </div>
+          <button onClick="{{ hx.travel }}" style="padding:11px 16px;background:{{ hx.tBg }};border:1px solid {{ hx.tBorder }};border-radius:3px;color:{{ hx.tCol }};font:600 12px/1 Cinzel,serif;letter-spacing:.12em;cursor:pointer;box-shadow:{{ hx.tGlow }}">{{ hx.tLabel }}</button>
+        </div>
+      </div>
+      <div style="background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(232,200,170,.08);font:600 11px/1 Cinzel,serif;letter-spacing:.16em;color:#d8cfc6"><span style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a;box-shadow:0 0 8px #e08a72"></span>REGIONS</div>
+        <sc-for list="{{ regions }}" as="rg" hint-placeholder-count="6">
+          <div onClick="{{ rg.click }}" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid rgba(232,200,170,.05);cursor:pointer;background:{{ rg.bg }}" style-hover="background:rgba(232,200,170,.04)">
+            <span style="width:7px;height:7px;transform:rotate(45deg);background:{{ rg.dCol }};box-shadow:0 0 6px {{ rg.dCol }}"></span>
+            <span style="flex:1;min-width:0;font:500 14px/1.2 'Alegreya Sans',sans-serif;color:#ece6df">{{ rg.name }}</span>
+            <span style="font:500 11px/1 'JetBrains Mono',monospace;color:#a39a93">{{ rg.lv }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  </div>
+  </main>
+</div>
+
+<sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+  <nav style="position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(6,1fr);background:rgba(11,9,14,.96);border-top:1px solid rgba(232,200,170,.12);padding:6px 4px calc(6px + env(safe-area-inset-bottom))">
+    <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+      <div onClick="{{ n.go }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0;min-height:48px;cursor:pointer;border-top:2px solid {{ n.bar }}">
+        <span style="font:400 20px/1 'Noto Sans Runic',serif;color:{{ n.gc }};text-shadow:{{ n.gt }}">{{ n.glyph }}</span>
+        <span style="font:600 9px/1 Cinzel,serif;letter-spacing:.08em;text-transform:uppercase;color:{{ n.color }}">{{ n.short }}</span>
+      </div>
+    </sc-for>
+  </nav>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;characterLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Paper doll&quot;,&quot;Codex&quot;],&quot;default&quot;:&quot;Paper doll&quot;,&quot;tsType&quot;:&quot;'Paper doll'|'Codex'&quot;,&quot;section&quot;:&quot;Alternate treatments&quot;},&quot;talentLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;All trees&quot;,&quot;Focused spec&quot;],&quot;default&quot;:&quot;All trees&quot;,&quot;tsType&quot;:&quot;'All trees'|'Focused spec'&quot;,&quot;section&quot;:&quot;Alternate treatments&quot;},&quot;mapSource&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Eridan&quot;,&quot;Hex grid&quot;,&quot;Custom image&quot;],&quot;default&quot;:&quot;Eridan&quot;,&quot;tsType&quot;:&quot;'Eridan'|'Hex grid'|'Custom image'&quot;,&quot;section&quot;:&quot;World map&quot;},&quot;customMapRatio&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;16 / 10&quot;,&quot;16 / 9&quot;,&quot;4 / 3&quot;,&quot;1 / 1&quot;,&quot;3 / 2&quot;],&quot;default&quot;:&quot;16 / 10&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;World map&quot;},&quot;mapZoom&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:2,&quot;max&quot;:6,&quot;step&quot;:0.5,&quot;unit&quot;:&quot;×&quot;,&quot;default&quot;:4,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;World map&quot;},&quot;terrainTint&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Off&quot;,&quot;Subtle&quot;,&quot;Strong&quot;],&quot;default&quot;:&quot;Subtle&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;World map&quot;},&quot;fogOfWar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;World map&quot;}}">
+const C={ember:'#e08a72',hp:'#d0604a',mana:'#5fc4d6',gold:'#d9b865',green:'#86c46f',violet:'#b287e6',frost:'#8fc6e6',ink:'#f3ece4',muted:'#a39a93'};
+const RAR={common:'#a8a29c',uncommon:'#86c46f',rare:'#6aa7e6',epic:'#b287e6',legendary:'#e6a64e'};
+const SCH={Radiant:C.gold,Nature:C.green,Protection:C.mana,Racial:C.ember};
+const hexA=(h,a)=>h+Math.round(a*255).toString(16).padStart(2,'0');
+const stripe=(col,a)=>`repeating-linear-gradient(135deg,${hexA(col,a)} 0 4px,transparent 4px 8px),#120f16`;
+const PAGES=[
+{id:'home',label:'Home',short:'Home',glyph:'ᚺ',key:'H'},
+{id:'character',label:'Character',short:'Hero',glyph:'ᛗ',key:'C'},
+{id:'inventory',label:'Inventory',short:'Bag',glyph:'ᛒ',key:'I'},
+{id:'skills',label:'Skills',short:'Skills',glyph:'ᚲ',key:'K'},
+{id:'talents',label:'Talents',short:'Talents',glyph:'ᛉ',key:'N'},
+{id:'map',label:'World Map',short:'Map',glyph:'ᛟ',key:'M'}];
+const EQUIP=[
+{slot:'Head',name:'Circlet of Silverleaf Vows',r:'rare',il:208,side:'L'},
+{slot:'Neck',name:'Amulet of the Low Moon',r:'epic',il:214,side:'L'},
+{slot:'Shoulders',name:'Mantle of Falling Leaves',r:'uncommon',il:196,side:'L'},
+{slot:'Chest',name:'Vestments of the Eldergrove',r:'epic',il:216,side:'L'},
+{slot:'Waist',name:'Cord of Quiet Prayer',r:'rare',il:204,side:'L'},
+{slot:'Legs',name:'Leggings of the Warden',r:'rare',il:206,side:'L'},
+{slot:'Cloak',name:'Cloak of the Hollow Moon',r:'rare',il:203,side:'R'},
+{slot:'Hands',name:'Gloves of Mending Light',r:'rare',il:205,side:'R'},
+{slot:'Feet',name:'Treads of the Glade',r:'uncommon',il:198,side:'R'},
+{slot:'Ring',name:'Band of First Frost',r:'rare',il:207,side:'R'},
+{slot:'Ring',name:'Seal of Aldermoor',r:'epic',il:212,side:'R'},
+{slot:'Trinket',name:'Phial of Dawnwater',r:'legendary',il:224,side:'R'},
+{slot:'Main hand',name:'Branch of the Worldtree',r:'legendary',il:226,side:'W'},
+{slot:'Off hand',name:'Lantern of the Pilgrim',r:'epic',il:214,side:'W'}];
+const ATTR=[['Strength','STR',10,4,'Melee damage, carry weight'],['Dexterity','DEX',14,4,'Evasion, initiative'],['Intellect','INT',16,6,'Mana pool, spell critical'],['Wisdom','WIS',27,14,'Healing power, mana per turn'],['Vitality','VIT',19,10,'Health, resistances'],['Spirit','SPI',24,12,'Faith generation, radiant power']];
+const COMBAT=[{g:'Tempo',rows:[['Action Points','4 / turn'],['Initiative','27'],['Movement','4 tiles'],['Faith per turn','+1']]},{g:'Offense',rows:[['Spell Power','318'],['Healing Power','356'],['Critical Chance','14.2%'],['Critical Effect','165%']]},{g:'Defense',rows:[['Health','468'],['Armor','1,240 · 38%'],['Evasion','9.0%'],['Mana per turn','+42']]}];
+const RESIST=[['Fire',22,C.ember],['Frost',18,C.frost],['Nature',30,C.green],['Shadow',40,C.violet],['Radiant',65,C.gold],['Arcane',15,C.mana]];
+const ITEMS=[
+{id:'staff',name:'Elderwood Staff',short:'STAFF',x:0,y:0,w:1,h:4,r:'uncommon',type:'Two-handed Staff',cat:'gear',il:198,lines:['+21 Wisdom','+14 Vitality','+96 Healing Power'],flavor:'Cut from a limb that fell on its own.',req:21,value:'4g 20s'},
+{id:'mace',name:'Sunforged Mace',short:'MACE',x:1,y:0,w:1,h:3,r:'epic',type:'One-handed Mace',cat:'gear',il:214,lines:['+18 Spirit','+22 Wisdom','+124 Spell Power'],effect:'Equip: Smite has a 15% chance to refund 1 AP.',flavor:'Still warm from the forges beneath Aldermoor Keep.',req:22,value:'18g 40s',cmp:'Branch of the Worldtree',compare:['+24 Spell Power','−38 Healing Power','−6 Wisdom']},
+{id:'robe',name:'Robe of Silverleaf',short:'ROBE',x:2,y:0,w:2,h:3,r:'epic',type:'Cloth Chest',cat:'gear',il:218,lines:['+212 Armor','+26 Wisdom','+19 Vitality'],effect:'Equip: Healing a target below 30% health grants 1 Faith.',flavor:'Woven by the tailors of Lirael’s Rest.',req:23,value:'16g',cmp:'Vestments of the Eldergrove',compare:['+2 Item level','+4 Wisdom','−3 Spirit']},
+{id:'shield',name:'Aegis of the First Dawn',short:'SHIELD',x:4,y:0,w:2,h:2,r:'rare',type:'Shield',cat:'gear',il:206,lines:['+540 Armor','+12 Vitality','12% Block'],flavor:'Its face shows a sunrise no one living has seen.',req:20,value:'9g 10s'},
+{id:'tome',name:'Tome of Litanies',short:'TOME',x:6,y:0,w:2,h:2,r:'epic',type:'Off-hand Relic',cat:'gear',il:215,lines:['+17 Spirit','+15 Intellect'],effect:'Equip: Sanctuary Circle lasts 1 additional turn.',flavor:'The margins are filled with other clerics’ notes.',req:22,value:'14g 75s',cmp:'Lantern of the Pilgrim',compare:['+1 Item level','+5 Spirit','−8 Wisdom']},
+{id:'scale',name:'Wyrmscale',short:'SCALE',x:8,y:0,w:2,h:2,r:'rare',type:'Crafting Material',cat:'material',qty:3,effect:'Used in: Dragonhide armor, fire-resist wards.',flavor:'Shed by Ignarath, if the merchant is to be believed.',value:'2g each'},
+{id:'tooth',name:'Tooth of Ignarath',short:'TOOTH',x:4,y:2,w:1,h:2,r:'rare',type:'Quest Item',cat:'quest',effect:'Quest: Bring to Warden Ysolde in Aldermoor Keep.',flavor:'Longer than your forearm.'},
+{id:'draught',name:'Healing Draught',short:'HEAL',x:5,y:2,w:1,h:1,r:'common',type:'Consumable',cat:'consumable',qty:8,lines:['Restores 180 Health'],effect:'Use: costs 1 AP in combat.',value:'25s'},
+{id:'tincture',name:'Mana Tincture',short:'MANA',x:6,y:2,w:1,h:1,r:'uncommon',type:'Consumable',cat:'consumable',qty:5,lines:['Restores 220 Mana'],effect:'Use: costs 1 AP in combat.',value:'60s'},
+{id:'ring',name:'Ring of Quiet Stars',short:'RING',x:7,y:2,w:1,h:1,r:'legendary',type:'Ring',cat:'gear',il:226,lines:['+28 Spirit','+24 Wisdom','+3% Critical Chance'],effect:'Equip: Your first heal each battle costs no Mana.',flavor:'It hums when the sky is clear.',req:23,value:'42g',cmp:'Band of First Frost',compare:['+19 Item level','+16 Spirit','+3% Critical Chance']},
+{id:'crown',name:'Crown of the Grove Warden',short:'HELM',x:8,y:2,w:2,h:2,r:'rare',type:'Cloth Head',cat:'gear',il:209,lines:['+96 Armor','+16 Wisdom','+11 Spirit'],flavor:'Antlers of living wood, trimmed each spring.',req:22,value:'8g 60s'},
+{id:'scroll',name:'Scroll of Recall',short:'SCRL',x:5,y:3,w:1,h:1,r:'common',type:'Consumable',cat:'consumable',qty:2,effect:'Use: Return to Lirael’s Rest. Cannot be used in combat.',value:'10s'},
+{id:'petal',name:'Moonpetal',short:'HERB',x:6,y:3,w:1,h:1,r:'uncommon',type:'Herb',cat:'material',qty:12,effect:'Used in: Mana Tinctures, Blessed Incense.',value:'8s each'},
+{id:'opal',name:'Ember Opal',short:'GEM',x:7,y:3,w:1,h:1,r:'epic',type:'Gem',cat:'material',lines:['Socket: +12 Spirit, +8 Fire Resistance'],value:'6g'},
+{id:'boots',name:'Boots of the Glade',short:'BOOTS',x:1,y:4,w:2,h:2,r:'uncommon',type:'Cloth Feet',cat:'gear',il:199,lines:['+64 Armor','+9 Dexterity','+1 Movement'],req:20,value:'3g 40s'},
+{id:'gloves',name:'Wraps of the Penitent',short:'GLOVES',x:3,y:4,w:2,h:2,r:'rare',type:'Cloth Hands',cat:'gear',il:207,lines:['+72 Armor','+14 Wisdom'],effect:'Equip: Purify also removes 1 Poison stack from you.',req:22,value:'7g 15s'}];
+const SKILLS=[
+{id:'smite',name:'Smite',g:'ᛋ',school:'Radiant',ap:1,mana:30,faith:0,cd:0,range:'4 tiles',target:'Enemy',rank:4,lvl:1,desc:'Strike an enemy with radiant light for 64–78 damage. Generates 1 Faith.'},
+{id:'mend',name:'Mend',g:'ᛚ',school:'Nature',ap:1,mana:40,faith:0,cd:0,range:'4 tiles',target:'Ally',rank:5,lvl:1,desc:'Heal an ally for 142–160 health.'},
+{id:'bloom',name:'Verdant Bloom',g:'ᛜ',school:'Nature',ap:1,mana:55,faith:0,cd:1,range:'4 tiles',target:'Ally',rank:3,lvl:6,desc:'Plant a bloom on an ally. It heals 48 health at the start of each of their turns for 3 turns.'},
+{id:'sanctuary',name:'Sanctuary Circle',g:'ᛟ',school:'Nature',ap:2,mana:120,faith:0,cd:3,range:'Self, radius 2',target:'Area',rank:3,lvl:10,desc:'Consecrate a circle around you. Allies inside heal 60 health per turn for 3 turns.'},
+{id:'ward',name:'Aegis Ward',g:'ᛉ',school:'Protection',ap:1,mana:70,faith:0,cd:2,range:'3 tiles',target:'Ally',rank:3,lvl:4,desc:'Shield an ally, absorbing 180 damage until your next turn.'},
+{id:'purify',name:'Purify',g:'ᚹ',school:'Protection',ap:1,mana:35,faith:0,cd:1,range:'3 tiles',target:'Ally',rank:2,lvl:8,desc:'Remove one curse, poison, or disease from an ally.'},
+{id:'rootbind',name:'Rootbind',g:'ᚱ',school:'Nature',ap:2,mana:60,faith:0,cd:3,range:'5 tiles',target:'Enemy',rank:2,lvl:12,desc:'Roots erupt beneath an enemy, immobilizing it for 2 turns.'},
+{id:'judgment',name:'Judgment',g:'ᛏ',school:'Radiant',ap:2,mana:80,faith:1,cd:2,range:'3 tiles',target:'Enemy',rank:2,lvl:14,desc:'Deal 120–140 radiant damage. Deals double damage to enemies below 35% health.'},
+{id:'dawnbreak',name:'Dawnbreak',g:'ᛞ',school:'Radiant',ap:3,mana:150,faith:2,cd:4,range:'Line, 5 tiles',target:'Line',rank:1,lvl:18,desc:'Release a line of dawnlight that damages enemies for 150 and heals allies for 90.'},
+{id:'lament',name:'Lamentation’s End',g:'ᛇ',school:'Protection',ap:3,mana:200,faith:5,cd:'battle',range:'1 tile',target:'Fallen ally',rank:1,lvl:20,desc:'Return a fallen ally to life with 40% health. Once per battle.'},
+{id:'step',name:'Silverleaf Step',g:'ᛖ',school:'Racial',ap:1,mana:20,faith:0,cd:3,range:'3 tiles',target:'Empty tile',rank:1,lvl:1,desc:'Elven racial. Teleport to an empty tile without provoking attacks.'},
+{id:'consecrate',name:'Consecrate Ground',g:'ᚦ',school:'Radiant',ap:2,mana:90,faith:0,cd:3,range:'4 tiles',target:'Area',rank:1,lvl:22,desc:'Hallow a 3-tile area for 2 turns. Enemies standing in it take 30 radiant damage per turn.'},
+{id:'choir',name:'Choir of the Dawn',g:'ᛝ',school:'Radiant',ap:3,mana:180,faith:3,cd:5,range:'Self, radius 3',target:'Area',rank:0,lvl:26,desc:'Allies in range gain 1 AP next turn and heal 120 health.'}];
+const SK={};SKILLS.forEach(s=>SK[s.id]=s);
+const T=(id,n,t,c,max,g,vals,d,mod,req)=>({id,n,t,c,max,g,vals,d,mod:mod||null,req:req||null});
+const TREES=[
+{id:'dawn',name:'Dawnward',sub:'Radiant judgment and burning light',col:C.gold,nodes:[
+T('searing','Searing Light',1,0,3,'ᛋ',[5,10,15],'Smite deals {v}% more damage.','smite'),
+T('kindled','Kindled Faith',1,1,2,'ᚲ',[1,2],'Critical Smites grant {v} extra Faith.','smite'),
+T('illum','Illumination',1,2,3,'ᛁ',[1,2,3],'Critical chance increased by {v}%.'),
+T('echo','Radiant Echo',2,0,2,'ᛖ',[15,30],'Smite has a {v}% chance to strike a second enemy.','smite','searing'),
+T('zeal','Burning Zeal',2,1,3,'ᚠ',[2,4,6],'Spell Power increased by {v}%.'),
+T('gaze','Sunward Gaze',2,2,1,'ᛞ',[1],'Dawnbreak range increased by {v} tile.','dawnbreak'),
+T('weight','Weight of Judgment',3,0,3,'ᛏ',[40,45,50],'Judgment deals double damage to enemies below {v}% health.','judgment'),
+T('hallowed','Hallowed Earth',3,1,2,'ᚦ',[1,2],'Consecrate Ground lasts {v} more turn(s).','consecrate','zeal'),
+T('halo','Blinding Halo',3,2,1,'ᛜ',[1],'Dawnbreak blinds enemies hit for {v} turn.','dawnbreak','gaze'),
+T('pace','Zealot’s Pace',4,0,2,'ᚱ',[1,2],'Gain {v} Initiative for each Faith you hold.'),
+T('flare','Solar Flare',4,2,3,'ᛊ',[10,20,30],'Radiant critical hits burn for {v}% of the damage over 2 turns.'),
+T('avatar','Avatar of Dawn',5,1,1,'ᛟ',[1],'Keystone. Once per battle, radiant skills cost {v} less AP for 3 turns.',null,'hallowed')]},
+{id:'grove',name:'Verdant Grace',sub:'Elven nature magic and lasting heals',col:C.green,nodes:[
+T('silverleaf','Silverleaf Blessing',1,0,3,'ᛚ',[3,6,9],'Healing done increased by {v}%.'),
+T('roots','Deep Roots',1,1,2,'ᚱ',[1,2],'Rootbind lasts {v} more turn(s).','rootbind'),
+T('swift','Swift Mending',1,2,1,'ᛗ',[1],'Your first Mend each turn costs {v} less AP.','mend'),
+T('weave','Bloomweave',2,0,3,'ᛜ',[20,35,50],'Verdant Bloom also heals adjacent allies for {v}% of its amount.','bloom','silverleaf'),
+T('patience','Grove’s Patience',2,1,2,'ᛃ',[10,20],'Mana regained per turn increased by {v}%.'),
+T('thorn','Thornward',2,2,2,'ᚦ',[8,16],'Allies you heal reflect {v} nature damage when struck.'),
+T('circle','Circle of Life',3,0,3,'ᛟ',[10,20,30],'Sanctuary Circle radius +1 and its healing increased by {v}%.','sanctuary','weave'),
+T('sap','Sap of Ages',3,2,1,'ᛇ',[50],'Overhealing becomes a shield worth {v}% of the excess.'),
+T('renewal','Wild Renewal',4,0,3,'ᛒ',[1,2,3],'Verdant Bloom lasts {v} more turn(s).','bloom','circle'),
+T('evergreen','Evergreen',4,1,2,'ᛉ',[15,30],'Allies below 30% health receive {v}% more healing from you.'),
+T('heart','Heart of the Eldergrove',5,1,1,'ᛝ',[30],'Keystone. Once per battle, an ally who would die is instead healed to {v}% health.',null,'evergreen')]},
+{id:'aegis',name:'Aegis',sub:'Wards, armor, and shared burden',col:C.mana,nodes:[
+T('plate','Blessed Plate',1,0,3,'ᛒ',[3,6,9],'Armor increased by {v}%.'),
+T('resolve','Warden’s Resolve',1,1,2,'ᛉ',[15,30],'Aegis Ward absorbs {v}% more damage.','ward'),
+T('stalwart','Stalwart',1,2,3,'ᚢ',[2,4,6],'Vitality increased by {v}%.'),
+T('burden','Shared Burden',2,0,2,'ᚷ',[10,20],'{v}% of damage dealt to warded allies is redirected to you.',null,'plate'),
+T('touch','Purifying Touch',2,1,1,'ᚹ',[80],'Purify also heals the target for {v} health.','purify','resolve'),
+T('steadfast','Steadfast',2,2,3,'ᛁ',[4,8,12],'All resistances increased by {v}.'),
+T('bulwark','Bulwark of Faith',3,1,3,'ᛞ',[1,2,3],'Each point of Faith increases your armor by {v}%.',null,'touch'),
+T('guardian','Guardian’s Step',3,2,1,'ᛖ',[3],'Silverleaf Step can swap places with an ally within {v} tiles.','step'),
+T('unbroken','Unbroken',4,0,2,'ᛊ',[80,60],'You cannot be critically hit while above {v}% health.'),
+T('lastrite','Last Rite',4,1,1,'ᛇ',[3],'Lamentation’s End costs {v} Faith instead of 5.','lament','bulwark'),
+T('sanctified','Sanctified Aegis',5,1,1,'ᛟ',[3],'Keystone. Aegis Ward can shield every ally at once for {v} AP.','ward','lastrite')]}];
+const INIT={searing:2,silverleaf:3,roots:1,swift:1,weave:3,patience:2,circle:3,plate:3,resolve:2,touch:1};
+const TOTAL=23;
+const NODE={},NTREE={};TREES.forEach(tr=>tr.nodes.forEach(n=>{NODE[n.id]=n;NTREE[n.id]=tr}));
+const fmt=(n,r)=>n.d.replace('{v}',n.vals[Math.max(0,Math.min(n.vals.length,r)-1)]);
+const ROMAN=['I','II','III','IV','V'];
+const REGIONS=[
+{id:'silver',name:'Silverleaf Vale',lv:'18–24',lo:18,sx:3,sy:5,enc:'10%',desc:'Elven forest'},
+{id:'alder',name:'Kingdom of Aldermoor',lv:'20–26',lo:20,sx:9,sy:6,enc:'15%'},
+{id:'salt',name:'Saltmarsh Coast',lv:'22–27',lo:22,sx:5,sy:10,enc:'20%'},
+{id:'frost',name:'Frostmere',lv:'26–32',lo:27,sx:9,sy:1,enc:'30%'},
+{id:'ember',name:'Emberreach',lv:'30–36',lo:30,sx:15,sy:4,enc:'45%'},
+{id:'hollow',name:'The Hollow Wastes',lv:'34–40',lo:34,sx:14,sy:9,enc:'Unknown'}];
+const RG={};REGIONS.forEach(r=>RG[r.id]=r);
+const POIS=[
+{c:3,r:5,name:'Lirael’s Rest',type:'Elven town',g:'◆',col:C.gold,desc:'Kel’hos’s home. Trainer, bank, and the Silverleaf tailors.'},
+{c:2,r:3,name:'Moonwell Shrine',type:'Shrine',g:'✧',col:C.mana,desc:'Restores Mana and Faith once per day.'},
+{c:5,r:4,name:'The Wilting Grove',type:'Quest · Level 23',g:'!',col:C.gold,desc:'Something is draining the old trees. The grove keepers want answers.'},
+{c:9,r:6,name:'Aldermoor Keep',type:'Capital',g:'✦',col:C.gold,desc:'Seat of Queen Maerin. Warden Ysolde is waiting for the Tooth of Ignarath.'},
+{c:7,r:7,name:'Crossroads Inn',type:'Inn',g:'◆',col:C.ink,desc:'Rest to restore the party. Recruit mercenaries.'},
+{c:8,r:8,name:'Bandits at the Ford',type:'Quest · Level 24',g:'!',col:C.gold,desc:'Clear the ford so the grain caravans can pass.'},
+{c:10,r:8,name:'Barrow of Kings',type:'Dungeon · Level 25',g:'▼',col:C.ember,desc:'Six encounters. Undead are weak to radiant damage.'},
+{c:8,r:2,name:'Frosthold',type:'Town',g:'◆',col:C.ink,desc:'Last warm hearth before the Frostmere passes.'},
+{c:14,r:5,name:'Cinderforge',type:'Dungeon · Level 32',g:'▼',col:C.ember,desc:'Dwarven foundry overrun by fire elementals.'},
+{c:16,r:3,name:'Ignarath’s Roost',type:'Dragon lair · Level 36',g:'▲',col:C.hp,desc:'The red wyrm Ignarath. Raid encounter for a full party.'},
+{c:5,r:9,name:'Saltmarsh Landing',type:'Port',g:'◇',col:C.ink,desc:'Ships to the southern isles.'},
+{c:13,r:9,name:'The Hollow Gate',type:'Rumored dungeon',g:'▼',col:C.violet,desc:'Travelers speak of a gate that swallows the light.'}];
+const TER={deep:'Deep sea',sea:'Sea',forest:'Forest',elder:'Elderwood',glade:'Glade',plains:'Plains',hills:'Hills',snow:'Snowfield',peak:'Peaks',volcanic:'Volcanic',ash:'Ashland',blight:'Blight',marsh:'Marsh',shore:'Shore'};
+const TF={deep:'#0c1b2b',sea:'#12283d',forest:'#1f3b2c',elder:'#153a3a',glade:'#33462b',plains:'#3a4829',hills:'#48442f',snow:'#5f6a77',peak:'#434a55',volcanic:'#5a251b',ash:'#382825',blight:'#2c1e39',marsh:'#26382f',shore:'#48473a'};
+const noise=(c,r)=>Math.sin(c*1.9+r*0.7)*Math.cos(c*0.5-r*1.7);
+const terFor=(g,n)=>({silver:n>0.35?'elder':n<-0.5?'glade':'forest',alder:n>0.45?'forest':n<-0.55?'hills':'plains',frost:n>0.1?'peak':'snow',ember:n>0.15?'volcanic':'ash',hollow:'blight',salt:n>0?'marsh':'shore'})[g];
+const COLS=18,ROWS=12;
+const HEXES=[];
+for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+  const n=noise(c,r),dx=(c-8.5)/9.6,dy=(r-5.5)/6.4,d=dx*dx+dy*dy+n*0.22;
+  const poi=POIS.find(p=>p.c===c&&p.r===r)||null;
+  let reg=null,ter;
+  if(d>1.12&&!poi)ter='deep';else if(d>0.9&&!poi)ter='sea';
+  else{reg=REGIONS.reduce((b,g)=>{const dd=(c-g.sx)**2+((r-g.sy)*1.25)**2+noise(c*1.3,r*0.8)*2;return dd<b.d?{d:dd,id:g.id}:b},{d:1e9}).id;ter=terFor(reg,n)}
+  HEXES.push({c,r,key:c+','+r,ter,reg,poi,water:ter==='sea'||ter==='deep',fog:reg==='hollow'});
+}
+const HEX={};HEXES.forEach(h=>HEX[h.key]=h);
+const axial=(c,r)=>[c-(r-(r&1))/2,r];
+const hdist=(a,b)=>{const[q1,r1]=axial(a.c,a.r),[q2,r2]=axial(b.c,b.r);return(Math.abs(q1-q2)+Math.abs(r1-r2)+Math.abs(q1+r1-q2-r2))/2};
+const danger=lo=>lo<=23?['Safe',C.green]:lo<=26?['Moderate',C.gold]:lo<=31?['Dangerous',C.ember]:['Deadly',C.hp];
+
+const EW=2048,EH=1536,HW=46.5,HS=HW/Math.sqrt(3),RS=HS*1.5,OX=-9.25,OY=5.3,ECOLS=46,EROWS=39;
+const ec=(c,r)=>[OX+c*HW+(r&1?HW/2:0),OY+r*RS];
+const ECOR=[0,1,2,3,4,5].map(i=>{const a=Math.PI/180*(60*i-30);return[HS*Math.cos(a),HS*Math.sin(a)]});
+const epts=(c,r)=>{const[x,y]=ec(c,r);return ECOR.map(([dx,dy])=>(x+dx).toFixed(1)+','+(y+dy).toFixed(1)).join(' ')};
+const epath=(c,r)=>'M'+epts(c,r).split(' ').join('L')+'Z';
+const px2hex=(x,y)=>{const px=x-OX,py=y-OY,X=(Math.sqrt(3)/3*px-py/3)/HS,Zc=(2/3*py)/HS,Y=-X-Zc;let rx=Math.round(X),ry=Math.round(Y),rz=Math.round(Zc);const dx=Math.abs(rx-X),dy=Math.abs(ry-Y),dz=Math.abs(rz-Zc);if(dx>dy&&dx>dz)rx=-ry-rz;else if(!(dy>dz))rz=-rx-ry;const r=Math.max(0,Math.min(EROWS-1,rz));return{c:Math.max(0,Math.min(ECOLS-1,rx+(rz-(rz&1))/2)),r}};
+const EHEX=[];for(let r=0;r<EROWS;r++)for(let c=0;c<ECOLS;c++){const[x,y]=ec(c,r);EHEX.push({c,r,key:c+','+r,x,y})}
+const EHX={};EHEX.forEach(h=>EHX[h.key]=h);
+const EGRID=EHEX.map(h=>epath(h.c,h.r)).join('');
+const ETER={plains:'Grassland',forest:'Forest',highlands:'Highlands',peaks:'Mountains',snow:'Snow & ice',desert:'Desert',water:'Water'};
+const ETC={plains:'#b9c46a',forest:'#2f7a3a',highlands:'#d0623a',peaks:'#a3aab6',snow:'#eef4fa',desert:'#e8c27a',water:'#3a86b8'};
+const eCls=(r,g,b)=>{const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(r+g+b)/3;
+  if(g-r>16&&Math.abs(b-g)<18&&b>r+10)return'water';if(l>182&&mx-mn<70)return'snow';if(b>r+10&&b>g+4)return'snow';
+  if(r>175&&g>140&&b<150&&r-b>55)return'desert';if(r>g+28&&r>110)return'highlands';if(mx-mn<32&&b>=r-10&&l>=55)return'peaks';if(l<95&&r>b+8)return'forest';return'plains'};
+const E_REG=[
+['tameless','The Tameless Shore',720,1060,20,'20–24'],['tiuv','Tiuv Forest',660,850,21,'21–25'],['sepulcher','Sepulcher Hills',960,790,24,'24–28'],['eldrin','Eldrin Reach',900,930,22,'22–25'],
+['arnweyal','Arnweyal Plains',1010,610,23,'23–27'],['corran','Corran Woodland',640,470,25,'25–29'],['aonru','Lake Aonru',840,560,24,'24–27'],['bretten','Gandireav Vale',950,330,25,'25–29'],
+['bronze','The Bronze Hills',450,380,30,'30–35'],['frost','Frostbound Wastes',420,90,34,'34–40'],['cristolach','Cristolach',120,520,36,'36–42'],['fen','Great Glacial Fen',390,770,27,'27–31'],
+['raonai','Raonai Strand',460,990,26,'26–30'],['collmhor','Collmhor Wood',330,1230,28,'28–32'],['mhistana','Mhistana Detritus',220,1420,38,'38–44'],['torril','Torril Wood',1130,370,26,'26–30'],
+['tririver','Tririver Marsh',1260,470,28,'28–32'],['freyil','The Freyil Basin',1700,330,32,'32–36'],['raduna','Raduna Woodland',1700,90,35,'35–40'],['thrandir','Thrandir Ridge',1420,560,33,'33–38'],
+['windshear','Windshear Peaks',1500,760,34,'34–39'],['prakov','Prakov’s Gift',1400,990,28,'28–33'],['solmara','Solmara',1000,1110,25,'25–29'],['graliel','Graliel’s Bulwark',1250,1240,30,'30–34'],
+['ylestrea','Ylestrea Valley',1700,900,33,'33–37'],['dunes','The Bloody Dunes',1880,900,36,'36–42'],['decay','Sands of Decay',1880,1340,38,'38–44'],['claw','Claw Pointe',930,1400,30,'30–34']
+].map(([id,name,x,y,lo,lv])=>({id,name,x,y,lo,lv}));
+const E_SEA=[['Mortas Bay',870,1030],['Proxus Strait',760,1300],['Claw Bay',945,1310],['Great Sea of Morimar',1300,1480],['Thaive Sea',1090,190],['Sea of Rhew',100,110],['Lake Aonru',840,590],['Teorann Lake',650,185],['Eastern Sea',1850,560],['Sea of Morimar',1700,1200],['Western Sea',60,1300]].map(([name,x,y])=>({name,x,y}));
+const ERG={};E_REG.forEach(g=>ERG[g.id]=g);
+const nearest=(list,x,y)=>list.reduce((b,g)=>{const d=(g.x-x)**2+(g.y-y)**2;return d<b.d?{d,g}:b},{d:1e12}).g;
+const E_POIS=[
+['Ridgeton',758,1012,'Town','◆',C.gold,'Market town on the Tameless Shore. Trainer, bank, and the harbor road north.'],
+['Ashvale',665,1008,'Village','◆',C.ink,'Forest village where the Tiuv river forks.'],
+['Praldosta',800,940,'Village','◆',C.ink,'Fishing village on the northern rim of Mortas Bay.'],
+['Lighthouse of Ala’cul',762,1046,'Quest · Level 23','!',C.gold,'The lamp has been dark for three nights. The keeper has not been seen.'],
+['Raisson',708,1212,'Port','◇',C.ink,'Southern harbor on the Proxus Strait. Ships to Claw Pointe.'],
+['Olend',838,803,'Village','◆',C.ink,'Hill village at the foot of the Sepulcher Hills.'],
+['Eldrin City',880,908,'City','✦',C.gold,'Walled city at the head of Mortas Bay.'],
+['Marsh Haven',836,478,'Village','◆',C.ink,'Stilt village on the shore of Lake Aonru.'],
+['Bretten',1022,402,'City','✦',C.gold,'River city between the Gandireav branches.'],
+['Talav’s Benediction',1050,455,'Shrine','✧',C.mana,'Restores Mana and Faith once per day.'],
+['The Bastion',1215,1212,'Fortress','✦',C.gold,'Fortress at the heart of Graliel’s Bulwark.'],
+['Mount Felxtra',480,250,'Dragon lair · Level 36','▲',C.hp,'Raid encounter for a full party.'],
+['The Winter Court',168,598,'Rumored court','▼',C.violet,'Travelers speak of a court of ice beyond the Cristolach peaks.'],
+['Adania',1815,1452,'Desert town','◆',C.ink,'Last well before the Sands of Decay.']
+].map(([name,x,y,type,g,col,desc])=>{const h=px2hex(x,y);return{name,type,g,col,desc,key:h.c+','+h.r}});
+const EPOI={};E_POIS.forEach(p=>EPOI[p.key]=p);
+const edisk=(k,R)=>{const o={},h=EHX[k];EHEX.forEach(x=>{if(hdist(x,h)<=R)o[x.key]=1});return o};
+const encFor=lo=>lo<=23?'10%':lo<=26?'15%':lo<=31?'25%':'40%';
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    let q={};try{const u=new URLSearchParams(location.search);q={page:u.get('page'),char:u.get('char'),tal:u.get('talents')}}catch(e){}
+    this.q=q;this.mapRef=React.createRef();this.svgRef=React.createRef();this.hoverRef=React.createRef();this.miniRef=React.createRef();
+    let saved=null;if(!q.page){try{saved=localStorage.getItem('aetherwyn-page')}catch(e){}}
+    this.state={page:q.page||saved||'home',invFilter:'all',selItem:'mace',skFilter:'All',selSkill:'smite',arming:false,bar:['smite','mend','bloom','ward','sanctuary','dawnbreak'],ranks:{...INIT},selTal:'circle',focus:'grove',selHex:'9,6',party:{c:4,r:5},day:14,eParty:'16,25',eSel:'17,23',eExp:edisk('16,25',5),zoom:null,terReady:false,w:typeof window!=='undefined'?window.innerWidth:1440};
+  }
+  componentDidMount(){
+    this.onResize=()=>this.setState({w:window.innerWidth});
+    this.onKey=e=>{const tg=e.target&&e.target.tagName;if(/INPUT|TEXTAREA|SELECT/.test(tg||'')||e.metaKey||e.ctrlKey||e.altKey)return;const p=PAGES.find(p=>p.key.toLowerCase()===String(e.key).toLowerCase());if(p)this.go(p.id)};
+    window.addEventListener('resize',this.onResize);window.addEventListener('keydown',this.onKey);
+    this.loadTerrain();this.afterMap();
+  }
+  componentDidUpdate(){this.afterMap()}
+  loadTerrain(){
+    const img=new Image();img.onload=()=>{try{
+      const cv=document.createElement('canvas');cv.width=EW;cv.height=EH;const g=cv.getContext('2d');g.drawImage(img,0,0,EW,EH);const D=g.getImageData(0,0,EW,EH).data;
+      const ter={},reg={};
+      EHEX.forEach(h=>{const cnt={};let n=0;for(let dy=-15;dy<=15;dy+=6)for(let dx=-15;dx<=15;dx+=6){const X=Math.round(h.x+dx),Y=Math.round(h.y+dy);if(X<0||Y<0||X>=EW||Y>=EH)continue;const i=(Y*EW+X)*4,k=eCls(D[i],D[i+1],D[i+2]);cnt[k]=(cnt[k]||0)+1;n++}
+        let t='water';if(n&&(cnt.water||0)/n<0.4){let bn=-1;for(const k in cnt)if(k!=='water'&&cnt[k]>bn){bn=cnt[k];t=k}}
+        if(EPOI[h.key]&&t==='water')t='plains';
+        if(t==='water')reg[h.key]={sea:nearest(E_SEA,h.x,h.y).name};else{const g=nearest(E_REG,h.x,h.y);reg[h.key]={id:g.id};if((g.id==='windshear'||g.id==='thrandir')&&t==='forest')t='peaks'}
+        ter[h.key]=t});
+      const paths={};EHEX.forEach(h=>{const t=ter[h.key];if(t==='water')return;(paths[t]=paths[t]||[]).push(epath(h.c,h.r))});
+      this.eTer=ter;this.eReg=reg;this.eTints=Object.keys(paths).map(t=>({t,col:ETC[t],d:paths[t].join('')}));
+      this.setState({terReady:true});
+    }catch(e){console.warn('terrain sampling failed',e)}};img.src='assets/eridan.jpg';
+  }
+  eZoom(){return this.state.zoom??this.props.mapZoom??4}
+  afterMap(){
+    const el=this.mapRef.current;
+    if(!el){this._centered=false;return}
+    const z=this.eZoom();
+    if(!this._centered){this._centered=true;this._z=z;this.centerOn(EHX[this.state.eParty]);return}
+    if(this._z!==z){const c=this._keep;this._z=z;if(c){el.scrollLeft=c.x*z-el.clientWidth/2;el.scrollTop=c.y*z-el.clientHeight/2}}
+    this.updMini();
+  }
+  centerOn(h){const el=this.mapRef.current;if(!el||!h)return;const z=this.eZoom();el.scrollLeft=h.x*z-el.clientWidth/2;el.scrollTop=h.y*z-el.clientHeight/2;this.updMini()}
+  updMini(){const el=this.mapRef.current,m=this.miniRef.current;if(!el||!m)return;const z=this.eZoom(),mw=this.miniW;
+    m.style.left=el.scrollLeft/(EW*z)*mw+'px';m.style.top=el.scrollTop/(EH*z)*mw*0.75+'px';m.style.width=Math.min(mw,el.clientWidth/(EW*z)*mw)+'px';m.style.height=Math.min(mw*.75,el.clientHeight/(EH*z)*mw*.75)+'px'}
+  setZoom(z){const el=this.mapRef.current,oz=this.eZoom();z=Math.max(2,Math.min(6,z));if(el)this._keep={x:(el.scrollLeft+el.clientWidth/2)/oz,y:(el.scrollTop+el.clientHeight/2)/oz};this.setState({zoom:z})}
+  evHex(e){const s=this.svgRef.current;if(!s)return null;const b=s.getBoundingClientRect(),z=this.eZoom();return px2hex((e.clientX-b.left)/z,(e.clientY-b.top)/z)}
+  mDown(e){if(e.button!==undefined&&e.button!==0)return;const el=this.mapRef.current;this.drag={x:e.clientX,y:e.clientY,sl:el.scrollLeft,st:el.scrollTop,moved:false};try{el.setPointerCapture(e.pointerId)}catch(_){};el.style.cursor='grabbing'}
+  mMove(e){const d=this.drag,el=this.mapRef.current;
+    if(d){const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.abs(dx)+Math.abs(dy)>5)d.moved=true;if(d.moved){el.scrollLeft=d.sl-dx;el.scrollTop=d.st-dy}return}
+    const h=this.evHex(e),p=this.hoverRef.current;if(h&&p){const k=h.c+','+h.r;if(k!==this._hk){this._hk=k;p.setAttribute('points',epts(h.c,h.r))}}}
+  mUp(e){const d=this.drag;this.drag=null;const el=this.mapRef.current;if(el)el.style.cursor='grab';if(d&&!d.moved){const h=this.evHex(e);if(h)this.setState({eSel:h.c+','+h.r})}}
+  mLeave(){const p=this.hoverRef.current;if(p&&!this.drag){p.setAttribute('points','0,0');this._hk=null}}
+  componentWillUnmount(){window.removeEventListener('resize',this.onResize);window.removeEventListener('keydown',this.onKey)}
+  go(id){if(id!=='map')this._centered=false;this.setState({page:id});if(!this.q.page){try{localStorage.setItem('aetherwyn-page',id)}catch(e){}}}
+  spent(ranks){return Object.values(ranks).reduce((a,b)=>a+b,0)}
+  tierBelow(tr,t,ranks){return tr.nodes.filter(n=>n.t<t).reduce((a,n)=>a+(ranks[n.id]||0),0)}
+  valid(tr,ranks){return tr.nodes.every(n=>{const r=ranks[n.id]||0;if(!r)return true;if(this.tierBelow(tr,n.t,ranks)<4*(n.t-1))return false;if(n.req&&!(ranks[n.req]>0))return false;return true})}
+  canLearn(n,tr,ranks){return this.spent(ranks)<TOTAL&&(ranks[n.id]||0)<n.max&&this.tierBelow(tr,n.t,ranks)>=4*(n.t-1)&&(!n.req||ranks[n.req]>0)}
+  canUnlearn(id,ranks){const r=ranks[id]||0;if(!r)return false;return this.valid(NTREE[id],{...ranks,[id]:r-1})}
+  learn(id){const s=this.state;if(!this.canLearn(NODE[id],NTREE[id],s.ranks)){this.setState({selTal:id});return}this.setState({ranks:{...s.ranks,[id]:(s.ranks[id]||0)+1},selTal:id})}
+  unlearn(id){const s=this.state;if(!this.canUnlearn(id,s.ranks))return;this.setState({ranks:{...s.ranks,[id]:s.ranks[id]-1},selTal:id})}
+
+  renderVals(){
+    const s=this.state,narrow=s.w<820,P=s.page;
+    const charLayout=this.q.char==='b'?'Codex':this.q.char==='a'?'Paper doll':(this.props.characterLayout??'Paper doll');
+    const talLayout=this.q.tal==='b'?'Focused spec':this.q.tal==='a'?'All trees':(this.props.talentLayout??'All trees');
+    const pg=PAGES.find(p=>p.id===P)||PAGES[0];
+    const nav=PAGES.map(p=>{const a=p.id===P;return{...p,go:()=>this.go(p.id),color:a?C.ink:C.muted,bg:a?'rgba(184,92,74,.14)':'transparent',bar:a?C.ember:'transparent',gc:a?C.ember:'#7d746e',gt:a?'0 0 10px rgba(224,138,114,.9)':'none'}});
+    const eqMap=e=>({...e,col:RAR[e.r],bg:stripe(RAR[e.r],.14),glow:`0 0 10px ${hexA(RAR[e.r],.25)}`,abbr:e.slot.split(' ')[0].slice(0,4).toUpperCase(),slotU:e.slot.toUpperCase()});
+    const eqAll=EQUIP.map(eqMap);
+    const attrs=ATTR.map(([name,abbr,base,gear,hint])=>({name,abbr,base,gear,hint,total:base+gear,gearTxt:'+'+gear}));
+    const combat=COMBAT.map(g=>({gU:g.g.toUpperCase(),rows:g.rows.map(([k,v])=>({k,v}))}));
+    const resist=RESIST.map(([name,v,col])=>({name,nameU:name.toUpperCase(),v,col,pct:v+'%'}));
+
+    // inventory
+    const cell=narrow?34:50;
+    const cats=[['all','All'],['gear','Gear'],['consumable','Consumables'],['material','Materials'],['quest','Quest']];
+    const invTabs=cats.map(([id,label])=>{const a=s.invFilter===id;return{label:label.toUpperCase(),count:id==='all'?ITEMS.length:ITEMS.filter(i=>i.cat===id).length,click:()=>this.setState({invFilter:id}),bg:a?'rgba(184,92,74,.18)':'transparent',border:a?C.ember:'rgba(232,200,170,.12)',col:a?C.ink:C.muted}});
+    const items=ITEMS.map(it=>{const col=RAR[it.r],sel=s.selItem===it.id,match=s.invFilter==='all'||s.invFilter===it.cat;return{...it,col,l:it.x*cell+2,t:it.y*cell+2,w:it.w*cell-4,h:it.h*cell-4,bg:stripe(col,sel?.22:.12),sh:sel?`0 0 0 1px ${col},0 0 18px ${hexA(col,.55)}`:'none',op:match?1:.22,fs:narrow?7:9,hasQty:!!it.qty,qty:it.qty?'×'+it.qty:'',click:()=>this.setState({selItem:it.id})}});
+    const it=ITEMS.find(i=>i.id===s.selItem)||ITEMS[0],icol=RAR[it.r];
+    const sel={...it,col:icol,bg:stripe(icol,.16),glow:`0 0 18px ${hexA(icol,.35)}`,tglow:`0 0 14px ${hexA(icol,.5)}`,typeLine:(it.r+' · '+it.type+(it.qty?' · stack of '+it.qty:'')).toUpperCase(),hasIl:!!it.il,ilvl:it.il?'Item level '+it.il:'',lines:it.lines||[],hasLines:!!(it.lines&&it.lines.length),hasEffect:!!it.effect,hasFlavor:!!it.flavor,hasCompare:!!it.compare,cmpWithU:(it.cmp||'').toUpperCase(),compare:(it.compare||[]).map(t=>({t,col:t.startsWith('+')?C.green:C.hp})),meta:[it.req?'Requires level '+it.req:null,it.value?'Sells for '+it.value:null].filter(Boolean).join('  ·  '),actionU:{gear:'EQUIP',consumable:'USE',material:'SPLIT STACK',quest:'TRACK QUEST'}[it.cat]};
+
+    // skills
+    const schools=['All','Radiant','Nature','Protection','Racial'];
+    const skTabs=schools.map(sc=>{const a=s.skFilter===sc;return{label:sc.toUpperCase(),dot:SCH[sc]||C.ink,click:()=>this.setState({skFilter:sc}),bg:a?'rgba(184,92,74,.18)':'transparent',border:a?C.ember:'rgba(232,200,170,.12)',col:a?C.ink:C.muted}});
+    const cdTxt=k=>k.cd==='battle'?'1/battle':k.cd?k.cd+' turns':'none';
+    const skills=SKILLS.filter(k=>s.skFilter==='All'||k.school===s.skFilter).map(k=>{const col=SCH[k.school],a=s.selSkill===k.id,slot=s.bar.indexOf(k.id),locked=k.lvl>23;return{...k,col,colA:hexA(col,.3),border:a?col:'rgba(232,200,170,.1)',bg:a?hexA(col,.09):'#100d13',op:locked?.5:1,slotLabel:slot>=0?'SLOT '+(slot+1):locked?'LV '+k.lvl:'',meta:locked?'Unlocks at level '+k.lvl:`${k.ap} AP · ${k.mana} MP${k.faith?' · '+k.faith+' FAITH':''}`,click:()=>this.setState({selSkill:k.id,arming:false})}});
+    const k=SK[s.selSkill],kcol=SCH[k.school],klocked=k.lvl>23;
+    const mods=[];TREES.forEach(tr=>tr.nodes.forEach(n=>{if(n.mod===k.id){const r=s.ranks[n.id]||0;mods.push({name:n.n,rk:`${tr.name.toUpperCase()} · ${r}/${n.max}`,text:fmt(n,r||1),col:r?tr.col:C.muted,border:r?hexA(tr.col,.4):'rgba(232,200,170,.08)'})}}));
+    const sk={...k,col:kcol,colA:hexA(kcol,.3),line:`${k.school} · ${klocked?'Locked':'Rank '+k.rank}`.toUpperCase(),stats:[['ACTION POINTS',k.ap],['MANA',k.mana],['FAITH',k.faith||'—'],['COOLDOWN',k.cd==='battle'?'Once per battle':cdTxt(k)],['RANGE',k.range],['TARGET',k.target]].map(([kk,v])=>({k:kk,v:String(v)})),mods,hasMods:mods.length>0,noMods:mods.length===0};
+    const bar=s.bar.map((id,i)=>{const b=id?SK[id]:null,col=b?SCH[b.school]:'#3a333f';return{key:i+1,g:b?b.g:'',col,ap:b?b.ap+'AP':'',bstyle:s.arming?'dashed':'solid',bcol:s.arming?C.ember:b?hexA(col,.6):'rgba(232,200,170,.12)',glow:s.arming?'0 0 12px rgba(224,138,114,.35)':b?`inset 0 0 14px ${hexA(col,.2)}`:'none',click:()=>{if(s.arming){const nb=s.bar.map(x=>x===s.selSkill?null:x);nb[i]=s.selSkill;this.setState({bar:nb,arming:false})}else if(id)this.setState({selSkill:id,skFilter:'All'})}}});
+    const barHint=s.arming?`Placing ${k.name}. Click a slot.`:'Select a skill, then place it in a slot. Keys 1–6 in battle.';
+
+    // talents
+    const ranks=s.ranks,spent=this.spent(ranks),avail=TOTAL-spent;
+    const focusMode=talLayout==='Focused spec'||narrow;
+    const big=talLayout==='Focused spec'&&!narrow;
+    const G=big?{cw:112,rh:90,ns:58,lw:40,fs:28}:{cw:68,rh:70,ns:44,lw:30,fs:20};
+    const shown=focusMode?TREES.filter(t=>t.id===s.focus):TREES;
+    const trees=shown.map(tr=>{
+      const nodes=tr.nodes.map(n=>{const r=ranks[n.id]||0,can=this.canLearn(n,tr,ranks),maxed=r===n.max,key=n.t===5,size=key?Math.round(G.ns*0.78):G.ns,off=(G.ns-size)/2;
+        return{g:n.g,x:G.lw+n.c*G.cw+(G.cw-G.ns)/2+off,y:(n.t-1)*G.rh+6+off,s:size,rot:key?'rotate(45deg)':'none',fs:key?G.fs-4:G.fs,
+          border:r>0?tr.col:can?'#8a817b':'#3a333f',bg:maxed?hexA(tr.col,.2):r>0?hexA(tr.col,.1):'#100d13',
+          glow:maxed?`0 0 16px ${hexA(tr.col,.55)},inset 0 0 10px ${hexA(tr.col,.35)}`:r>0?`0 0 8px ${hexA(tr.col,.35)}`:'none',
+          gc:r>0?tr.col:can?'#d8cfc6':'#5a5158',gt:r>0?`0 0 10px ${tr.col}`:'none',op:r>0||can?1:.6,
+          outline:s.selTal===n.id?`1px solid ${C.ink}`:'1px solid transparent',rk:`${r}/${n.max}`,bc:maxed?tr.col:r>0?C.ink:'#8a817b',
+          click:()=>this.learn(n.id),unclick:e=>{e.preventDefault();this.unlearn(n.id)},hover:narrow?undefined:()=>{if(this.state.selTal!==n.id)this.setState({selTal:n.id})}}});
+      const links=tr.nodes.filter(n=>n.req).map(n=>{const q=NODE[n.req],lit=(ranks[q.id]||0)>0;return{x:G.lw+n.c*G.cw+G.cw/2-1,y:(q.t-1)*G.rh+6+G.ns,h:(n.t-q.t)*G.rh-G.ns,col:lit?hexA(tr.col,.8):'#2e2833',glow:lit?`0 0 6px ${tr.col}`:'none'}});
+      const tiers=[1,2,3,4,5].map(t=>{const need=4*(t-1),ok=this.tierBelow(tr,t,ranks)>=need;return{y:(t-1)*G.rh+6+G.ns/2-10,w:G.lw,label:ROMAN[t-1],req:need?need+'pt':'',col:ok?C.muted:'#4a4249'}});
+      return{...tr,nameU:tr.name.toUpperCase(),colA:hexA(tr.col,.6),pts:tr.nodes.reduce((a,n)=>a+(ranks[n.id]||0),0),nodes,links,tiers,bw:G.lw+3*G.cw,bh:4*G.rh+G.ns+14};
+    });
+    const specTabs=TREES.map(tr=>{const a=s.focus===tr.id;return{name:tr.name,sub:tr.sub,col:tr.col,pts:tr.nodes.reduce((x,n)=>x+(ranks[n.id]||0),0),border:a?tr.col:'rgba(232,200,170,.1)',bg:a?hexA(tr.col,.08):'#141118',glow:a?`0 0 18px ${hexA(tr.col,.2)}`:'none',click:()=>this.setState({focus:tr.id})}});
+    const tn=NODE[s.selTal],ttr=NTREE[s.selTal],tr_=ranks[tn.id]||0,tcan=this.canLearn(tn,ttr,ranks),tun=this.canUnlearn(tn.id,ranks);
+    let lock='';
+    if(tr_<tn.max&&!tcan){if(this.tierBelow(ttr,tn.t,ranks)<4*(tn.t-1))lock=`Requires ${4*(tn.t-1)} points in ${ttr.name} tiers above.`;else if(tn.req&&!(ranks[tn.req]>0))lock=`Requires ${NODE[tn.req].n}.`;else if(avail<=0)lock='No talent points available.'}
+    const msk=tn.mod?SK[tn.mod]:null;
+    const tal={name:tn.n,col:ttr.col,colA:hexA(ttr.col,.45),line:`${ttr.name} · Tier ${ROMAN[tn.t-1]} · ${tn.t===5?'Keystone':'Passive'}`.toUpperCase(),rankTxt:`Rank ${tr_} / ${tn.max}`,hasMod:!!msk,modName:msk?msk.name:'',modG:msk?msk.g:'',modCol:msk?SCH[msk.school]:C.ink,hasCur:tr_>0,cur:fmt(tn,tr_),hasNext:tr_<tn.max,next:fmt(tn,tr_+1),nextLabel:tr_===0?'RANK 1':'NEXT RANK',hasLock:!!lock,lock,
+      learn:()=>this.learn(tn.id),unlearn:()=>this.unlearn(tn.id),lBg:tcan?'#b85c4a':'transparent',lBorder:tcan?C.ember:'rgba(232,200,170,.12)',lCol:tcan?'#fff':'#6b625c',uCol:tun?'#d8cfc6':'#6b625c'};
+    const ftr=TREES.find(t=>t.id===s.focus);
+    const learned=ftr.nodes.filter(n=>ranks[n.id]>0).map(n=>({name:n.n,rk:`${ranks[n.id]}/${n.max}`,col:ranks[n.id]===n.max?ftr.col:C.ink}));
+
+    // map
+    const W=narrow?36:50,H=W*1.1547,SY=H*0.75;
+    const px=(c,r)=>[c*W+(r&1?W/2:0),r*SY];
+    const party=HEX[s.party.c+','+s.party.r];
+    const hexes=HEXES.map(h=>{const[x,y]=px(h.c,h.r),isSel=s.selHex===h.key,isParty=h===party,showPoi=h.poi&&!h.fog;
+      return{x,y,w:W,hh:H,fill:h.fog?'#141118':TF[h.ter],rim:isSel?C.gold:isParty?C.ember:'rgba(0,0,0,.55)',inset:isSel?2.5:1.2,g:showPoi?h.poi.g:h.fog?'?':'',gc:showPoi?h.poi.col:'#3a333f',gt:showPoi?`0 0 8px ${h.poi.col}`:'none',fs:showPoi&&h.poi.g==='!'?W*0.42:W*0.32,click:()=>this.setState({selHex:h.key})}});
+    const regionLabels=REGIONS.map(g=>{const[x,y]=px(g.sx,g.sy);return{name:g.name.replace('Kingdom of ','').toUpperCase(),x:x+W/2,y:y+H+(narrow?4:6),fs:narrow?8:10}});
+    const[ppx,ppy]=px(party.c,party.r);
+    const h=HEX[s.selHex],hreg=h.reg?RG[h.reg]:null,d=hdist(h,party),dg=hreg?danger(hreg.lo):['—',C.muted],isParty=h===party,canTravel=!h.water&&!isParty;
+    const hx={coord:`${h.c}·${h.r}`,hasPoi:!!h.poi,poiName:h.poi?h.poi.name:'',poiType:h.poi?(h.fog?'UNEXPLORED · ':'')+h.poi.type.toUpperCase():'',poiCol:h.poi?h.poi.col:C.ink,poiDesc:h.poi?h.poi.desc:'',
+      region:hreg?hreg.name:'Open sea',terrain:h.fog?'Unexplored':TER[h.ter],lv:hreg?hreg.lv:'—',danger:dg[0],dCol:dg[1],enc:hreg?hreg.enc:'—',dist:isParty?'Here':`${d} day${d===1?'':'s'}`,
+      tLabel:h.water?'NEEDS A SHIP':isParty?'PARTY IS HERE':`TRAVEL · ${d} DAY${d===1?'':'S'}`,tBg:canTravel?'#b85c4a':'transparent',tBorder:canTravel?C.ember:'rgba(232,200,170,.12)',tCol:canTravel?'#fff':'#8a817b',tGlow:canTravel?'0 0 16px rgba(224,138,114,.35)':'none',
+      travel:()=>{if(canTravel)this.setState(st=>({party:{c:h.c,r:h.r},day:st.day+d}))}};
+    const regions=REGIONS.map(g=>{const dd=danger(g.lo);return{name:g.name,lv:'LV '+g.lv,dCol:dd[1],bg:h.reg===g.id?'rgba(232,200,170,.05)':'transparent',click:()=>this.setState({selHex:g.sx+','+g.sy})}});
+    const partyWhere=(party.poi?party.poi.name:(party.reg?RG[party.reg].name:'Sea')).toUpperCase();
+
+    // eridan
+    const mapSrc=this.props.mapSource??'Eridan',isE=P==='map'&&mapSrc==='Eridan';
+    const Z=this.eZoom(),miniW=narrow?120:190;this.miniW=miniW;
+    const ep=EHX[s.eParty],es=EHX[s.eSel],eter=this.eTer||{},ereg=this.eReg||{};
+    const rgOf=k=>{const r=ereg[k];return r&&r.id?ERG[r.id]:null};
+    if(!this._fog||this._fogK!==s.eExp){this._fogK=s.eExp;this._fog=EHEX.filter(h=>!s.eExp[h.key]).map(h=>epath(h.c,h.r)).join('')}
+    const tintOp={Off:0,Subtle:.2,Strong:.42}[this.props.terrainTint??'Subtle']??.2;
+    const esr=rgOf(s.eSel),esw=eter[s.eSel]==='water',ed=hdist(es,ep),eHere=s.eSel===s.eParty,eKnown=!!s.eExp[s.eSel]||!(this.props.fogOfWar??false),poi=EPOI[s.eSel],edg=esr?danger(esr.lo):['—',C.muted],eCan=s.terReady&&!esw&&!eHere;
+    const ex={coord:es.c+'·'+es.r,hasPoi:!!poi&&eKnown,poiName:poi?poi.name:'',poiType:poi?poi.type.toUpperCase():'',poiCol:poi?poi.col:C.ink,poiDesc:poi?poi.desc:'',
+      region:!s.terReady?'Surveying…':esw?(ereg[s.eSel]||{}).sea||'Open sea':esr?esr.name:'—',terrain:!s.terReady?'—':eKnown?ETER[eter[s.eSel]]:'Unexplored',lv:esr&&!esw?esr.lv:'—',danger:esw?'—':edg[0],dCol:esw?C.muted:edg[1],enc:esr&&!esw?encFor(esr.lo):'—',dist:eHere?'Here':ed+' day'+(ed===1?'':'s'),
+      tLabel:esw?'NEEDS A SHIP':eHere?'PARTY IS HERE':'TRAVEL · '+ed+' DAY'+(ed===1?'':'S'),tBg:eCan?'#b85c4a':'transparent',tBorder:eCan?C.ember:'rgba(232,200,170,.12)',tCol:eCan?'#fff':'#8a817b',tGlow:eCan?'0 0 16px rgba(224,138,114,.35)':'none',
+      travel:()=>{if(eCan)this.setState(st=>{const add=edisk(st.eSel,4);return{eParty:st.eSel,day:st.day+ed,eExp:{...st.eExp,...add}}})}};
+    const ePlaces=E_POIS.map(p=>({...p,d:hdist(EHX[p.key],ep)})).sort((a,b)=>a.d-b.d).map(p=>({name:p.name,g:p.g,col:p.col,d:p.key===s.eParty?'HERE':String(p.d),bg:p.key===s.eSel?'rgba(232,200,170,.05)':'transparent',click:()=>{this.setState({eSel:p.key});this.centerOn(EHX[p.key])}}));
+    const epoi=EPOI[s.eParty],eprg=rgOf(s.eParty);
+    const eridan={showEridan:isE,showOldMap:P==='map'&&mapSrc!=='Eridan',eW:EW*Z,eH:EH*Z,gScale:'scale('+Z+')',mapVH:narrow?'62vh':'min(74vh,780px)',zoomTxt:Z+'×',
+      zoomIn:()=>this.setZoom(Z+0.5),zoomOut:()=>this.setZoom(Z-0.5),centerParty:()=>this.centerOn(ep),
+      mapRef:this.mapRef,svgRef:this.svgRef,hoverRef:this.hoverRef,miniRef:this.miniRef,
+      mDown:e=>this.mDown(e),mMove:e=>this.mMove(e),mUp:e=>this.mUp(e),mLeave:()=>this.mLeave(),mScroll:()=>this.updMini(),
+      miniClick:e=>{const b=e.currentTarget.getBoundingClientRect();this.centerOn({x:(e.clientX-b.left)/miniW*EW,y:(e.clientY-b.top)/(miniW*.75)*EH})},
+      miniW,miniH:miniW*.75,miniPX:ep.x/EW*miniW-3,miniPY:ep.y/EH*miniW*.75-3,
+      tints:this.eTints||[],tintOp,fogD:(this.props.fogOfWar??false)?this._fog:'',gridD:EGRID,
+      selPts:epts(es.c,es.r),partyPts:epts(ep.c,ep.r),tokX:ep.x*Z-10,tokY:(ep.y+HS*0.55)*Z-10,
+      route:{x1:ep.x,y1:ep.y+HS*.55,x2:es.x,y2:es.y,op:eHere?0:.9},
+      eLegend:Object.keys(ETER).map(k=>({name:ETER[k].toUpperCase(),col:ETC[k]})),terStatus:s.terReady?'TERRAIN READ FROM MAP':'READING TERRAIN…',
+      ex,ePlaces,ePartyWhere:(epoi?epoi.name:eprg?eprg.name:'Eridan').toUpperCase()};
+    // home
+    const HC=18,hbItems=ITEMS.map(i=>({l:i.x*HC+1,t:i.y*HC+1,w:i.w*HC-2,h:i.h*HC-2,col:hexA(RAR[i.r],.8),bg:stripe(RAR[i.r],.18)}));
+    const hbCounts=['legendary','epic','rare','uncommon'].map(r=>({col:RAR[r],label:r.toUpperCase(),n:ITEMS.filter(i=>i.r===r).length}));
+    const hsBar=s.bar.filter(Boolean).slice(0,3).map(id=>{const b=SK[id];return{name:b.name,col:SCH[b.school],meta:b.ap+' AP · '+b.mana+' MP'}});
+    const htTrees=TREES.map(tr=>{const p=tr.nodes.reduce((a,n)=>a+(ranks[n.id]||0),0),mx=tr.nodes.reduce((a,n)=>a+n.max,0);return{nameU:tr.name.toUpperCase(),col:tr.col,pts:p+' / '+mx,pct:Math.round(p/mx*100)+'%'}});
+    const HZ=1.6,hmW=EW*HZ,hmH=EH*HZ,hmTf='translate('+(-ep.x*HZ)+'px,'+(-ep.y*HZ)+'px)';
+    const hmNear=E_POIS.filter(p=>p.key!==s.eParty).map(p=>({...p,dd:hdist(EHX[p.key],ep)})).sort((a,b)=>a.dd-b.dd).slice(0,3).map(p=>({name:p.name,g:p.g,col:p.col,d:p.dd+(p.dd===1?' DAY':' DAYS')}));
+    const home={isHome:P==='home',hbItems,hbCell:HC,hbW:10*HC,hbH:6*HC,hbCounts,hsBar,hsKnown:SKILLS.filter(k=>k.lvl<=23).length+' abilities known · '+SKILLS.filter(k=>k.lvl>23).length+' locked',htTrees,htAvailTxt:avail===1?'POINT TO SPEND':'POINTS TO SPEND',
+      hmW,hmH,hmTf,hmNear,hmWhere:epoi?epoi.name:(eprg?eprg.name:'Eridan'),hmRegion:eprg?eprg.name+' · Levels '+eprg.lv:'Continent of Eridan',
+      goCharacter:()=>this.go('character'),goInventory:()=>this.go('inventory'),goSkills:()=>this.go('skills'),goTalents:()=>this.go('talents'),goMap:()=>this.go('map')};
+    const eyebrow={home:'Level 23 Elf Cleric · Day '+s.day,character:"Kel'hos · Level 23 Elf Cleric",inventory:'Items carried · 45 of 60 cells used',skills:'Active abilities for combat',talents:'Passive traits · Level 23 Cleric',map:isE?'Continent of Eridan · Overworld':'Aetherwyn · Overworld'}[P];
+    return{
+      wide:!narrow,narrow,pad:narrow?'16px 12px 86px':'22px 26px 36px',nav,eyebrow,title:P==='home'?"Kel'hos":pg.label,day:s.day,...home,
+      isCharacter:P==='character',showCharA:P==='character'&&charLayout!=='Codex',showCharB:P==='character'&&charLayout==='Codex',
+      isInventory:P==='inventory',isSkills:P==='skills',isTalents:P==='talents',isMap:P==='map',
+      attrs,combat,resist,eqAll,eqL:eqAll.filter(e=>e.side==='L'),eqR:eqAll.filter(e=>e.side==='R'),eqW:eqAll.filter(e=>e.side==='W'),showEqNames:s.w>=1100,
+      cell,bagW:10*cell,bagH:6*cell,invTabs,items,sel,
+      skTabs,skills,sk,bar,barHint,barHintCol:s.arming?C.ember:C.muted,arm:()=>{if(!klocked)this.setState(st=>({arming:!st.arming}))},armLabel:klocked?'LOCKED UNTIL LEVEL '+k.lvl:s.arming?'CANCEL PLACEMENT':'PLACE ON ACTION BAR',armBg:s.arming?'transparent':'#b85c4a',armOp:klocked?.4:1,
+      talAvail:avail,talSpentTxt:`${spent} / ${TOTAL} SPENT`,resetTal:()=>this.setState({ranks:{}}),focusMode,trees,treeFlex:focusMode?'1 1 auto':'0 0 auto',specTabs,tal,learned,focusNameU:ftr.name.toUpperCase(),
+      showHexMap:(this.props.mapSource??'Hex grid')!=='Custom image',showCustomMap:(this.props.mapSource??'Hex grid')==='Custom image',customMapRatio:this.props.customMapRatio??'16 / 10',hexes,mapW:COLS*W+W/2,mapH:(ROWS-1)*SY+H,regionLabels,partyX:ppx+W*0.62-8,partyY:ppy+H*0.2-8,hx,regions,...eridan,partyWhere:isE?eridan.ePartyWhere:partyWhere
+    };
+  }
+}
+</script>
+</body>
+</html>
