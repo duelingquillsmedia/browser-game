@@ -103,28 +103,3 @@
   color: var(--aow-faint);
 }
 
-.aow-skill-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.aow-skill-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: var(--aow-inset);
-  border: 1px solid var(--aow-divider);
-  border-radius: 3px;
-  padding: 6px 9px;
-  font-size: 13px;
-  color: var(--aow-secondary);
-}
-
-.aow-skill-stat-label {
-  font-family: var(--aow-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  color: var(--aow-faint);
-}

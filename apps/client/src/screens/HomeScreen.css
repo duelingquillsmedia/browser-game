@@ -73,12 +73,6 @@
   color: var(--aow-secondary);
 }
 
-.aow-warning {
-  color: var(--aow-hp);
-  font-size: 12px;
-  margin: 10px 0 0;
-}
-
 .aow-card-actions {
   display: flex;
   flex-wrap: wrap;

@@ -206,43 +206,6 @@ button.ghost {
   border-radius: 8px;
 }
 
-/* Encounter select */
-.encounter-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
-.encounter-card {
-  text-align: left;
-  background-color: var(--bg-panel);
-  background-size: cover;
-  background-position: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem;
-  color: var(--text);
-}
-
-.encounter-card:hover {
-  border-color: var(--accent);
-}
-
-.encounter-card .location {
-  color: var(--accent);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 0.2rem 0 0.5rem;
-}
-
-.encounter-card .flavor {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
 /* Character select */
 .character-roster {
   display: grid;

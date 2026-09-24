@@ -11,7 +11,7 @@ import { CharacterScreen } from "./screens/CharacterScreen";
 import { InventoryScreen } from "./screens/InventoryScreen";
 import { SkillsScreen } from "./screens/SkillsScreen";
 import { PartyScreen } from "./screens/PartyScreen";
-import { EncounterSelectScreen } from "./screens/EncounterSelectScreen";
+import { WorldMapScreen } from "./screens/WorldMapScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { GAME_NAME, WORLD_NAME, type Encounter } from "./game/lore";
@@ -244,19 +244,28 @@ function App() {
   }
 
   if (screen.kind === "encounterSelect") {
+    function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
+      if (screen.kind !== "encounterSelect") return;
+      if (id === "home") setScreen({ kind: "home", character: screen.character });
+      else if (id === "character") setScreen({ kind: "character", character: screen.character });
+      else if (id === "inventory") setScreen({ kind: "inventory", character: screen.character });
+      else if (id === "skills") setScreen({ kind: "skills", character: screen.character });
+    }
+
     return (
-      <EncounterSelectScreen
-        character={screen.character}
-        onChoose={(encounter) =>
-          setScreen({
-            kind: "combat",
-            character: screen.character,
-            encounter,
-            combat: beginEncounter(screen.character, encounter),
-          })
-        }
-        onBack={() => setScreen({ kind: "home", character: screen.character })}
-      />
+      <GameShell gameName={GAME_NAME} character={screen.character} active="map" onNavigate={handleNavigate}>
+        <WorldMapScreen
+          character={screen.character}
+          onChooseEncounter={(encounter) =>
+            setScreen({
+              kind: "combat",
+              character: screen.character,
+              encounter,
+              combat: beginEncounter(screen.character, encounter),
+            })
+          }
+        />
+      </GameShell>
     );
   }
 

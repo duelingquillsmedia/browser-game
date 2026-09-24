@@ -1,0 +1,102 @@
+.aow-worldmap {
+  color: var(--aow-body);
+}
+
+.aow-map-page-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.aow-map-panel {
+  flex: 2 1 560px;
+}
+
+.aow-map-detail-panel {
+  flex: 1 1 300px;
+  min-height: 200px;
+}
+
+.aow-map-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2048 / 1536;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.aow-map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.aow-map-pin:hover,
+.aow-map-pin:focus-visible,
+.aow-map-pin.active {
+  z-index: 2;
+}
+
+.aow-map-pin-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--aow-ink);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+.aow-map-pin-home .aow-map-pin-dot {
+  background: var(--aow-gold);
+}
+
+.aow-map-pin-encounter .aow-map-pin-dot {
+  background: var(--aow-hp);
+}
+
+.aow-map-pin-encounter.active .aow-map-pin-dot {
+  box-shadow: 0 0 0 3px rgba(208, 96, 74, 0.4), 0 0 10px rgba(208, 96, 74, 0.6);
+}
+
+.aow-map-pin-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 3px;
+  transform: translateX(-50%);
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--aow-ink);
+  background: rgba(11, 9, 14, 0.75);
+  padding: 2px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.aow-map-pin-home .aow-map-pin-label {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 3px;
+}
+
+.aow-map-foes-stat {
+  grid-column: 1 / -1;
+}
+
+.aow-map-venture-button {
+  width: 100%;
+  margin-top: 12px;
+}

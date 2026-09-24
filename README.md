@@ -117,10 +117,8 @@ client-server milestone (combat is still resolved in the browser for now).
   Sans/JetBrains Mono/Noto Sans Runic, ember accent), a persistent header +
   left nav (`GameShell`), and a Home page with Character/World
   Map/Inventory/Skills/Talents cards. This replaces the old Town Hub screen.
-  World Map currently bridges to the existing encounter-select screen (not
-  yet rebuilt in the new style); Talents has no backing system yet and shows
-  "Coming soon." The World Map card's background is the real Eridan map art
-  from the design handoff.
+  Talents has no backing system yet and shows "Coming soon." The World Map
+  card's background is the real Eridan map art from the design handoff.
 - **New Character page**: replaces the old character sheet, in the same
   visual system as Home. Identity + a 6-attribute list (with a one-line hint
   of what each governs), a 14-slot equipment paper-doll matching the design's
@@ -159,6 +157,22 @@ client-server milestone (combat is still resolved in the browser for now).
   `CombatActionDef` fields. The design's 6-slot manual action-bar assignment
   and talent-modifier sub-list are both omitted: real combat already shows
   every known action with no hotbar limit, and there's no talent system yet.
+- **New World Map page**: replaces the old plain encounter-select screen,
+  now wrapped in the persistent shell like every other page. It shows the
+  real Eridan map art with pins at real place names pulled straight from
+  the design handoff's own Eridan coordinate data — Ridgeton (home) plus
+  the exact locations of the game's 3 real encounters (The Tameless Shore,
+  Tiuv Forest, Collmhor Wood) — rather than inventing positions. Selecting
+  a pin shows the encounter's real flavor text and foes (grouped/counted
+  from its actual `monsterTemplateIds`, e.g. "2x Goblin Raider") with a
+  Venture Out button that starts the fight, disabled while too wounded to
+  travel, matching the old screen's behavior. The design's full hex-grid
+  map — fog of war, per-region danger tiers, travel-day distances, procedural
+  terrain — is omitted entirely, since none of that exists in the engine:
+  there's no map-position/travel-time system, and encounter difficulty
+  isn't leveled or region-gated today. The other named regions and points
+  of interest from the design's map art (dungeons, shrines, other towns)
+  are left unlabeled rather than turned into fake clickable content.
 
 ## Tech stack
 
