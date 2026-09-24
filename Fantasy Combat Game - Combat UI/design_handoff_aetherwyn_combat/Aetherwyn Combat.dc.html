@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=Cinzel:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+Runic&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#0b090e;color:#ece6df;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#e08a72}a:hover{color:#f2b3a1}button{font:inherit;color:inherit}
+@keyframes dmgFloat{0%{opacity:0;transform:translate(-50%,8px) scale(.7)}12%{opacity:1;transform:translate(-50%,-8px) scale(1.15)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-64px) scale(1)}}
+@keyframes hitFlash{0%{opacity:.8}100%{opacity:0}}
+@keyframes actPulse{0%,100%{opacity:.45}50%{opacity:1}}</style>
+</helmet>
+<div style="position:fixed;inset:0;background:#050407;overflow:hidden">
+<div style="position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale({{ scale }});transform-origin:50% 50%;display:grid;grid-template-rows:60px minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);background:#0b090e;overflow:hidden" data-screen-label="Combat">
+
+  <header style="display:flex;align-items:center;gap:20px;padding:0 20px;border-bottom:1px solid rgba(232,200,170,.1);background:radial-gradient(ellipse 80% 140% at 50% -60%, #1d1420 0%, #0b090e 70%);position:relative;z-index:5">
+    <div style="display:flex;flex-direction:column;gap:4px;flex:none">
+      <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8a817b;white-space:nowrap">ENCOUNTER · ASHEN HOLLOW</div>
+      <div style="font:700 17px/1 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4;text-shadow:0 0 16px rgba(224,138,114,.35);white-space:nowrap">Cinder Cult Ambush</div>
+    </div>
+    <div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-start;gap:6px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)">
+      <div style="flex:none;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8a817b;margin-right:6px;white-space:nowrap">TURN ORDER</div>
+      <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="8">
+        <sc-if value="{{ t.isDiv }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;display:flex;align-items:center;gap:6px;padding:0 4px">
+            <div style="width:1px;height:26px;background:rgba(232,200,170,.18)"></div>
+            <div style="font:500 10px 'JetBrains Mono',monospace;color:#a39a93">R{{ t.round }}</div>
+            <div style="width:1px;height:26px;background:rgba(232,200,170,.18)"></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ t.isUnit }}" hint-placeholder-val="{{ true }}">
+          <div title="{{ t.name }}" style="flex:none;width:{{ t.size }};height:{{ t.size }};display:flex;align-items:center;justify-content:center;border:1px solid {{ t.color }};border-radius:3px;background:repeating-linear-gradient(135deg, rgba(232,200,170,.05) 0 4px, transparent 4px 8px), #120f16;font:600 12px 'Cinzel',serif;letter-spacing:.04em;color:{{ t.color }};box-shadow:{{ t.glow }};opacity:{{ t.opacity }}">{{ t.tag }}</div>
+        </sc-if>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8a817b">ROUND</div>
+        <div style="font:600 18px/1 'Cinzel',serif;color:#f3ece4">{{ round }}</div>
+      </div>
+      <button onClick="{{ flee }}" style="display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:1px solid rgba(232,200,170,.18);border-radius:3px;background:#141118;cursor:pointer;font:600 11px 'Cinzel',serif;letter-spacing:.14em;color:#d8cfc6;opacity:{{ turnOpacity }}" style-hover="border-color:rgba(224,138,114,.55)">FLEE <span style="font:500 10px 'JetBrains Mono',monospace;color:#a39a93">{{ fleeChance }}%</span></button>
+    </div>
+  </header>
+
+  <main ref="{{ stageRef }}" style="position:relative;overflow:hidden;min-height:0">
+    <div style="position:absolute;inset:0"><image-slot id="combat-arena" placeholder="Drop arena background (16:9)" style="display:block;width:100%;height:100%"></image-slot></div>
+    <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(11,9,14,.7) 0%, rgba(11,9,14,.05) 30%, rgba(11,9,14,.1) 62%, rgba(11,9,14,.85) 100%)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:6%;height:30%;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 50% 70%, rgba(184,92,74,.14), transparent 70%)"></div>
+
+    <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:4">
+      <div style="font:700 13px 'Cinzel',serif;letter-spacing:.3em;color:{{ banner.color }};text-shadow:0 0 14px {{ banner.color }}">{{ banner.title }}</div>
+      <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#cfc6bd">{{ banner.sub }}</div>
+    </div>
+
+    <div style="position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);padding:46px 24px 12px;pointer-events:none">
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center">
+        <div onMouseEnter="{{ hoverPlayer }}" onMouseLeave="{{ unhover }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:auto">
+          <div style="position:relative;width:{{ lay.pw }};height:{{ lay.ph }};border-radius:4px;box-shadow:{{ player.glow }};transition:box-shadow .15s">
+            <image-slot id="combat-kelhos" placeholder="Kel'hos art" style="display:block;width:100%;height:100%"></image-slot>
+            <sc-if value="{{ player.targetable }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ clickPlayer }}" style="position:absolute;inset:0;cursor:crosshair;border:1px dashed rgba(95,196,214,.7);border-radius:4px;background:rgba(95,196,214,.06)"></div>
+            </sc-if>
+            {{ player.fx }}
+            <sc-if value="{{ player.showPreview }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;left:calc(100% + 14px);top:18px;width:210px;padding:12px 14px;background:rgba(20,17,24,.96);border:1px solid rgba(95,196,214,.45);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:6px;z-index:20;pointer-events:none">
+                <div style="font:600 11px 'Cinzel',serif;letter-spacing:.14em;color:{{ preview.color }}">{{ preview.skill }} → SELF</div>
+                <div style="font:600 20px 'Cinzel',serif;color:#f3ece4">{{ preview.main }}</div>
+                <div style="font:500 11px 'JetBrains Mono',monospace;color:#a39a93">{{ preview.sub }}</div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;width:180px;padding:8px 10px;background:rgba(14,12,17,.82);border:1px solid rgba(232,200,170,.11);border-radius:4px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div style="font:600 13px 'Cinzel',serif;letter-spacing:.06em;color:#f3ece4">Kel'hos</div>
+              <div style="font:500 10px 'JetBrains Mono',monospace;color:#a39a93">LV 23</div>
+            </div>
+            <div style="position:relative;height:6px;background:#0e0c11;border-radius:2px;overflow:hidden">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:{{ player.hpPct }};background:linear-gradient(90deg,#7a2f22,#d0604a);box-shadow:0 0 8px rgba(208,96,74,.6);transition:width .3s"></div>
+              <div style="position:absolute;left:0;top:0;height:2px;width:{{ player.shieldPct }};background:#8fc6e6;box-shadow:0 0 6px #8fc6e6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:{{ lay.outerDir }};align-items:center;justify-content:center;gap:{{ lay.outerGap }}">
+        <sc-for list="{{ ranks }}" as="rk" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin:{{ rk.margin }}">
+            <div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#8a817b;text-align:center">{{ rk.label }}</div>
+            <div style="display:flex;flex-direction:{{ lay.innerDir }};align-items:center;gap:{{ lay.innerGap }}">
+            <sc-for list="{{ rk.foes }}" as="e" hint-placeholder-count="3">
+              <div onMouseEnter="{{ e.onEnter }}" onMouseLeave="{{ unhover }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto;opacity:{{ e.opacity }};transition:opacity .2s">
+                <div style="position:relative;width:{{ lay.size }};height:{{ lay.size }};border-radius:4px;box-shadow:{{ e.glow }};transition:box-shadow .15s">
+                  <image-slot id="{{ e.slotId }}" placeholder="{{ e.placeholder }}" style="display:block;width:100%;height:100%"></image-slot>
+                  <sc-if value="{{ e.targetable }}" hint-placeholder-val="{{ false }}">
+                    <div onClick="{{ e.onClick }}" style="position:absolute;inset:0;cursor:crosshair;border:1px dashed {{ e.dash }};border-radius:4px;background:{{ e.tint }}"></div>
+                  </sc-if>
+                  <sc-if value="{{ e.dead }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,9,14,.72);border-radius:4px;font:700 11px 'Cinzel',serif;letter-spacing:.24em;color:#8a817b">SLAIN</div>
+                  </sc-if>
+                  <sc-if value="{{ e.acting }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;left:50%;top:-16px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #d0604a;filter:drop-shadow(0 0 6px #d0604a)"></div>
+                  </sc-if>
+                  {{ e.fx }}
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;width:{{ lay.plateW }};padding:5px 8px;background:rgba(14,12,17,.86);border:1px solid {{ e.plateBorder }};border-radius:4px">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px">
+                    <div style="font:600 11px 'Cinzel',serif;letter-spacing:.04em;color:{{ e.nameColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.name }}</div>
+                    <div style="font:500 9px 'JetBrains Mono',monospace;color:#a39a93;white-space:nowrap">LV {{ e.lvl }}</div>
+                  </div>
+                  <div style="position:relative;height:5px;background:#0e0c11;border-radius:2px;overflow:hidden">
+                    <div style="position:absolute;left:0;top:0;bottom:0;width:{{ e.ghostPct }};background:rgba(232,200,170,.35)"></div>
+                    <div style="position:absolute;left:0;top:0;bottom:0;width:{{ e.hpPct }};background:linear-gradient(90deg,#7a2f22,#d0604a);transition:width .3s"></div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:14px">
+                    <div style="display:flex;gap:3px">
+                      <sc-for list="{{ e.statuses }}" as="s" hint-placeholder-count="1">
+                        <div title="{{ s.name }}" style="display:flex;align-items:center;gap:2px;height:14px;padding:0 3px;border:1px solid {{ s.color }};border-radius:2px;font:400 9px 'Noto Sans Runic','JetBrains Mono',monospace;color:{{ s.color }}">{{ s.g }}<span style="font:500 8px 'JetBrains Mono',monospace">{{ s.turns }}</span></div>
+                      </sc-for>
+                    </div>
+                    <div style="font:500 9px 'JetBrains Mono',monospace;color:#cfc6bd">{{ e.cur }}/{{ e.hp }}</div>
+                  </div>
+                </div>
+                <sc-if value="{{ e.showPreview }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;right:calc(100% + 12px);top:0;width:214px;padding:12px 14px;background:rgba(20,17,24,.97);border:1px solid rgba(224,138,114,.5);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.55), 0 0 20px rgba(184,92,74,.18);display:flex;flex-direction:column;gap:8px;z-index:20;pointer-events:none">
+                    <div style="font:600 10px 'Cinzel',serif;letter-spacing:.14em;color:{{ preview.color }}">{{ preview.skill }}</div>
+                    <div style="display:flex;align-items:baseline;gap:6px">
+                      <div style="font:600 22px/1 'Cinzel',serif;color:#f3ece4">{{ preview.main }}</div>
+                      <div style="font:500 10px 'JetBrains Mono',monospace;color:#a39a93">{{ preview.unit }}</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font:500 10px 'JetBrains Mono',monospace;color:#cfc6bd">
+                      <div>HIT <span style="color:#f3ece4">{{ preview.hit }}%</span></div>
+                      <div>CRIT <span style="color:#f3ece4">{{ preview.crit }}%</span></div>
+                    </div>
+                    <sc-if value="{{ preview.hasNote }}" hint-placeholder-val="{{ false }}">
+                      <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ preview.noteColor }}">{{ preview.note }}</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:12px;right:12px;bottom:8px;z-index:4;pointer-events:none;display:flex;justify-content:center">
+        <div style="max-width:100%;padding:4px 10px;background:rgba(14,12,17,.82);border:1px solid rgba(232,200,170,.1);border-radius:3px;font:400 12px 'Alegreya Sans',sans-serif;color:#a39a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><sc-for list="{{ lastLog.segs }}" as="g" hint-placeholder-count="1"><span style="color:{{ g.c }}">{{ g.s }}</span></sc-for></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ended }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(11,9,14,.72)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:32px 48px;background:#141118;border:1px solid rgba(232,200,170,.14);border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#8a817b">ROUND {{ round }}</div>
+          <div style="font:700 34px/1 'Cinzel',serif;letter-spacing:.1em;color:{{ result.color }};text-shadow:0 0 22px {{ result.color }}">{{ result.title }}</div>
+          <div style="font:400 15px 'Alegreya Sans',sans-serif;color:#cfc6bd;text-align:center;max-width:320px">{{ result.sub }}</div>
+          <button onClick="{{ restart }}" style="height:38px;padding:0 20px;border:1px solid #e08a72;border-radius:3px;background:#b85c4a;cursor:pointer;font:600 12px 'Cinzel',serif;letter-spacing:.16em;color:#f3ece4">RESTART ENCOUNTER</button>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <footer style="display:grid;grid-template-columns:{{ footCols }};gap:12px;padding:12px 16px 14px;background:#100d13;border-top:1px solid rgba(232,200,170,.11);position:relative;z-index:5">
+
+    <div style="display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px 12px;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="position:relative;width:40px;height:40px;flex:none">
+          <div style="position:absolute;inset:4px;transform:rotate(45deg);background:#1a1216;border:1px solid #e08a72;box-shadow:0 0 10px rgba(224,138,114,.4)"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 13px 'Cinzel',serif;color:#f3ece4">23</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+          <div style="font:700 16px/1 'Cinzel',serif;letter-spacing:.04em;color:#f3ece4">Kel'hos</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#a39a93">ELF · CLERIC</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;justify-content:space-between;font:500 10px 'JetBrains Mono',monospace;color:#a39a93"><span>HEALTH</span><span style="color:#ece6df">{{ hpText }}</span></div>
+        <div style="position:relative;height:9px;background:#0e0c11;border-radius:2px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:{{ player.hpPct }};background:linear-gradient(90deg,#7a2f22,#d0604a);box-shadow:0 0 8px rgba(208,96,74,.6);transition:width .3s"></div>
+          <div style="position:absolute;left:0;top:0;height:3px;width:{{ player.shieldPct }};background:#8fc6e6;box-shadow:0 0 6px #8fc6e6"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;justify-content:space-between;font:500 10px 'JetBrains Mono',monospace;color:#a39a93"><span>MANA</span><span style="color:#ece6df">{{ manaText }}</span></div>
+        <div style="position:relative;height:7px;background:#0e0c11;border-radius:2px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:{{ manaPct }};background:linear-gradient(90deg,#1f5f6b,#5fc4d6);box-shadow:0 0 8px rgba(95,196,214,.5);transition:width .3s"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="font:500 10px 'JetBrains Mono',monospace;color:#a39a93">AP</div>
+          <sc-for list="{{ apPips }}" as="p" hint-placeholder-count="4">
+            <div style="width:12px;height:12px;transform:rotate(45deg);border:1px solid {{ p.border }};background:{{ p.fill }};box-shadow:{{ p.glow }}"></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <div style="font:500 10px 'JetBrains Mono',monospace;color:#a39a93">FAITH</div>
+          <sc-for list="{{ faithPips }}" as="p" hint-placeholder-count="5">
+            <div style="width:8px;height:8px;transform:rotate(45deg);border:1px solid {{ p.border }};background:{{ p.fill }};box-shadow:{{ p.glow }}"></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:18px">
+        <sc-for list="{{ playerStatuses }}" as="s" hint-placeholder-count="1">
+          <div title="{{ s.desc }}" style="display:flex;align-items:center;gap:4px;height:18px;padding:0 6px;border:1px solid {{ s.color }};border-radius:3px;font:400 11px 'Noto Sans Runic',sans-serif;color:{{ s.color }}">{{ s.g }}<span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.04em">{{ s.label }}</span></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div style="display:flex;align-items:flex-start;gap:12px;min-height:50px;padding:0 2px">
+        <sc-if value="{{ info.has }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <div style="font:600 14px 'Cinzel',serif;letter-spacing:.06em;color:{{ info.color }}">{{ info.name }}</div>
+              <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#a39a93">{{ info.meta }}</div>
+              <sc-if value="{{ info.hasWarn }}" hint-placeholder-val="{{ false }}">
+                <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#d0604a">{{ info.warn }}</div>
+              </sc-if>
+            </div>
+            <div style="font:400 13px/1.3 'Alegreya Sans',sans-serif;color:#cfc6bd;text-wrap:pretty">{{ info.desc }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ info.none }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;font:400 13px 'Alegreya Sans',sans-serif;font-style:italic;color:#8a817b;padding-top:6px">{{ idleHint }}</div>
+        </sc-if>
+        <button onClick="{{ endTurn }}" style="flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:48px;min-width:132px;padding:0 16px;border:1px solid #e08a72;border-radius:3px;background:#b85c4a;cursor:pointer;box-shadow:0 0 18px rgba(184,92,74,.35);opacity:{{ turnOpacity }}" style-hover="box-shadow:0 0 26px rgba(224,138,114,.55)">
+          <span style="font:700 13px 'Cinzel',serif;letter-spacing:.18em;color:#f3ece4;white-space:nowrap">END TURN</span>
+          <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#f3ece4;opacity:.8">SPACE</span>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;min-width:0">
+          <sc-for list="{{ bar }}" as="b" hint-placeholder-count="9">
+            <button onClick="{{ b.onClick }}" onMouseEnter="{{ b.onEnter }}" onMouseLeave="{{ unhoverSkill }}" style="position:relative;width:{{ lay.btn }};height:{{ lay.btn }};padding:0;border:1px solid {{ b.border }};border-radius:3px;background:{{ b.bg }};box-shadow:{{ b.glow }};cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:{{ b.opacity }};transition:border-color .12s, box-shadow .12s">
+              <span style="font:400 26px 'Noto Sans Runic',sans-serif;color:{{ b.color }};text-shadow:0 0 10px {{ b.color }}">{{ b.g }}</span>
+              <span style="position:absolute;top:3px;left:4px;font:500 9px 'JetBrains Mono',monospace;color:#a39a93">{{ b.key }}</span>
+              <span style="position:absolute;top:3px;right:4px;font:500 9px 'JetBrains Mono',monospace;color:#d9b865">{{ b.ap }}</span>
+              <span style="position:absolute;bottom:2px;right:4px;font:500 9px 'JetBrains Mono',monospace;color:#5fc4d6">{{ b.mana }}</span>
+              <sc-if value="{{ b.onCd }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,9,14,.72);font:600 18px 'Cinzel',serif;color:#ece6df">{{ b.cd }}</span>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+        <div style="flex:none;width:1px;height:40px;background:rgba(232,200,170,.12)"></div>
+        <div style="flex:none;display:flex;gap:5px">
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="2">
+            <button onClick="{{ it.onClick }}" onMouseEnter="{{ it.onEnter }}" onMouseLeave="{{ unhoverSkill }}" style="position:relative;width:{{ lay.btn }};height:{{ lay.btn }};padding:0;border:1px solid {{ it.border }};border-radius:3px;background:{{ it.bg }};cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;opacity:{{ it.opacity }}">
+              <span style="font:600 10px 'Cinzel',serif;letter-spacing:.1em;color:{{ it.color }}">{{ it.short }}</span>
+              <span style="position:absolute;top:3px;left:4px;font:500 9px 'JetBrains Mono',monospace;color:#a39a93">{{ it.key }}</span>
+              <span style="position:absolute;top:3px;right:4px;font:500 9px 'JetBrains Mono',monospace;color:#d9b865">1</span>
+              <span style="position:absolute;bottom:3px;right:5px;font:500 10px 'JetBrains Mono',monospace;color:#ece6df">×{{ it.qty }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ showLog }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;min-height:0;min-width:0;background:#141118;border:1px solid rgba(232,200,170,.11);border-radius:4px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(232,200,170,.08)">
+        <div style="width:6px;height:6px;transform:rotate(45deg);background:#b85c4a"></div>
+        <div style="font:600 11px 'Cinzel',serif;letter-spacing:.16em;color:#d8cfc6">COMBAT LOG</div>
+      </div>
+      <div ref="{{ logRef }}" style="height:118px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:4px">
+        <sc-for list="{{ log }}" as="l" hint-placeholder-count="4">
+          <sc-if value="{{ l.isRound }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#8a817b">
+              <div style="flex:1;height:1px;background:rgba(232,200,170,.08)"></div>{{ l.text }}<div style="flex:1;height:1px;background:rgba(232,200,170,.08)"></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ l.isLine }}" hint-placeholder-val="{{ true }}">
+            <div style="font:400 12.5px/1.35 'Alegreya Sans',sans-serif;color:#a39a93"><sc-for list="{{ l.segs }}" as="g" hint-placeholder-count="1"><span style="color:{{ g.c }}">{{ g.s }}</span></sc-for></div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+  </footer>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;enemyCount&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[4,5,6],&quot;default&quot;:5,&quot;tsType&quot;:&quot;4|5|6&quot;},&quot;floatingNumbers&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;hitFlash&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const C={ember:'#e08a72',deep:'#b85c4a',hp:'#d0604a',mana:'#5fc4d6',gold:'#d9b865',green:'#86c46f',violet:'#b287e6',frost:'#8fc6e6',ink:'#f3ece4',body:'#ece6df'};
+const SCH={Radiant:C.gold,Nature:C.green,Protection:C.mana,Racial:C.ember};
+const MAX={hp:468,mana:610,faith:5,ap:4};
+const SKILLS=[
+{id:'smite',name:'Smite',g:'ᛋ',school:'Radiant',ap:1,mana:30,faith:0,cd:0,tgt:'enemy',shape:'single',dmg:[64,78],hit:95,crit:12,gain:1,desc:'Strike an enemy with radiant light. Generates 1 Faith.'},
+{id:'judgment',name:'Judgment',g:'ᛏ',school:'Radiant',ap:2,mana:80,faith:1,cd:2,tgt:'enemy',shape:'single',dmg:[120,140],hit:90,crit:15,exec:.35,desc:'Deal heavy radiant damage. Double damage to enemies below 35% health.'},
+{id:'dawnbreak',name:'Dawnbreak',g:'ᛞ',school:'Radiant',ap:3,mana:150,faith:2,cd:4,tgt:'enemy',shape:'line',dmg:[150,170],hit:100,crit:10,desc:'A line of dawnlight strikes every enemy in the target’s rank.'},
+{id:'consecrate',name:'Consecrate Ground',g:'ᚦ',school:'Radiant',ap:2,mana:90,faith:0,cd:3,tgt:'enemy',shape:'area',dmg:[40,50],hit:100,crit:5,st:{id:'consecrated',turns:2},desc:'Hallow the target and the enemies beside it. They burn for 30 at the start of their turns for 2 turns.'},
+{id:'rootbind',name:'Rootbind',g:'ᚱ',school:'Nature',ap:2,mana:60,faith:0,cd:3,tgt:'enemy',shape:'single',dmg:[20,26],hit:85,crit:5,st:{id:'rooted',turns:2},desc:'Roots erupt beneath an enemy. It loses its next 2 turns.'},
+{id:'mend',name:'Mend',g:'ᛚ',school:'Nature',ap:1,mana:40,faith:0,cd:0,tgt:'self',heal:[142,160],desc:'Heal yourself for 142–160 health.'},
+{id:'bloom',name:'Verdant Bloom',g:'ᛜ',school:'Nature',ap:1,mana:55,faith:0,cd:1,tgt:'self',desc:'Heal 48 health at the start of each of your next 3 turns.'},
+{id:'ward',name:'Aegis Ward',g:'ᛉ',school:'Protection',ap:1,mana:70,faith:0,cd:2,tgt:'self',desc:'Absorb up to 180 damage until your next turn.'},
+{id:'purify',name:'Purify',g:'ᚹ',school:'Protection',ap:1,mana:35,faith:0,cd:1,tgt:'self',desc:'Remove Burning from yourself.'}];
+const SK={};SKILLS.forEach(s=>SK[s.id]=s);
+const ITEMS=[{id:'draught',name:'Healing Draught',short:'HEAL',key:'Q',color:'#a8a29c',desc:'Restore 180 health.'},{id:'tincture',name:'Mana Tincture',short:'MANA',key:'E',color:'#86c46f',desc:'Restore 220 mana.'}];
+const FOE_DEFS={
+brute:{name:'Ashbound Brute',tag:'AB',lvl:24,hp:520,row:'front',spd:8,atk:[58,72],move:'Cinder Slam',ev:0,burn:0},
+cult1:{name:'Cinder Cultist',tag:'CC',lvl:22,hp:300,row:'front',spd:12,atk:[38,46],move:'Ember Lash',ev:5,burn:.3},
+cult2:{name:'Cinder Cultist',tag:'CC',lvl:22,hp:300,row:'front',spd:11,atk:[38,46],move:'Ember Lash',ev:5,burn:.3},
+wisp:{name:'Ember Wisp',tag:'EW',lvl:22,hp:180,row:'back',spd:18,atk:[30,36],move:'Flicker',ev:20,burn:0},
+pyro:{name:'Cult Pyromancer',tag:'CP',lvl:25,hp:340,row:'back',spd:10,atk:[70,86],move:'Firebolt',ev:5,burn:.5},
+warden:{name:'Hollow Warden',tag:'HW',lvl:26,hp:640,row:'back',spd:6,atk:[80,96],move:'Grave Toll',ev:0,burn:0}};
+const LINEUPS={4:['cult1','brute','wisp','pyro'],5:['cult1','brute','cult2','wisp','pyro'],6:['cult1','brute','cult2','wisp','pyro','warden']};
+const FST={rooted:{g:'ᚱ',name:'Rooted',c:C.green},consecrated:{g:'ᚦ',name:'Consecrated',c:C.gold}};
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+
+class Component extends DCLogic {
+  logRef=React.createRef();
+  fid=0; lid=0; timers=[];
+  state=this.fresh();
+  fresh(){
+    const n=this.props?.enemyCount??5;
+    const ids=LINEUPS[n]||LINEUPS[5];
+    this.lid=0;
+    return {hp:412,mana:530,faith:3,ap:4,shield:0,bloom:0,burning:0,cds:{},qty:{draught:8,tincture:5},
+      foes:ids.map(id=>({uid:id,...FOE_DEFS[id],cur:FOE_DEFS[id].hp,st:{}})),
+      round:1,phase:'player',acting:'player',armed:null,hover:null,hoverSkill:null,floats:[],hits:{},
+      log:[this.mkRound(1),this.mkLine([['A Cinder Cult war band springs from the ash. '],['Kel\'hos',C.ember],[' acts first.']])]};
+  }
+  mkRound(r){return {id:++this.lid,isRound:true,isLine:false,text:'ROUND '+r,segs:[]};}
+  mkLine(parts){return {id:++this.lid,isRound:false,isLine:true,text:'',segs:parts.map(p=>({s:p[0],c:p[1]||'#a39a93'}))};}
+  addLog(parts){this.setState(s=>({log:[...s.log,this.mkLine(parts)].slice(-80)}));}
+  float(uid,text,color,big){
+    const id=++this.fid;
+    this.setState(s=>({floats:[...s.floats,{id,uid,text,color,big}],hits:{...s.hits,[uid]:(s.hits[uid]||0)+(color===C.hp||color===C.ink?1:0)}}));
+    this.later(()=>this.setState(s=>({floats:s.floats.filter(f=>f.id!==id)})),1400);
+  }
+  later(fn,ms){const t=setTimeout(fn,ms);this.timers.push(t);}
+  stageRef=React.createRef();
+  componentDidMount(){
+    const measure=()=>{const el=this.stageRef.current;this.setState({scale:Math.min(window.innerWidth/1600,window.innerHeight/900),...(el?{sw:el.clientWidth,sh:el.clientHeight}:{})});};
+    this.ro=new ResizeObserver(measure);if(this.stageRef.current)this.ro.observe(this.stageRef.current);
+    window.addEventListener('resize',measure);this.onResize=measure;measure();
+    this.onKey=e=>{
+      if(e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA/.test(e.target.tagName))return;
+      if(e.key==='Escape'){this.setState({armed:null});return;}
+      if(e.key===' '||e.key==='Enter'){e.preventDefault();this.endTurn();return;}
+      const k=e.key.toLowerCase();
+      if(k==='q')return this.useItem('draught');
+      if(k==='e')return this.useItem('tincture');
+      const i=parseInt(e.key,10);
+      if(i>=1&&i<=SKILLS.length)this.pick(SKILLS[i-1].id);
+    };
+    window.addEventListener('keydown',this.onKey);
+  }
+  layout(){
+    const s=this.state,W=s.sw||1600,H=s.sh||620,compact=false;
+    const avail=H-46-12-(compact?30:0),eW=(W-48)*1.55/2.55;
+    const per=r=>s.foes.filter(f=>f.row===r).length,n=Math.max(per('front'),per('back'));
+    const PL=50,LB=21;
+    const sc=Math.min((avail-LB-(n-1)*10)/n-PL,(eW-48)/2-40);
+    const sr=Math.min((avail-2*LB-10)/2-PL,(eW-(n-1)*14)/n-20);
+    const rows=sr>sc,size=Math.round(Math.max(48,Math.min(150,rows?sr:sc)));
+    let plateW=Math.max(120,Math.min(168,size+28));
+    if(rows)plateW=Math.min(plateW,Math.floor((eW-(n-1)*14)/n));
+    const ph=Math.round(Math.max(120,Math.min(400,avail-50))),pw=Math.round(Math.min(ph*.68,(W-48)/2.55-20));
+    return {compact,rows,lay:{size:size+'px',plateW:plateW+'px',pw:pw+'px',ph:ph+'px',btn:compact?'44px':'52px',
+      outerDir:rows?'column-reverse':'row',innerDir:rows?'row':'column',outerGap:rows?'8px':'clamp(28px,4vw,64px)',innerGap:rows?'14px':'10px'}};
+  }
+  componentWillUnmount(){window.removeEventListener('keydown',this.onKey);window.removeEventListener('resize',this.onResize);this.ro&&this.ro.disconnect();this.timers.forEach(clearTimeout);}
+  componentDidUpdate(pp,ps){
+    const ec=this.props.enemyCount??5;if(this._ec===undefined)this._ec=ec;
+    if(this._ec!==ec){this._ec=ec;{this.timers.forEach(clearTimeout);this.timers=[];this.setState(this.fresh());return;}}
+    if((!ps||!ps.log||ps.log.length!==this.state.log.length)&&this.logRef.current){const el=this.logRef.current;el.scrollTop=el.scrollHeight;}
+  }
+  blocker(sk){
+    const s=this.state;
+    if(s.phase!=='player')return 'Not your turn';
+    if((s.cds[sk.id]||0)>0)return 'On cooldown · '+s.cds[sk.id];
+    if(s.ap<sk.ap)return 'Not enough AP';
+    if(s.mana<sk.mana)return 'Not enough mana';
+    if(s.faith<sk.faith)return 'Needs '+sk.faith+' Faith';
+    if(sk.id==='purify'&&!s.burning)return 'Nothing to purify';
+    return null;
+  }
+  pick(id){
+    const sk=SK[id];if(this.blocker(sk))return;
+    this.setState(s=>({armed:s.armed===id?null:id}));
+  }
+  affected(sk,uid){
+    const f=this.state.foes, t=f.find(x=>x.uid===uid);if(!t)return [];
+    const rank=f.filter(x=>x.row===t.row&&x.cur>0);
+    if(sk.shape==='line')return rank;
+    if(sk.shape==='area'){const all=f.filter(x=>x.row===t.row),i=all.indexOf(t);return all.filter((x,j)=>Math.abs(j-i)<=1&&x.cur>0);}
+    return [t];
+  }
+  dmgRange(sk,foe){let [a,b]=sk.dmg;if(sk.exec&&foe.cur/foe.hp<sk.exec){a*=2;b*=2;}return [a,b];}
+  pay(sk){this.setState(s=>({ap:s.ap-sk.ap,mana:s.mana-sk.mana,faith:Math.min(MAX.faith,s.faith-sk.faith+(sk.gain||0)),cds:sk.cd?{...s.cds,[sk.id]:sk.cd+1}:s.cds,armed:null,hoverSkill:null}));}
+  castOn(uid){
+    const sk=SK[this.state.armed];if(!sk||sk.tgt!=='enemy'||this.blocker(sk))return;
+    const targets=this.affected(sk,uid);if(!targets.length)return;
+    this.pay(sk);
+    const foes=this.state.foes.map(f=>({...f,st:{...f.st}}));
+    targets.forEach(t0=>{
+      const t=foes.find(f=>f.uid===t0.uid);
+      const hit=Math.max(5,sk.hit-t.ev);
+      if(Math.random()*100>=hit){this.float(t.uid,'MISS','#a39a93');this.addLog([['Kel\'hos',C.ember],[' — '],[sk.name,SCH[sk.school]],[' misses '],[t.name,C.body],['.']]);return;}
+      const [a,b]=this.dmgRange(sk,t);let d=rnd(a,b);const crit=Math.random()*100<sk.crit;if(crit)d=Math.round(d*1.5);
+      t.cur=Math.max(0,t.cur-d);
+      if(sk.st&&t.cur>0)t.st[sk.st.id]=sk.st.turns;
+      this.float(t.uid,(crit?'✦ ':'')+d,crit?C.gold:C.ink,crit);
+      this.addLog([['Kel\'hos',C.ember],[' — '],[sk.name,SCH[sk.school]],[' hits '],[t.name,C.body],[' for '],[String(d),C.hp],[crit?' (critical)':'',C.gold],[sk.st&&t.cur>0?' · '+FST[sk.st.id].name:'',FST[sk.st?.id]?.c]]);
+      if(t.cur===0)this.addLog([[t.name,C.body],[' is slain.',C.ember]]);
+    });
+    if(sk.gain)this.float('player','+'+sk.gain+' Faith',C.gold);
+    this.setState({foes},()=>this.checkWin());
+  }
+  castSelf(){
+    const sk=SK[this.state.armed];if(!sk||sk.tgt!=='self'||this.blocker(sk))return;
+    this.pay(sk);const s=this.state;
+    if(sk.id==='mend'){const h=Math.min(rnd(...sk.heal),MAX.hp-s.hp);this.setState({hp:s.hp+h});this.float('player','+'+h,C.green);this.addLog([['Kel\'hos',C.ember],[' — '],['Mend',C.green],[' restores '],[String(h),C.green],[' health.']]);}
+    if(sk.id==='bloom'){this.setState({bloom:3});this.float('player','Bloom',C.green);this.addLog([['Kel\'hos',C.ember],[' plants a '],['Verdant Bloom',C.green],['.']]);}
+    if(sk.id==='ward'){this.setState({shield:180});this.float('player','Ward 180',C.frost);this.addLog([['Kel\'hos',C.ember],[' raises an '],['Aegis Ward',C.mana],[' (180).']]);}
+    if(sk.id==='purify'){this.setState({burning:0});this.float('player','Purified',C.mana);this.addLog([['Kel\'hos',C.ember],[' — '],['Purify',C.mana],[' removes Burning.']]);}
+  }
+  useItem(id){
+    const s=this.state;if(s.phase!=='player'||s.ap<1||!s.qty[id])return;
+    if(id==='draught'){const h=Math.min(180,MAX.hp-s.hp);this.setState({hp:s.hp+h,ap:s.ap-1,qty:{...s.qty,draught:s.qty.draught-1},armed:null});this.float('player','+'+h,C.green);this.addLog([['Kel\'hos',C.ember],[' drinks a '],['Healing Draught',C.body],[' (+'+h+').',C.green]]);}
+    else{const m=Math.min(220,MAX.mana-s.mana);this.setState({mana:s.mana+m,ap:s.ap-1,qty:{...s.qty,tincture:s.qty.tincture-1},armed:null});this.float('player','+'+m+' MP',C.mana);this.addLog([['Kel\'hos',C.ember],[' drinks a '],['Mana Tincture',C.body],[' (+'+m+' mana).',C.mana]]);}
+  }
+  checkWin(){if(this.state.foes.every(f=>f.cur<=0))this.setState({phase:'won',acting:null,armed:null});}
+  fleeChance(){return Math.min(90,35+10*this.state.foes.filter(f=>f.cur<=0).length);}
+  flee(){
+    if(this.state.phase!=='player')return;
+    if(Math.random()*100<this.fleeChance()){this.addLog([['Kel\'hos',C.ember],[' slips away through the smoke.']]);this.setState({phase:'fled',armed:null,acting:null});}
+    else{this.addLog([['Kel\'hos',C.ember],[' fails to escape.',C.hp]]);this.endTurn(true);}
+  }
+  endTurn(force){
+    if(this.state.phase!=='player')return;
+    this.setState({phase:'enemy',armed:null,hover:null,hoverSkill:null});
+    const order=this.state.foes.filter(f=>f.cur>0).sort((a,b)=>b.spd-a.spd).map(f=>f.uid);
+    const step=i=>{
+      if(this.state.phase!=='enemy')return;
+      if(i>=order.length)return this.newRound();
+      const uid=order[i];
+      this.setState({acting:uid});
+      this.later(()=>{this.foeAct(uid);this.later(()=>step(i+1),520);},380);
+    };
+    this.later(()=>step(0),300);
+  }
+  foeAct(uid){
+    const foes=this.state.foes.map(f=>({...f,st:{...f.st}}));const f=foes.find(x=>x.uid===uid);if(!f||f.cur<=0)return;
+    if(f.st.consecrated){f.cur=Math.max(0,f.cur-30);f.st.consecrated--;if(!f.st.consecrated)delete f.st.consecrated;this.float(uid,'30',C.gold);this.addLog([[f.name,C.body],[' burns on consecrated ground for '],['30',C.hp],['.']]);
+      if(f.cur===0){this.addLog([[f.name,C.body],[' is slain.',C.ember]]);this.setState({foes},()=>this.checkWin());return;}}
+    if(f.st.rooted){f.st.rooted--;if(!f.st.rooted)delete f.st.rooted;this.setState({foes});this.float(uid,'Rooted',C.green);this.addLog([[f.name,C.body],[' strains against the roots.',C.green]]);return;}
+    this.setState({foes});
+    const s=this.state;
+    if(Math.random()<.08){this.float('player','Dodge','#a39a93');this.addLog([[f.name,C.body],[' — '+f.move+' misses '],['Kel\'hos',C.ember],['.']]);return;}
+    let d=rnd(...f.atk),abs=Math.min(s.shield,d);d-=abs;
+    const burn=f.burn&&Math.random()<f.burn;
+    const hp=Math.max(0,s.hp-d);
+    this.setState({hp,shield:s.shield-abs,burning:burn?2:s.burning,hits:{...s.hits,player:(s.hits.player||0)+1}});
+    this.float('player',abs&&!d?'Absorbed':String(d),abs&&!d?C.frost:C.hp);
+    this.addLog([[f.name,C.body],[' — '+f.move+' hits '],['Kel\'hos',C.ember],[' for '],[String(d),C.hp],[abs?' ('+abs+' absorbed)':'',C.frost],[burn?' · Burning':'',C.hp]]);
+    if(hp===0)this.setState({phase:'lost',acting:null});
+  }
+  newRound(){
+    const s=this.state;if(s.phase!=='enemy')return;
+    const r=s.round+1;let hp=s.hp;const cds={};Object.keys(s.cds).forEach(k=>{if(s.cds[k]>1)cds[k]=s.cds[k]-1;});
+    const lines=[this.mkRound(r)];
+    if(s.bloom){const h=Math.min(48,MAX.hp-hp);hp+=h;this.float('player','+'+h,C.green);lines.push(this.mkLine([['Verdant Bloom',C.green],[' heals '],['Kel\'hos',C.ember],[' for '+h+'.',C.green]]));}
+    if(s.burning){hp=Math.max(1,hp-18);this.float('player','18',C.hp);lines.push(this.mkLine([['Burning',C.hp],[' sears '],['Kel\'hos',C.ember],[' for 18.']]));}
+    this.setState({round:r,phase:'player',acting:'player',ap:MAX.ap,mana:Math.min(MAX.mana,s.mana+40),shield:0,bloom:Math.max(0,s.bloom-1),burning:Math.max(0,s.burning-1),cds,hp,log:[...s.log,...lines]});
+  }
+  fx(uid){
+    const s=this.state,n=s.hits[uid]||0;
+    const kids=s.floats.filter(f=>f.uid===uid).map((f,i)=>React.createElement('span',{key:f.id,style:{position:'absolute',left:(50+((f.id*37)%30)-15)+'%',top:'22%',transform:'translateX(-50%)',font:(f.big?'700 30px':'700 22px')+" 'Cinzel',serif",color:f.color,textShadow:'0 0 12px '+f.color+', 0 2px 0 #000',whiteSpace:'nowrap',animation:'dmgFloat 1.35s ease-out forwards',pointerEvents:'none',zIndex:15}},f.text));
+    if(n&&this.props.hitFlash!==false)kids.unshift(React.createElement('div',{key:'h'+n,style:{position:'absolute',inset:0,borderRadius:4,background:'radial-gradient(circle, rgba(255,240,220,.55), rgba(208,96,74,.2) 60%, transparent 75%)',animation:'hitFlash .45s ease-out forwards',pointerEvents:'none',zIndex:14}}));
+    return React.createElement(React.Fragment,null,this.props.floatingNumbers===false?kids.filter(k=>String(k.key).startsWith('h')):kids);
+  }
+  renderVals(){
+    const s=this.state,armed=s.armed?SK[s.armed]:null;
+    const myTurn=s.phase==='player';
+    const hovFoe=s.foes.find(f=>f.uid===s.hover&&f.cur>0);
+    const aff=armed&&armed.tgt==='enemy'&&hovFoe?this.affected(armed,hovFoe.uid).map(f=>f.uid):[];
+    const alive=s.foes.filter(f=>f.cur>0);
+    let preview={skill:'',main:'',unit:'',hit:0,crit:0,note:'',hasNote:false,color:C.gold,sub:'',noteColor:C.ember};
+    if(armed&&armed.tgt==='enemy'&&hovFoe){
+      const [a,b]=this.dmgRange(armed,hovFoe),hit=Math.max(5,armed.hit-hovFoe.ev);
+      let note='';if(a>=hovFoe.cur)note='LETHAL';else if(Math.round(b*1.5)>=hovFoe.cur)note=b>=hovFoe.cur?'CAN KILL':'KILLS ON CRIT';
+      if(armed.exec&&hovFoe.cur/hovFoe.hp<armed.exec)note=(note?note+' · ':'')+'EXECUTE ×2';
+      if(aff.length>1)note=(note?note+' · ':'')+'HITS '+aff.length+' ENEMIES';
+      if(armed.st)note=(note?note+' · ':'')+FST[armed.st.id].name.toUpperCase()+' '+armed.st.turns;
+      preview={skill:armed.name.toUpperCase()+' → '+hovFoe.name.toUpperCase(),main:a+'–'+b,unit:'DAMAGE',hit,crit:armed.crit,note,hasNote:!!note,color:SCH[armed.school],sub:'',noteColor:note.startsWith('LETHAL')||note.startsWith('CAN')||note.startsWith('KILLS')?C.ember:'#cfc6bd'};
+    }
+    if(armed&&armed.tgt==='self'){
+      const m={mend:['+142–160','HEALTH'],bloom:['+48 ×3','HEALTH OVER 3 TURNS'],ward:['180','ABSORB UNTIL NEXT TURN'],purify:['Cleanse','REMOVES BURNING']}[armed.id];
+      preview={...preview,skill:armed.name.toUpperCase(),main:m[0],sub:m[1],color:SCH[armed.school]};
+    }
+    const L=this.layout();
+    const ranks=['front','back'].map(row=>({label:row==='front'?'FRONT RANK':'BACK RANK',margin:row==='front'?'0':(L.rows?'0 0 0 14%':'0 0 44px 0'),
+      foes:s.foes.filter(f=>f.row===row).map(f=>{
+        const dead=f.cur<=0,tg=!!(armed&&armed.tgt==='enemy'&&!dead&&myTurn),inAoe=aff.includes(f.uid),acting=s.acting===f.uid;
+        let ghost=f.cur;if(inAoe&&armed){const [a,b]=this.dmgRange(armed,f);ghost=f.cur;f._lo=Math.max(0,f.cur-b);}
+        const lo=inAoe?f._lo:f.cur;
+        return {...f,slotId:'combat-foe-'+f.uid,placeholder:f.name.split(' ').pop(),dead,targetable:tg,acting,
+          opacity:dead?.45:1,
+          glow:acting?'0 0 0 1px #d0604a, 0 0 22px rgba(208,96,74,.55)':inAoe?'0 0 0 1px #e08a72, 0 0 24px rgba(224,138,114,.5)':'none',
+          dash:inAoe?'#e08a72':'rgba(224,138,114,.45)',tint:inAoe?'rgba(224,138,114,.12)':'rgba(224,138,114,.03)',
+          plateBorder:acting?'rgba(208,96,74,.7)':inAoe?'rgba(224,138,114,.55)':'rgba(232,200,170,.11)',
+          nameColor:dead?'#6b625c':'#f3ece4',
+          hpPct:(lo/f.hp*100)+'%',ghostPct:(f.cur/f.hp*100)+'%',
+          statuses:Object.keys(f.st).map(k=>({g:FST[k].g,name:FST[k].name,color:FST[k].c,turns:f.st[k]})),
+          showPreview:!!(hovFoe&&hovFoe.uid===f.uid&&armed&&armed.tgt==='enemy'&&myTurn),
+          onEnter:()=>this.setState({hover:f.uid}),onClick:()=>this.castOn(f.uid)};
+      })}));
+    const pTarget=!!(armed&&armed.tgt==='self'&&myTurn);
+    const player={targetable:pTarget,showPreview:pTarget&&s.hover==='player',fx:this.fx('player'),
+      glow:s.acting==='player'&&myTurn?(pTarget?'0 0 0 1px #5fc4d6, 0 0 28px rgba(95,196,214,.45)':'0 0 0 1px rgba(224,138,114,.6), 0 0 26px rgba(224,138,114,.3)'):'none',
+      hpPct:(s.hp/MAX.hp*100)+'%',shieldPct:Math.min(100,s.shield/MAX.hp*100)+'%'};
+    ranks.forEach(r=>r.foes.forEach(f=>f.fx=this.fx(f.uid)));
+    // timeline
+    const bySpd=alive.slice().sort((a,b)=>b.spd-a.spd);
+    const unit=(u,cur,r,future)=>u==='player'?{isUnit:true,isDiv:false,tag:'K',name:'Kel\'hos',color:C.ember,cur}:{isUnit:true,isDiv:false,tag:u.tag,name:u.name,color:u.st.rooted&&!future?C.green:'#c9887a',cur};
+    let tl=[];
+    const roundList=['player',...bySpd];
+    let startIdx=0;
+    if(s.phase==='enemy'){const i=bySpd.findIndex(f=>f.uid===s.acting);startIdx=i<0?1:i+1;}
+    roundList.slice(startIdx).forEach((u,i)=>tl.push(unit(u,i===0)));
+    tl.push({isDiv:true,isUnit:false,round:s.round+1});
+    roundList.forEach(u=>tl.push(unit(u,false,0,true)));
+    if(s.phase==='won'||s.phase==='lost'||s.phase==='fled')tl=tl.map(t=>({...t,cur:false}));
+    tl=tl.slice(0,12).map((t,i)=>t.isDiv?t:{...t,size:t.cur?'44px':'34px',glow:t.cur?'0 0 14px '+t.color:'none',opacity:t.cur?1:(i>6?.5:.8)});
+    const bar=SKILLS.map((sk,i)=>{const bl=this.blocker(sk),on=s.armed===sk.id,cd=s.cds[sk.id]||0;const col=SCH[sk.school];
+      return {...sk,key:String(i+1),color:col,onCd:cd>0,cd,
+        border:on?col:'rgba(232,200,170,.16)',bg:on?'rgba(184,92,74,.18)':'repeating-linear-gradient(135deg, rgba(232,200,170,.04) 0 4px, transparent 4px 8px), #120f16',
+        glow:on?'0 0 0 1px '+col+', 0 0 18px '+col:'none',opacity:bl&&!(cd>0)?.4:1,
+        onClick:()=>this.pick(sk.id),onEnter:()=>this.setState({hoverSkill:sk.id})};});
+    const items=ITEMS.map(it=>{const q=s.qty[it.id],ok=myTurn&&s.ap>=1&&q>0;return {...it,qty:q,opacity:ok?1:.4,border:'rgba(232,200,170,.16)',bg:'repeating-linear-gradient(135deg, rgba(232,200,170,.04) 0 4px, transparent 4px 8px), #120f16',onClick:()=>this.useItem(it.id),onEnter:()=>this.setState({hoverSkill:'item:'+it.id})};});
+    let info={has:false,none:true};
+    const is=s.hoverSkill||s.armed;
+    if(is&&is.startsWith('item:')){const it=ITEMS.find(x=>'item:'+x.id===is);info={has:true,none:false,name:it.name,color:it.color,meta:'1 AP · ×'+s.qty[it.id],desc:it.desc,hasWarn:false,warn:''};}
+    else if(is){const sk=SK[is],bl=this.blocker(sk);info={has:true,none:false,name:sk.name,color:SCH[sk.school],meta:[sk.school.toUpperCase(),sk.ap+' AP',sk.mana+' MP',sk.faith?sk.faith+' FAITH':null,sk.cd?'CD '+sk.cd:null,sk.tgt==='self'?'SELF':sk.shape==='line'?'RANK':sk.shape==='area'?'AREA':'ENEMY'].filter(Boolean).join(' · '),desc:sk.desc,hasWarn:!!bl&&s.phase==='player',warn:bl||''};}
+    const banner=s.phase==='player'?{title:'YOUR TURN',color:C.ember,sub:armed?(armed.tgt==='self'?'Click Kel\'hos to cast '+armed.name+' · Esc to cancel':'Choose a target for '+armed.name+' · Esc to cancel'):s.ap+' AP remaining'}
+      :s.phase==='enemy'?{title:'ENEMY TURN',color:C.hp,sub:(s.foes.find(f=>f.uid===s.acting)||{}).name||''}
+      :{title:'',color:'transparent',sub:''};
+    const result={won:{title:'VICTORY',color:C.gold,sub:'The war band is broken. '+(s.hp)+' health remaining.'},lost:{title:'DEFEAT',color:C.hp,sub:'Kel\'hos falls in the ash.'},fled:{title:'ESCAPED',color:C.frost,sub:'You slip away. The cult will remember.'}}[s.phase]||{title:'',color:'',sub:''};
+    return {
+      scale:s.scale||1,lay:L.lay,compact:L.compact,showLog:!L.compact,lastLog:s.log.filter(l=>l.isLine).slice(-1)[0]||{segs:[]},stageRef:this.stageRef,
+      footCols:L.compact?'minmax(200px,240px) minmax(0,1fr)':'minmax(240px,280px) minmax(0,1fr) minmax(240px,320px)',
+      round:s.round,timeline:tl,ranks,player,preview,bar,items,info,banner,result,
+      ended:!!result.title,notPlayerTurn:!myTurn,turnOpacity:myTurn?1:.45,fleeChance:this.fleeChance(),
+      hpText:s.hp+' / '+MAX.hp+(s.shield?' +'+s.shield:''),manaText:s.mana+' / '+MAX.mana,manaPct:(s.mana/MAX.mana*100)+'%',
+      apPips:[0,1,2,3].map(i=>({fill:i<s.ap?C.gold:'transparent',border:i<s.ap?C.gold:'#6b5a33',glow:i<s.ap?'0 0 8px rgba(217,184,101,.7)':'none'})),
+      faithPips:[0,1,2,3,4].map(i=>({fill:i<s.faith?C.gold:'transparent',border:i<s.faith?C.gold:'#6b5a33',glow:i<s.faith?'0 0 6px rgba(217,184,101,.6)':'none'})),
+      playerStatuses:[s.shield&&{g:'ᛉ',label:'WARD '+s.shield,color:C.frost,desc:'Absorbs damage until your next turn'},s.bloom&&{g:'ᛜ',label:'BLOOM '+s.bloom,color:C.green,desc:'Heals 48 at the start of your turn'},s.burning&&{g:'ᚲ',label:'BURNING '+s.burning,color:C.hp,desc:'Takes 18 at the start of your turn'}].filter(Boolean),
+      idleHint:myTurn?'Pick a skill (1–9), then a target. Items on Q and E.':'Enemies are acting…',
+      log:s.log,logRef:this.logRef,
+      hoverPlayer:()=>this.setState({hover:'player'}),unhover:()=>this.setState({hover:null}),unhoverSkill:()=>this.setState({hoverSkill:null}),
+      clickPlayer:()=>this.castSelf(),endTurn:()=>this.endTurn(),flee:()=>this.flee(),
+      restart:()=>{this.timers.forEach(clearTimeout);this.timers=[];this.setState(this.fresh());}
+    };
+  }
+}
+</script>
+</body>
+</html>
