@@ -27,12 +27,12 @@ export interface CharacterScreenProps {
 }
 
 const ABILITY_HINTS: Record<AbilityKey, string> = {
-  str: "Melee attack rolls and damage.",
-  dex: "Armor Class, initiative, and finesse/ranged attacks.",
-  con: "Maximum HP and Second Wind-style healing.",
-  int: "Wizard spellcasting and Intelligence saves.",
+  str: "Warrior attack rolls and melee damage.",
+  dex: "Armor Class, initiative, and Rogue attacks.",
+  vit: "Maximum HP and Second Wind-style healing.",
+  int: "Mage spellcasting and Intellect saves.",
   wis: "Cleric and Druid spellcasting; Wisdom saves.",
-  cha: "Bard, Sorcerer, and Warlock spellcasting.",
+  spi: "Spirit saves and resource regeneration.",
 };
 
 /** Slot layout matching the design handoff's paper-doll grouping. Only main/armor/accessory are real today. */

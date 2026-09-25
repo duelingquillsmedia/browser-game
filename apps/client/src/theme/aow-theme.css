@@ -116,6 +116,22 @@
   transform: rotate(45deg);
 }
 
+.aow-logo-diamond {
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--aow-ember);
+}
+
+.aow-wordmark {
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.24em;
+  color: var(--aow-ink);
+  text-shadow: 0 0 14px rgba(224, 138, 114, 0.45);
+  white-space: nowrap;
+}
+
 .aow-keycap {
   font-family: var(--aow-font-mono);
   font-size: 10px;
@@ -229,6 +245,23 @@
   color: var(--aow-hp);
   font-size: 12px;
   margin: 10px 0 0;
+}
+
+.aow-stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aow-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--aow-secondary);
+}
+
+.aow-stat-row span:first-child {
+  color: var(--aow-faint);
 }
 
 .aow-skill-stat-grid {

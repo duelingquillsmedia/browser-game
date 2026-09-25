@@ -3,16 +3,20 @@
 A browser-based, D&D SRD-inspired MMORPG set in the world of Eridan. Turn-based
 combat, multiple fantasy races, and (eventually) guilds, PvP, and raids.
 
-**A UI and combat overhaul is underway.** A full design handoff (out-of-combat
-menus: Title, Home, Character, Inventory, Skills, Talents, World Map) lives in
-`Fantasy Combat Game UI/design_handoff_aetherwyn_ui/` — see its own README for
-the full spec. "Aetherwyn" in those files is this project's working title
-before the game was renamed; treat it as synonymous with Age of Broken Wings.
-The plan is to rebuild the out-of-combat UI to match that design one page at a
-time (Title + Home shipped so far — see below), then design a lighter-weight,
-still-turn-based combat system to replace the current D&D-SRD math. The
-sections below describe what's live today, which still reflects the older
-SRD-based systems except where noted.
+**A UI and combat overhaul is underway.** Three design handoffs live in this
+repo — out-of-combat menus (`Fantasy Combat Game UI/design_handoff_aetherwyn_ui/`),
+Character Creation (`Fantasy Combat Game - Character Creation UI/design_handoff_aetherwyn_character_creation/`),
+and the AP-based Combat screen (`Fantasy Combat Game - Combat UI/design_handoff_aetherwyn_combat/`)
+— each with its own README for the full spec. "Aetherwyn" in those files is
+this project's working title before the game was renamed; treat it as
+synonymous with Age of Broken Wings. The out-of-combat UI has been rebuilt to
+match its handoff one page at a time (Title, Home, Character, Inventory,
+Skills, World Map, and now Character Creation — see below); Talents and the
+AP-based Combat screen itself are still ahead. Building Character Creation
+meant replacing the SRD species/class roster with the Character Creation
+handoff's own smaller one (3 races, 5 classes — see below), so most of the
+SRD-specific bullets in this section now describe superseded behavior except
+where noted; the sections below describe what's live today.
 
 ## Status: Milestone 1.5 — real accounts + persistent characters
 
@@ -20,24 +24,29 @@ Milestone 1 proved out the core combat loop client-side only. This pass adds
 real accounts and server-side persistence via Supabase, ahead of the full
 client-server milestone (combat is still resolved in the browser for now).
 
-- All 9 SRD 5.2.1 playable species (Human, Elf, Dwarf, Orc, Halfling,
-  Dragonborn, Gnome, Goliath, Tiefling), each with speed and traits; several
-  carry real mechanical hooks — a Dragonborn's fire resistance and
-  once-per-fight Breath Weapon (an AoE save-for-half), a Dwarf's poison
-  resistance, a Tiefling's fire resistance, an Orc's Relentless Endurance
-  (survive a killing blow at 1 HP, once per fight), and a Halfling's Lucky
-  trait (reroll a natural 1 on an attack roll).
+- **Superseded by Character Creation, below**: 3 playable races (Elf, Human,
+  Dwarf) carried over from the Character Creation handoff, each granting a
+  flat ability score bonus (the handoff's own "10 + race + class" model, not
+  the SRD's roll-or-point-buy) plus one named trait. Elf's Silverleaf Step
+  (the first resource-costing action each combat costs 1 less) and Dwarf's
+  Stoneblood (poison resistance) are real; Human's Many Roads (+10%
+  experience) is flavor-only, since there's no leveling/XP system yet.
 - A Background system, per the SRD 2024 rules: it's your Background, not
   your species, that grants ability score increases and an Origin feat.
   The 4 backgrounds detailed in the free SRD are implemented (Acolyte,
   Criminal, Sage, Soldier), each granting +1 to three abilities and one of
   the 4 free Origin feats (Alert's initiative bonus, Magic Initiate's bonus
   cantrip, Savage Attacker's reroll-and-keep-higher damage dice, or
-  Skilled).
-- All 12 SRD classes (Fighter, Rogue, Wizard, Cleric, Barbarian, Bard,
-  Druid, Monk, Paladin, Ranger, Sorcerer, Warlock) with distinct actions
-  and SRD-accurate hit dice, primary ability, and saving throw
-  proficiencies.
+  Skilled). The new Character Creation flow no longer asks for one --
+  each class auto-picks a thematically fitting Background internally.
+- **Superseded by Character Creation, below**: 5 classes (Warrior, Rogue,
+  Mage, Cleric, Druid) carried over from the Character Creation handoff,
+  each with distinct actions, a class resource pool (or none, for Rogue),
+  and its own flat ability score bonus. Every class's actual attack/heal/
+  buff moves still resolve with the SRD-derived hit die, primary ability,
+  and saving throw math described below -- only the roster and its ability
+  bonuses changed; the AP-based skill kits in the Combat handoff (schools,
+  ranks, statuses) await that screen's own rebuild.
 - SRD 5.2.1-accurate combat resolution: ability modifiers, d20 attack rolls
   vs. AC, initiative, proficiency bonus (including on saving throws), crits
   (double damage dice) and fumbles, Advantage/Disadvantage, and damage types
@@ -51,11 +60,11 @@ client-server milestone (combat is still resolved in the browser for now).
   bars draining live) instead of jumping straight to the end state, with
   the combat log revealing one line at a time in step. The result screen
   waits for the final blow's animation to finish before appearing.
-- A first real character sprite: an Elf Wizard party member now shows an
-  animated idle/attack/hurt/die sprite in combat (contributed craftpix elf
-  sprite sheets) instead of the generic portrait frame. Every other
-  race/class combination still uses the generic portrait until more sprites
-  are added.
+- A first real character sprite: an Elf Mage party member (Wizard's new
+  name) now shows an animated idle/attack/hurt/die sprite in combat
+  (contributed craftpix elf sprite sheets) instead of the generic portrait
+  frame. Every other race/class combination still uses the generic portrait
+  until more sprites are added.
 - Goblin Raiders got the same treatment with two distinct animated models,
   so the two goblins in an encounter (e.g. Raiders on the Tameless Shore)
   read as individuals instead of copy-pasted clones. Which model a given
@@ -80,10 +89,10 @@ client-server milestone (combat is still resolved in the browser for now).
   (weapon/armor/accessory).
   Equipping gear is functional, not cosmetic — it changes AC and the
   damage die on your basic attack in combat. At creation, each class
-  offers a choice of SRD-flavored starting loadouts (e.g. a Fighter picks
-  between a longsword with a chain shirt or with lighter studded leather;
-  a Monk stays unarmored either way). Whichever's picked comes already
-  equipped, plus a spare accessory to try swapping in.
+  offers a choice of SRD-flavored starting loadouts (e.g. a Warrior picks
+  between a longsword with a chain shirt or with lighter studded leather).
+  Whichever's picked comes already equipped, plus a spare accessory to try
+  swapping in.
 - Real accounts (email/password via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
@@ -102,16 +111,13 @@ client-server milestone (combat is still resolved in the browser for now).
   Each fighter's HP carries back to the town hub afterward (including
   companions who didn't fight), and resting heals the whole roster, not
   just the player.
-- Class resource pools: Wizards draw on Arcane, Clerics on Divinity, and
-  Druids/Paladins share a Wylde pool — all three work like a classic MMO
-  mana bar (start full, spend it on spells, trickle a little back each of
-  the caster's own turns). Barbarians build Rage by attacking or getting
-  hit, then spend it on their hardest-hitting moves. Fighters start at 10
-  of 20 Prowess, generated by their basic weapon Strike and spent on
-  Slash/Second Wind — a builder/spender loop rather than a mana bar. Every
-  ability bar slot shows its cost and grays out when it isn't affordable.
-  Other classes (Rogue, Bard, Monk, Ranger, Sorcerer, Warlock) don't have a
-  resource pool yet.
+- Class resource pools: Mages draw on Arcane, Clerics on Divinity, and
+  Druids on Wylde — all three work like a classic MMO mana bar (start full,
+  spend it on spells, trickle a little back each of the caster's own
+  turns). Warriors build Rage from 0 by dealing or taking blows, then spend
+  it on Slash/Second Wind — a builder/spender loop rather than a mana bar.
+  Every ability bar slot shows its cost and grays out when it isn't
+  affordable. Rogue doesn't have a resource pool yet.
 - **New UI, first slice**: a Title screen and a Home dashboard rebuilt to
   match the Aetherwyn design handoff — dark-arcane theme (Cinzel/Alegreya
   Sans/JetBrains Mono/Noto Sans Runic, ember accent), a persistent header +
@@ -173,6 +179,37 @@ client-server milestone (combat is still resolved in the browser for now).
   isn't leveled or region-gated today. The other named regions and points
   of interest from the design's map art (dungeons, shrines, other towns)
   are left unlabeled rather than turned into fake clickable content.
+- **New Character Creation flow**: a 5-step wizard (Race → Class →
+  Attributes → Appearance → Name) replacing the old single-page form,
+  reached from a new working "NEW GAME" button on the Title screen. Building
+  it meant adopting the Character Creation handoff's own smaller roster --
+  3 races (Elf, Human, Dwarf) and 5 classes (Warrior, Rogue, Mage, Cleric,
+  Druid) -- and its deterministic "10 + race bonus + class bonus" attribute
+  model, in place of the old SRD point-buy/rolled-stats step. The six
+  ability scores are renamed to match (Constitution → Vitality, Charisma →
+  Spirit; Strength/Dexterity/Intellect/Wisdom keep their names), and Fighter
+  and Wizard are renamed Warrior and Mage while keeping their existing
+  actions and gear. Warrior's resource pool switched from the retired
+  Prowess to Rage (gained on dealing *or taking* blows, matching the
+  handoff's own Warrior flavor) -- freeing up the Rage pool from Barbarian,
+  which was cut along with Bard, Monk, Paladin, Ranger, Sorcerer, and
+  Warlock. Two Misfit Six companions changed class to fit the new roster:
+  Magnar (was Barbarian) and Dondalian (was Paladin) are both Warriors now.
+  The Attributes step is read-only (no more point-buy or 4d6 rolling in
+  this flow -- companions still get one via `createCompanion`), and the
+  Background/Origin-feat/starting-equipment choices from the old form are
+  gone too; each class now auto-picks a thematically fitting Background
+  internally (e.g. Mage → Sage) purely for its Origin feat and small stat
+  bonus, with no player-facing step for it. The Appearance step's presets
+  (six per race, real names/colors from the handoff's own `LOOKS` data) are
+  stored on the new `Character.appearance` field but don't render a real
+  portrait yet -- there's no character art pipeline, so the preview panel
+  shows a race/class glyph instead of a fake photographic portrait. The
+  design's per-race name pools are wired to a working Random name button.
+  The actual tile/AP-based Combat screen this roster was built for is a
+  separate, still-unbuilt handoff (`Fantasy Combat Game - Combat UI/`) --
+  every class's moves still resolve through the existing SRD-derived attack/
+  save math for now.
 
 ## Tech stack
 
@@ -305,11 +342,11 @@ Commons Attribution 4.0 International License
   own Dexterity save for half damage on a success.
 - **Race and Origin feat hooks**: Alert adds its proficiency bonus to
   initiative; Savage Attacker rerolls a weapon hit's damage dice and keeps
-  the higher result; a Halfling's Lucky trait rerolls a natural 1 on an
-  attack roll; an Orc's Relentless Endurance drops them to 1 HP instead of
-  Unconscious the first time they'd fall in a fight; a Dragonborn's Breath
-  Weapon is a once-per-fight AoE save-for-half action built on the same
-  "save" action kind as Fireball.
+  the higher result. (Superseded by Character Creation, below: the SRD-era
+  Halfling's Lucky reroll, Orc's Relentless Endurance, and Dragonborn's
+  Breath Weapon were removed along with those species; an Elf's Silverleaf
+  Step is the new roster's equivalent race-trait hook, discounting the
+  first resource-costing action each combat by 1.)
 - **Action cooldowns (homebrew, not SRD)**: each class's signature attack
   (Firebolt, Slash, Eldritch Blast...) is at-will, usable every turn like a
   cantrip. Bigger one-off effects (Fireball, Second Wind, Arcane Shield...)

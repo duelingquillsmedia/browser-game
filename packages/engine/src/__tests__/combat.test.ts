@@ -9,7 +9,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     id: "hero",
     name: "Hero",
     side: "party",
-    abilityScores: { str: 16, dex: 14, con: 14, int: 10, wis: 10, cha: 10 },
+    abilityScores: { str: 16, dex: 14, vit: 14, int: 10, wis: 10, spi: 10 },
     maxHp: 20,
     hp: 20,
     armorClass: 12,
@@ -27,7 +27,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     fled: false,
     unconscious: false,
     dead: false,
-    usedRelentlessEndurance: false,
+    usedSilverleafStep: false,
     ...overrides,
   };
 }
@@ -37,7 +37,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     id: "foe",
     name: "Foe",
     side: "enemy",
-    abilityScores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+    abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
     maxHp: 7,
     hp: 7,
     armorClass: 10,
@@ -66,7 +66,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     fled: false,
     unconscious: false,
     dead: false,
-    usedRelentlessEndurance: false,
+    usedSilverleafStep: false,
     ...overrides,
   };
 }
@@ -216,7 +216,7 @@ describe("combat engine", () => {
       usesPerCombat: 1,
     };
     const caster = makeHero({
-      abilityScores: { str: 10, dex: 10, con: 10, int: 16, wis: 10, cha: 10 },
+      abilityScores: { str: 10, dex: 10, vit: 10, int: 16, wis: 10, spi: 10 },
       actions: [fireball],
       actionUses: { fireball: 1 },
     });
@@ -251,18 +251,33 @@ describe("combat engine", () => {
     expect(hero.initiative).toBe(15);
   });
 
-  it("rerolls a natural 1 attack roll for a Halfling (Lucky trait)", () => {
-    const state = startCombat([makeHero({ raceId: "halfling" })], [makeFoe()], sequenceRng([forD20(15), forD20(5)]));
+  it("discounts an Elf's first resource-costing action each combat by 1 (Silverleaf Step)", () => {
+    const firebolt = {
+      id: "firebolt",
+      name: "Firebolt",
+      description: "",
+      kind: "attack" as const,
+      target: "enemy" as const,
+      ability: "int" as const,
+      dice: "1d10",
+      damageType: "fire" as const,
+      resourceCost: 4,
+    };
+    const state = startCombat(
+      [makeHero({ raceId: "elf", actions: [firebolt], resource: 4 })],
+      [makeFoe()],
+      sequenceRng([forD20(15), forD20(5)])
+    );
 
     const after = submitPlayerAction(
       state,
-      { actorId: "hero", actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(1), forD20(15), forDie(6, 4)])
+      { actorId: "hero", actionId: "firebolt", targetId: "foe" },
+      sequenceRng([forD20(1)]) // guaranteed miss -- only the resource spend matters here
     );
 
-    expect(after.log.some((entry) => entry.message.includes("Lucky"))).toBe(true);
-    // reroll totals 15+3(str mod)+2(prof)=20 vs AC 10 -- hits for 4+3=7, exactly lethal.
-    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(0);
+    expect(after.log.some((entry) => entry.message.includes("Silverleaf Step"))).toBe(true);
+    // 4 resource, discounted to a cost of 3 -- 1 left over instead of running out.
+    expect(after.combatants.find((c) => c.id === "hero")!.resource).toBe(1);
   });
 
   it("rolls damage dice twice and keeps the higher for Savage Attacker, on a non-crit hit", () => {
@@ -280,20 +295,6 @@ describe("combat engine", () => {
 
     // Higher of the two damage rolls (5) + str mod (3) = 8.
     expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(20 - 8);
-  });
-
-  it("drops an Orc to 1 HP instead of unconscious the first time they'd fall (Relentless Endurance)", () => {
-    const state = startCombat(
-      [makeHero({ raceId: "orc", maxHp: 4, hp: 4 })],
-      [makeFoe()],
-      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forDie(4, 4)])
-    );
-
-    const hero = state.combatants.find((c) => c.id === "hero")!;
-    expect(hero.hp).toBe(1);
-    expect(hero.unconscious).toBe(false);
-    expect(hero.usedRelentlessEndurance).toBe(true);
-    expect(state.log.some((entry) => entry.message.includes("Relentless Endurance"))).toBe(true);
   });
 
   it("blocks a cooldown action from reuse until enough rounds have passed, then allows it again", () => {
@@ -383,30 +384,30 @@ describe("combat engine", () => {
 });
 
 describe("toCombatant", () => {
-  function makeFighter(hp?: number) {
+  function makeWarrior(hp?: number) {
     const character = createCharacter({
       id: "pc-1",
       name: "Bram",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
     return hp === undefined ? character : { ...character, hp };
   }
 
   it("starts a party member Unconscious if they're already at 0 HP", () => {
-    const combatant = toCombatant(makeFighter(0), "party");
+    const combatant = toCombatant(makeWarrior(0), "party");
     expect(combatant.unconscious).toBe(true);
   });
 
   it("starts a party member up normally when they have HP left", () => {
-    const combatant = toCombatant(makeFighter(), "party");
+    const combatant = toCombatant(makeWarrior(), "party");
     expect(combatant.unconscious).toBe(false);
   });
 
   it("never marks a monster Unconscious, even at 0 HP", () => {
-    const combatant = toCombatant(makeFighter(0), "enemy");
+    const combatant = toCombatant(makeWarrior(0), "enemy");
     expect(combatant.unconscious).toBe(false);
   });
 });

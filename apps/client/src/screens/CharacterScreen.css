@@ -185,23 +185,6 @@
   padding: 3px 5px;
 }
 
-.aow-stat-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.aow-stat-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--aow-secondary);
-}
-
-.aow-stat-row span:first-child {
-  color: var(--aow-faint);
-}
-
 .aow-resist-list {
   display: flex;
   flex-wrap: wrap;

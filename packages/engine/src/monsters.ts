@@ -44,7 +44,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "goblin",
     name: "Goblin Raider",
     description: "A wiry raider out of the goblin port towns of Claw Bay, preying on travelers along the Tameless Shore.",
-    abilityScores: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 },
+    abilityScores: { str: 8, dex: 14, vit: 10, int: 10, wis: 8, spi: 8 },
     hitDie: 6,
     hitDiceCount: 2,
     baseArmorClass: 13,
@@ -67,7 +67,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "direWolf",
     name: "Dire Wolf",
     description: "A pack hunter grown huge on the game trails of Tiuv Forest.",
-    abilityScores: { str: 15, dex: 15, con: 13, int: 3, wis: 12, cha: 7 },
+    abilityScores: { str: 15, dex: 15, vit: 13, int: 3, wis: 12, spi: 7 },
     hitDie: 8,
     hitDiceCount: 3,
     baseArmorClass: 13,
@@ -98,7 +98,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "orcMarauder",
     name: "Orc Marauder",
     description: "A blooded warrior out of Collmhor Wood, where orcs and bugbears have fought over the old ruins for generations.",
-    abilityScores: { str: 16, dex: 12, con: 14, int: 9, wis: 9, cha: 10 },
+    abilityScores: { str: 16, dex: 12, vit: 14, int: 9, wis: 9, spi: 10 },
     hitDie: 8,
     hitDiceCount: 4,
     baseArmorClass: 14,
@@ -123,8 +123,8 @@ export function createMonster(templateId: string, instanceId: string): Monster {
   const template = MONSTER_TEMPLATES[templateId];
   if (!template) throw new Error(`Unknown monster template: "${templateId}"`);
 
-  const conMod = abilityModifier(template.abilityScores.con);
-  const maxHp = (template.hitDie / 2 + 0.5 + conMod) * template.hitDiceCount;
+  const vitMod = abilityModifier(template.abilityScores.vit);
+  const maxHp = (template.hitDie / 2 + 0.5 + vitMod) * template.hitDiceCount;
 
   return {
     id: instanceId,

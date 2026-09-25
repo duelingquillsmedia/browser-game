@@ -1,0 +1,578 @@
+.aow-creation {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.aow-creation-header {
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px;
+  background: var(--aow-header-gradient);
+  border-bottom: 1px solid var(--aow-divider);
+}
+
+.aow-creation-back-link {
+  background: none;
+  border: none;
+  color: var(--aow-muted);
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.aow-creation-back-link:hover {
+  color: var(--aow-ember);
+}
+
+.aow-creation-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 16px;
+  border-left: 1px solid var(--aow-divider);
+}
+
+.aow-creation-header-eyebrow {
+  margin-left: auto;
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--aow-faint);
+}
+
+.aow-creation-body {
+  flex: 1;
+  display: flex;
+  gap: 18px;
+  padding: 20px 24px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Step rail */
+
+.aow-creation-rail {
+  flex: none;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aow-creation-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  padding: 10px 10px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.aow-creation-step.current {
+  border-left-color: var(--aow-ember);
+  background: rgba(184, 92, 74, 0.14);
+}
+
+.aow-creation-step.unreached {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.aow-creation-step-diamond {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+  border: 1px solid #3a333f;
+  background: transparent;
+}
+
+.aow-creation-step-diamond.current {
+  border-color: var(--aow-ember);
+  box-shadow: 0 0 10px rgba(224, 138, 114, 0.5);
+}
+
+.aow-creation-step-diamond.done {
+  background: var(--aow-ember-deep);
+  border-color: var(--aow-ember-deep);
+}
+
+.aow-creation-step-diamond span {
+  transform: rotate(-45deg);
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  color: var(--aow-faint);
+}
+
+.aow-creation-step-diamond.current span,
+.aow-creation-step-diamond.done span {
+  color: var(--aow-ink);
+}
+
+.aow-creation-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aow-creation-step-label {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--aow-tertiary);
+}
+
+.aow-creation-step-value {
+  font-family: var(--aow-font-display);
+  font-size: 13px;
+  color: var(--aow-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Step content */
+
+.aow-creation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.aow-creation-sub {
+  color: var(--aow-tertiary);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+
+.aow-creation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--aow-panel);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+}
+
+.aow-creation-card:hover {
+  border-color: var(--aow-card-hover-border);
+}
+
+.aow-creation-card.selected {
+  background: rgba(184, 92, 74, 0.12);
+  border-color: var(--aow-ember);
+  box-shadow: 0 0 0 1px var(--aow-ember), 0 0 24px rgba(184, 92, 74, 0.2);
+}
+
+.aow-creation-card-glyph {
+  font-family: var(--aow-font-runic);
+  font-size: 26px;
+  color: var(--aow-ember);
+}
+
+.aow-creation-card-name {
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--aow-ink);
+}
+
+.aow-creation-card-desc {
+  font-size: 13px;
+  color: var(--aow-tertiary);
+  margin: 0;
+}
+
+/* Race step */
+
+.aow-creation-race-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.aow-creation-bonus-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aow-creation-bonus-chip {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+
+.aow-creation-bonus-chip.positive {
+  color: var(--aow-green);
+  border-color: rgba(134, 196, 111, 0.35);
+}
+
+.aow-creation-bonus-chip.negative {
+  color: var(--aow-hp);
+  border-color: rgba(208, 96, 74, 0.35);
+}
+
+.aow-creation-trait-box {
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-divider);
+  border-radius: 3px;
+  padding: 8px 10px;
+}
+
+.aow-creation-trait-name {
+  font-family: var(--aow-font-display);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--aow-ember);
+  margin-bottom: 2px;
+}
+
+.aow-creation-trait-desc {
+  font-size: 12px;
+  color: var(--aow-tertiary);
+  margin: 0;
+}
+
+/* Class step */
+
+.aow-creation-class-layout {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.aow-creation-class-list {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aow-creation-class-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--aow-panel);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+}
+
+.aow-creation-class-row.selected {
+  background: rgba(184, 92, 74, 0.1);
+}
+
+.aow-creation-class-role {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--aow-faint);
+}
+
+.aow-creation-class-detail {
+  flex: 1.4 1 340px;
+  background: var(--aow-panel);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  padding: 16px;
+  min-height: 320px;
+}
+
+.aow-creation-class-title {
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+
+.aow-creation-tile-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.aow-creation-tile-row .aow-skill-stat {
+  flex: 1;
+}
+
+.aow-creation-skill-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+/* Attributes step */
+
+.aow-creation-attr-layout {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.aow-creation-attr-panel {
+  flex: 1.6 1 420px;
+}
+
+.aow-creation-attr-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aow-creation-attr-row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr 0.6fr 0.6fr 0.6fr;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--aow-divider-soft);
+  font-size: 13px;
+}
+
+.aow-creation-attr-name {
+  color: var(--aow-secondary);
+}
+
+.aow-creation-attr-base {
+  font-family: var(--aow-font-mono);
+  color: var(--aow-faint);
+  text-align: right;
+}
+
+.aow-creation-attr-delta {
+  font-family: var(--aow-font-mono);
+  text-align: right;
+}
+
+.aow-creation-attr-delta.positive {
+  color: var(--aow-green);
+}
+
+.aow-creation-attr-delta.negative {
+  color: var(--aow-hp);
+}
+
+.aow-creation-attr-total {
+  font-family: var(--aow-font-mono);
+  font-weight: 600;
+  color: var(--aow-ink);
+  text-align: right;
+}
+
+.aow-creation-tile-column {
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Appearance step */
+
+.aow-creation-look-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.aow-creation-look-card {
+  align-items: center;
+  text-align: center;
+}
+
+.aow-creation-swatch-row {
+  display: flex;
+  gap: 6px;
+}
+
+.aow-creation-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--aow-control-border);
+}
+
+.aow-creation-swatch-diamond {
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+
+.aow-creation-look-note {
+  grid-column: 1 / -1;
+}
+
+/* Name step */
+
+.aow-creation-name-layout {
+  max-width: 480px;
+}
+
+.aow-creation-name-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.aow-creation-name-input {
+  flex: 1;
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-control-border);
+  border-radius: 3px;
+  padding: 12px 14px;
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--aow-ink);
+}
+
+.aow-creation-name-hint {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--aow-faint);
+  margin: 8px 0 20px;
+}
+
+.aow-creation-name-hint.positive {
+  color: var(--aow-green);
+}
+
+.aow-creation-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Preview column */
+
+.aow-creation-preview {
+  flex: none;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aow-creation-preview-frame {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--aow-panel);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+}
+
+.aow-creation-preview-frame.has-class {
+  box-shadow: 0 0 30px rgba(184, 92, 74, 0.12);
+}
+
+.aow-creation-preview-glyph {
+  font-family: var(--aow-font-runic);
+  font-size: 96px;
+  color: var(--aow-faint);
+}
+
+.aow-creation-preview-caption {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+}
+
+.aow-creation-preview-name {
+  font-family: var(--aow-font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--aow-ink);
+}
+
+.aow-creation-preview-line {
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--aow-tertiary);
+}
+
+.aow-creation-preview-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Footer */
+
+.aow-creation-footer {
+  flex: none;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  border-top: 1px solid var(--aow-divider);
+  background: var(--aow-header-gradient);
+}
+
+.aow-creation-pagination {
+  margin: 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.aow-creation-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #3a333f;
+}
+
+.aow-creation-dot.current {
+  border-color: var(--aow-ember);
+  background: var(--aow-ember);
+}
+
+.aow-creation-dot.done {
+  border-color: var(--aow-ember-deep);
+  background: var(--aow-ember-deep);
+}
+
+@media (max-width: 1100px) {
+  .aow-creation-body {
+    flex-direction: column;
+  }
+
+  .aow-creation-rail {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .aow-creation-preview {
+    width: 100%;
+  }
+}

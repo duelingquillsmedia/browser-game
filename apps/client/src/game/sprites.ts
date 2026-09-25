@@ -33,12 +33,13 @@ const elfWizardDie = import.meta.glob("../assets/sprites/elf-wizard/die-*.png", 
 }) as Record<string, string>;
 
 /**
- * Party combat sprites, keyed by "raceId:classId". Only Elf Wizard has real
- * art so far (craftpix elf sprite sheets, contributed to the repo) — every
- * other race/class combination falls back to the generic portrait frame.
+ * Party combat sprites, keyed by "raceId:classId". Only Elf Mage has real
+ * art so far (craftpix elf sprite sheets, contributed to the repo, from
+ * back when this class was still called Wizard) — every other race/class
+ * combination falls back to the generic portrait frame.
  */
 const PARTY_SPRITES: Record<string, SpriteAnimationSet> = {
-  "elf:wizard": {
+  "elf:mage": {
     idle: sortedFrames(elfWizardIdle),
     attack: sortedFrames(elfWizardAttack),
     hurt: sortedFrames(elfWizardHurt),

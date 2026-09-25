@@ -41,7 +41,7 @@ export interface CombatActionDef {
    * combat degenerates into repeating the same action.
    */
   cooldown?: number;
-  /** Resource cost (from the actor's class resource pool — Arcane, Divinity, Wylde, Rage, or Prowess) to use this action. */
+  /** Resource cost (from the actor's class resource pool — Arcane, Divinity, Wylde, or Rage) to use this action. */
   resourceCost?: number;
 }
 

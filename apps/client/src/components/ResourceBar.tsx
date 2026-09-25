@@ -7,7 +7,7 @@ export interface ResourceBarProps {
   max: number;
 }
 
-/** A class resource pool (Arcane/Divinity/Wylde/Rage/Prowess), rendered as a small labeled bar. */
+/** A class resource pool (Arcane/Divinity/Wylde/Rage), rendered as a small labeled bar. */
 export function ResourceBar({ resourceKey, name, value, max }: ResourceBarProps) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (

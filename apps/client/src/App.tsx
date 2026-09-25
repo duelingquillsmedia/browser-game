@@ -84,8 +84,20 @@ function App() {
     setScreen({ kind: data.session ? "characterSelect" : "auth" });
   }
 
+  async function handleNewGame() {
+    const { data } = await supabase.auth.getSession();
+    setScreen({ kind: data.session ? "creation" : "auth" });
+  }
+
   if (screen.kind === "intro") {
-    return <TitleScreen gameName={GAME_NAME} tagline={`A turn-based chronicle of ${WORLD_NAME}`} onContinue={handleBegin} />;
+    return (
+      <TitleScreen
+        gameName={GAME_NAME}
+        tagline={`A turn-based chronicle of ${WORLD_NAME}`}
+        onContinue={handleBegin}
+        onNewGame={handleNewGame}
+      />
+    );
   }
 
   if (screen.kind === "auth") {

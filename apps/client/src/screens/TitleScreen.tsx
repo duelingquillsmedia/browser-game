@@ -6,11 +6,12 @@ export interface TitleScreenProps {
   gameName: string;
   tagline: string;
   onContinue: () => void;
+  onNewGame: () => void;
 }
 
-const STUB_ITEMS = ["NEW GAME", "LOAD GAME", "SETTINGS"];
+const STUB_ITEMS = ["LOAD GAME", "SETTINGS"];
 
-export function TitleScreen({ gameName, tagline, onContinue }: TitleScreenProps) {
+export function TitleScreen({ gameName, tagline, onContinue, onNewGame }: TitleScreenProps) {
   const [toast, setToast] = useState<string | null>(null);
 
   function handleStub(label: string) {
@@ -30,6 +31,9 @@ export function TitleScreen({ gameName, tagline, onContinue }: TitleScreenProps)
           <button type="button" className="aow-title-item primary" onClick={onContinue}>
             <span>CONTINUE</span>
             <span className="aow-title-item-sub">Resume your journey</span>
+          </button>
+          <button type="button" className="aow-title-item" onClick={onNewGame}>
+            NEW GAME
           </button>
           {STUB_ITEMS.map((label) => (
             <button key={label} type="button" className="aow-title-item" onClick={() => handleStub(label)}>

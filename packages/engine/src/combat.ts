@@ -14,7 +14,7 @@ export interface Combatant {
   id: string;
   name: string;
   side: Side;
-  /** A party member's species (for race-specific mechanics like Orc's Relentless Endurance); monsters have none. */
+  /** A party member's species (for race-specific mechanics like Elf's Silverleaf Step); monsters have none. */
   raceId?: string;
   /** A party member's class (for UI purposes, e.g. picking a combat sprite); monsters have none. */
   classId?: string;
@@ -36,7 +36,7 @@ export interface Combatant {
   damageResistances: DamageType[];
   damageVulnerabilities: DamageType[];
   damageImmunities: DamageType[];
-  /** Current value in this combatant's class resource pool (Arcane/Divinity/Wylde/Rage/Prowess); undefined if their class has none. */
+  /** Current value in this combatant's class resource pool (Arcane/Divinity/Wylde/Rage); undefined if their class has none. */
   resource?: number;
   /** From buff actions (e.g. Arcane Shield); cleared at the start of this combatant's own next turn. */
   tempArmorClassBonus: number;
@@ -48,8 +48,8 @@ export interface Combatant {
   unconscious: boolean;
   /** Only from an instant-death overkill hit; otherwise a party member simply goes Unconscious. */
   dead: boolean;
-  /** Whether an Orc's Relentless Endurance has already saved this combatant once this fight. */
-  usedRelentlessEndurance: boolean;
+  /** Whether an Elf's Silverleaf Step has already discounted a resource cost this fight. */
+  usedSilverleafStep: boolean;
 }
 
 export function toCombatant(source: Character | Monster, side: Side): Combatant {
@@ -83,7 +83,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     // monsters have no equivalent state, so this never applies to them.
     unconscious: side === "party" && source.hp <= 0,
     dead: false,
-    usedRelentlessEndurance: false,
+    usedSilverleafStep: false,
   };
 }
 
@@ -242,15 +242,6 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
     log(state, `${target.name} takes a devastating blow and dies instantly!`, { kind: "down", targetId: target.id });
     return;
   }
-  if (target.raceId === "orc" && !target.usedRelentlessEndurance) {
-    target.usedRelentlessEndurance = true;
-    target.hp = 1;
-    log(state, `${target.name}'s Relentless Endurance kicks in — they stay on their feet at 1 HP!`, {
-      kind: "info",
-      targetId: target.id,
-    });
-    return;
-  }
   target.unconscious = true;
   log(state, `${target.name} drops to 0 HP and falls unconscious!`, { kind: "down", targetId: target.id });
 }
@@ -266,11 +257,7 @@ function resolveAttack(
   const disadvantaged = target.dodging;
   const advantaged = target.unconscious;
   const edge = advantaged && disadvantaged ? "none" : advantaged ? "advantage" : disadvantaged ? "disadvantage" : "none";
-  let attackRoll = rollD20WithEdge(edge, rng);
-  if (attackRoll === 1 && actor.raceId === "halfling") {
-    log(state, `${actor.name}'s Lucky trait rerolls a natural 1!`, { kind: "info", actorId: actor.id });
-    attackRoll = rollD20WithEdge(edge, rng);
-  }
+  const attackRoll = rollD20WithEdge(edge, rng);
   const mod = abilityMod(actor, action.ability) + actor.proficiencyBonus;
   const total = attackRoll + mod;
   const targetAc = target.armorClass + target.tempArmorClassBonus;
@@ -430,14 +417,20 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
 
   if (action.resourceCost !== undefined) {
     const resourceConfig = getClassResource(actor.classId);
+    let cost = action.resourceCost;
+    if (actor.raceId === "elf" && !actor.usedSilverleafStep) {
+      actor.usedSilverleafStep = true;
+      cost = Math.max(0, cost - 1);
+      log(state, `${actor.name}'s Silverleaf Step discounts the cost of ${action.name}.`, { kind: "info", actorId: actor.id });
+    }
     const available = actor.resource ?? 0;
-    if (available < action.resourceCost) {
+    if (available < cost) {
       throw new Error(`${actor.name} doesn't have enough ${resourceConfig?.name ?? "resource"} to use ${action.name}.`);
     }
-    actor.resource = available - action.resourceCost;
+    actor.resource = available - cost;
   }
-  // The basic weapon Strike builds a class's resource (Fighter's Prowess, Barbarian's
-  // Rage) on use, hit or miss — a class without a matching pool is unaffected.
+  // The basic weapon Strike builds a Warrior's Rage on use, hit or miss —
+  // a class without a matching pool is unaffected.
   if (action.id === BASIC_ATTACK.id) {
     gainResource(actor, getClassResource(actor.classId)?.gainOnBasicAttack);
   }

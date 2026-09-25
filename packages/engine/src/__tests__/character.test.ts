@@ -13,21 +13,23 @@ describe("createCharacter", () => {
       raceId: "elf",
       classId: "rogue",
       backgroundId: "criminal",
-      baseAbilityScores: { str: 10, dex: 15, con: 12, int: 10, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10, spi: 8 },
     });
 
-    // Criminal background: +1 dex, +1 con, +1 int
-    expect(character.abilityScores.dex).toBe(16);
-    expect(character.abilityScores.con).toBe(13);
-    expect(character.abilityScores.int).toBe(11);
+    // Base scores + Criminal background (+1 dex/vit/int) + Elf (dex+2,wis+2,int+1,vit-1) + Rogue (dex+5,int+2,str+1)
+    expect(character.abilityScores.str).toBe(11);
+    expect(character.abilityScores.dex).toBe(20); // 15 +1 +2 +5 = 23, clamped to 20
+    expect(character.abilityScores.vit).toBe(12); // 12 +1 -1 = 12
+    expect(character.abilityScores.int).toBe(14); // 10 +1 +1 +2 = 14
+    expect(character.abilityScores.wis).toBe(12); // 10 +2 = 12
     expect(character.originFeatId).toBe("alert");
 
-    // Rogue hit die 8, con mod = 1 (con 13) -> maxHp = 8 + 1 = 9
+    // Rogue hit die 8, vit mod = 1 (vit 12) -> maxHp = 8 + 1 = 9
     expect(character.maxHp).toBe(9);
     expect(character.hp).toBe(character.maxHp);
 
-    // AC = 10 + dex mod (16 -> +3) + starting Leather Armor (+1)
-    expect(character.armorClass).toBe(14);
+    // AC = 10 + dex mod (20 -> +5) + starting Leather Armor (+1)
+    expect(character.armorClass).toBe(16);
 
     expect(character.proficiencyBonus).toBe(2);
     expect(character.actions.some((a) => a.id === "sneak-strike")).toBe(true);
@@ -42,7 +44,7 @@ describe("createCharacter", () => {
       raceId: "human",
       classId: "cleric",
       backgroundId: "acolyte",
-      baseAbilityScores: { str: 10, dex: 10, con: 12, int: 10, wis: 15, cha: 8 },
+      baseAbilityScores: { str: 10, dex: 10, vit: 12, int: 10, wis: 15, spi: 8 },
     });
 
     expect(character.originFeatId).toBe("magicInitiate");
@@ -51,18 +53,21 @@ describe("createCharacter", () => {
     expect(cantrip?.ability).toBe("wis");
   });
 
-  it("grants a Dragonborn's Breath Weapon and fire resistance", () => {
+  it("grants a Dwarf's Stoneblood poison resistance and applies its ability bonuses", () => {
     const character = createCharacter({
       id: "pc-1c",
       name: "Vex",
-      raceId: "dragonborn",
-      classId: "fighter",
+      raceId: "dwarf",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
 
-    expect(character.actions.some((a) => a.id === "breath-weapon")).toBe(true);
-    expect(character.damageResistances).toContain("fire");
+    expect(character.damageResistances).toContain("poison");
+    // Soldier background (+1 str/dex/vit), then Dwarf (vit+3,str+2,dex-1), then Warrior (str+4,vit+3,dex+1)
+    expect(character.abilityScores.str).toBe(20); // 15 +1 +2 +4 = 22, clamped to 20
+    expect(character.abilityScores.vit).toBe(20); // 13 +1 +3 +3 = 20
+    expect(character.abilityScores.dex).toBe(15); // 14 +1 -1 +1 = 15
   });
 
   it("starts with class-appropriate equipped gear and a spare accessory", () => {
@@ -70,9 +75,9 @@ describe("createCharacter", () => {
       id: "pc-3",
       name: "Bram",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
 
     expect(character.equipment.weapon).toBe("ironLongsword");
@@ -90,9 +95,9 @@ describe("createCharacter", () => {
       id: "pc-3b",
       name: "Bram",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
     expect(defaultGear.equipment.armor).toBe("chainShirt");
 
@@ -100,9 +105,9 @@ describe("createCharacter", () => {
       id: "pc-3c",
       name: "Bram",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
       equipmentOptionId: "sword-and-leather",
     });
     expect(chosenGear.equipment.weapon).toBe("ironLongsword");
@@ -114,9 +119,9 @@ describe("createCharacter", () => {
       id: "pc-3d",
       name: "Bram",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
       equipmentOptionId: "nonexistent",
     });
     expect(unknownOption.equipment).toEqual(defaultGear.equipment);
@@ -132,7 +137,7 @@ describe("createCharacter", () => {
           raceId: "human",
           classId: cls.id,
           backgroundId: "acolyte",
-          baseAbilityScores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+          baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
           equipmentOptionId: option.id,
         });
         expect(character.equipment).toEqual(option.equipment);
@@ -144,11 +149,11 @@ describe("createCharacter", () => {
     const base = {
       id: "pc-2",
       name: "Nobody",
-      baseAbilityScores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
     };
-    expect(() => createCharacter({ ...base, raceId: "nope", classId: "fighter", backgroundId: "acolyte" })).toThrow();
+    expect(() => createCharacter({ ...base, raceId: "nope", classId: "warrior", backgroundId: "acolyte" })).toThrow();
     expect(() => createCharacter({ ...base, raceId: "human", classId: "nope", backgroundId: "acolyte" })).toThrow();
-    expect(() => createCharacter({ ...base, raceId: "human", classId: "fighter", backgroundId: "nope" })).toThrow();
+    expect(() => createCharacter({ ...base, raceId: "human", classId: "warrior", backgroundId: "nope" })).toThrow();
   });
 
   it("creates a sane character for every combination of race, class, and background", () => {
@@ -161,7 +166,7 @@ describe("createCharacter", () => {
             raceId: race.id,
             classId: cls.id,
             backgroundId: background.id,
-            baseAbilityScores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+            baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
           });
           expect(character.maxHp).toBeGreaterThan(0);
           expect(character.armorClass).toBeGreaterThan(0);
@@ -173,19 +178,19 @@ describe("createCharacter", () => {
 });
 
 describe("equipItem / unequipItem", () => {
-  function fighter() {
+  function warrior() {
     return createCharacter({
       id: "pc-4",
       name: "Bram",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
   }
 
   it("equips an owned accessory and applies its AC bonus", () => {
-    const before = fighter();
+    const before = warrior();
     const after = equipItem(before, "luckyCharm");
 
     expect(after.equipment.accessory).toBe("luckyCharm");
@@ -195,7 +200,7 @@ describe("equipItem / unequipItem", () => {
   });
 
   it("unequips a slot and removes its AC bonus", () => {
-    const equipped = equipItem(fighter(), "luckyCharm");
+    const equipped = equipItem(warrior(), "luckyCharm");
     const unequipped = unequipItem(equipped, "accessory");
 
     expect(unequipped.equipment.accessory).toBeUndefined();
@@ -209,7 +214,7 @@ describe("equipItem / unequipItem", () => {
       raceId: "elf",
       classId: "rogue",
       backgroundId: "criminal",
-      baseAbilityScores: { str: 10, dex: 15, con: 12, int: 10, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10, spi: 8 },
     });
 
     // Rogue starts with a Hunter's Shortbow (dex-based) equipped.
@@ -225,7 +230,7 @@ describe("equipItem / unequipItem", () => {
   });
 
   it("throws when equipping an item the character doesn't own", () => {
-    expect(() => equipItem(fighter(), "oakenStaff")).toThrow();
+    expect(() => equipItem(warrior(), "oakenStaff")).toThrow();
   });
 });
 
@@ -235,9 +240,9 @@ describe("withStartingGearIfMissing", () => {
       id: "pc-6",
       name: "Old Timer",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
     // Simulate a row persisted before inventory/equipment were added.
     const { inventory: _inv, equipment: _equip, ...withoutGear } = legacy;
@@ -256,9 +261,9 @@ describe("withStartingGearIfMissing", () => {
       id: "pc-6b",
       name: "Ancient",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
     const { backgroundId: _bg, originFeatId: _feat, ...withoutBackground } = legacy;
     const stripped = withoutBackground as Character;
@@ -274,9 +279,9 @@ describe("withStartingGearIfMissing", () => {
       id: "pc-7",
       name: "Fresh",
       raceId: "human",
-      classId: "fighter",
+      classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
     expect(withStartingGearIfMissing(character)).toEqual(character);
   });

@@ -27,28 +27,28 @@ export const BACKGROUNDS: Record<string, Background> = {
     description:
       "Raised in temple service, more comfortable with scripture and ritual than with a blade — though " +
       "Eridan's frontier has a way of putting both to use.",
-    abilityScores: ["int", "wis", "cha"],
+    abilityScores: ["int", "wis", "spi"],
     originFeatId: "magicInitiate",
   },
   criminal: {
     id: "criminal",
     name: "Criminal",
     description: "A former thief, smuggler, or worse, who learned to read a room before reading anything else.",
-    abilityScores: ["dex", "con", "int"],
+    abilityScores: ["dex", "vit", "int"],
     originFeatId: "alert",
   },
   sage: {
     id: "sage",
     name: "Sage",
     description: "Years spent among books and archives, chasing knowledge that Eridan's libraries rarely give up easily.",
-    abilityScores: ["con", "int", "wis"],
+    abilityScores: ["vit", "int", "wis"],
     originFeatId: "magicInitiate",
   },
   soldier: {
     id: "soldier",
     name: "Soldier",
     description: "Drilled in formation and discipline, whether in a border garrison or a mercenary company.",
-    abilityScores: ["str", "dex", "con"],
+    abilityScores: ["str", "dex", "vit"],
     originFeatId: "savageAttacker",
   },
 };

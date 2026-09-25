@@ -17,9 +17,9 @@ function samplePlayer() {
     id: "pc-1",
     name: "Hero",
     raceId: "human",
-    classId: "fighter",
+    classId: "warrior",
     backgroundId: "soldier",
-    baseAbilityScores: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
+    baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
   });
 }
 
@@ -41,13 +41,13 @@ describe("MISFIT_SIX", () => {
 describe("createCompanion", () => {
   it("gives the class-default (standard array) stats by default, with the highest score on the primary ability", () => {
     const magnus = createCompanion("magnus");
-    const primary = getClass("wizard").primaryAbility;
+    const primary = getClass("mage").primaryAbility;
     expect(magnus.abilityScores[primary]).toBeGreaterThanOrEqual(
       Math.max(...Object.values(magnus.abilityScores))
     );
     expect(magnus.name).toBe("Magnus");
     expect(magnus.raceId).toBe("dwarf");
-    expect(magnus.classId).toBe("wizard");
+    expect(magnus.classId).toBe("mage");
   });
 
   it("rolls ability scores instead when useRolledStats is set, using the provided RNG deterministically", () => {
@@ -61,9 +61,12 @@ describe("createCompanion", () => {
     calls = 0;
     const b = createCompanion("magnar", { useRolledStats: true, rng });
     expect(a.abilityScores).toEqual(b.abilityScores);
+    // 4d6-drop-lowest rolls 3-18 before race/class/background bonuses stack on top
+    // (Magnar's Dwarf/Warrior/Soldier combination can add up to +7, or -1 on dex),
+    // and every score is clamped to a ceiling of 20.
     for (const score of Object.values(a.abilityScores)) {
-      expect(score).toBeGreaterThanOrEqual(3);
-      expect(score).toBeLessThanOrEqual(18);
+      expect(score).toBeGreaterThanOrEqual(2);
+      expect(score).toBeLessThanOrEqual(20);
     }
   });
 });

@@ -38,12 +38,21 @@ export interface Character {
   damageResistances?: DamageType[];
   damageVulnerabilities?: DamageType[];
   damageImmunities?: DamageType[];
-  /** Current value in this class's resource pool (Arcane/Divinity/Wylde/Rage/Prowess), if it has one. */
+  /** Current value in this class's resource pool (Arcane/Divinity/Wylde/Rage), if it has one. */
   resource?: number;
   /** This player's six Misfit Six companions, keyed by companion id. Built once via `ensureCompanionRoster`. */
   companions?: Record<string, Character>;
   /** Companion ids (up to `MAX_PARTY_SIZE - 1`) joining this player on their next mission. */
   activePartyIds?: string[];
+  /** Cosmetic-only appearance preset chosen at creation; the engine doesn't act on this beyond storing it. */
+  appearance?: CharacterAppearance;
+}
+
+export interface CharacterAppearance {
+  presetName: string;
+  skin: string;
+  hair: string;
+  eyes: string;
 }
 
 export function abilityMod(character: Character, key: AbilityKey): number {
@@ -58,9 +67,9 @@ export function ownsItem(character: Character, itemId: string): boolean {
   return character.inventory.some((stack) => stack.itemId === itemId && stack.quantity > 0);
 }
 
-/** The best of Intelligence, Wisdom, or Charisma — used by the Magic Initiate origin feat's bonus cantrip. */
+/** The best of Intellect, Wisdom, or Spirit — used by the Magic Initiate origin feat's bonus cantrip. */
 function bestMagicInitiateAbility(abilityScores: AbilityScores): AbilityKey {
-  const candidates: AbilityKey[] = ["int", "wis", "cha"];
+  const candidates: AbilityKey[] = ["int", "wis", "spi"];
   return candidates.reduce((best, key) =>
     abilityModifier(abilityScores[key]) > abilityModifier(abilityScores[best]) ? key : best
   );
@@ -105,9 +114,9 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     : [...cls.actions, strike];
 
   const bonusActions = [...(race.actions ?? [])];
-  // Wizards already have an at-will cantrip attack of their own (Firebolt) --
+  // Mages already have an at-will cantrip attack of their own (Firebolt) --
   // a Magic Initiate cantrip on top of that would just be a redundant duplicate.
-  if (character.originFeatId === "magicInitiate" && character.classId !== "wizard") {
+  if (character.originFeatId === "magicInitiate" && character.classId !== "mage") {
     bonusActions.push(buildMagicInitiateAction(character));
   }
 
@@ -143,6 +152,7 @@ export interface CreateCharacterOptions {
   level?: number;
   /** Which of the class's startingEquipmentOptions to start with; defaults to the first. */
   equipmentOptionId?: string;
+  appearance?: CharacterAppearance;
 }
 
 /** The class's chosen (or default) starting gear package. Falls back to the first option for an unknown id. */
@@ -199,9 +209,15 @@ export function createCharacter(options: CreateCharacterOptions): Character {
   for (const key of background.abilityScores) {
     abilityScores[key] = Math.min(20, abilityScores[key] + 1);
   }
+  for (const [key, bonus] of Object.entries(race.abilityScoreBonuses) as [AbilityKey, number][]) {
+    abilityScores[key] = Math.min(20, abilityScores[key] + bonus);
+  }
+  for (const [key, bonus] of Object.entries(cls.abilityScoreBonuses) as [AbilityKey, number][]) {
+    abilityScores[key] = Math.min(20, abilityScores[key] + bonus);
+  }
 
-  const conMod = abilityModifier(abilityScores.con);
-  const maxHp = cls.hitDie + conMod + (level - 1) * (Math.ceil(cls.hitDie / 2) + 1 + conMod);
+  const vitMod = abilityModifier(abilityScores.vit);
+  const maxHp = cls.hitDie + vitMod + (level - 1) * (Math.ceil(cls.hitDie / 2) + 1 + vitMod);
   const equipment = resolveStartingEquipment(cls, options.equipmentOptionId);
 
   const base: Character = {
@@ -222,6 +238,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     resource: getClassResource(cls.id)?.start,
     inventory: buildStartingInventory(cls, equipment),
     equipment: { ...equipment },
+    appearance: options.appearance,
   };
 
   const character = applyEquipmentEffects(base, cls, race);
