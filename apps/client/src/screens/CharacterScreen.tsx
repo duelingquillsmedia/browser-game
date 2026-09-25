@@ -278,8 +278,8 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
               </div>
             </div>
             <div className="aow-weapon-row">
-              <EquipmentSlot label="Main Hand" real="weapon" side="weapon" character={character} onUpdateCharacter={onUpdateCharacter} />
-              <EquipmentSlot label="Off Hand" side="weapon" character={character} onUpdateCharacter={onUpdateCharacter} />
+              <EquipmentSlot label="Melee Weapon" real="meleeWeapon" side="weapon" character={character} onUpdateCharacter={onUpdateCharacter} />
+              <EquipmentSlot label="Ranged Weapon" real="rangedWeapon" side="weapon" character={character} onUpdateCharacter={onUpdateCharacter} />
             </div>
           </div>
         </div>

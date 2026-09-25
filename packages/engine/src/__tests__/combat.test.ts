@@ -449,11 +449,11 @@ describe("weapon damage", () => {
     });
   }
 
-  it("rolls Strike within the weapon's own min-max range, plus a flat Attack Power bonus", () => {
+  it("rolls the melee Basic Attack within the weapon's own min-max range, plus a flat Attack Power bonus", () => {
     const warrior = toCombatant(makeArmedWarrior(), "party");
     // Hunter's Longsword: 14-20 damage.
-    expect(warrior.weaponDamageMin).toBe(14);
-    expect(warrior.weaponDamageMax).toBe(20);
+    expect(warrior.meleeWeaponDamageMin).toBe(14);
+    expect(warrior.meleeWeaponDamageMax).toBe(20);
 
     const foe = makeFoe({ maxHp: 1000, hp: 1000 });
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
@@ -462,7 +462,7 @@ describe("weapon damage", () => {
     // Force the weapon roll to its minimum (14 of 14-20).
     state = submitPlayerAction(
       state,
-      { actorId: warrior.id, actionId: "strike", targetId: "foe" },
+      { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
     );
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19); // 14 + 5
@@ -470,7 +470,7 @@ describe("weapon damage", () => {
     // Force the weapon roll to its maximum (20).
     state = submitPlayerAction(
       state,
-      { actorId: warrior.id, actionId: "strike", targetId: "foe" },
+      { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_FAILURE])
     );
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19 - 25); // 20 + 5
@@ -484,22 +484,29 @@ describe("weapon damage", () => {
     // First roll lands on the minimum (14), second on the maximum (20) -> keeps 20, +5 bonus.
     state = submitPlayerAction(
       state,
-      { actorId: warrior.id, actionId: "strike", targetId: "foe" },
+      { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS, GUARANTEED_FAILURE])
     );
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 25); // 20 + 5
   });
 
   it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {
-    // Rage starts empty; top it up so Slash (6 Rage) can actually be cast.
-    const warrior = toCombatant({ ...makeArmedWarrior(), resource: 10 }, "party");
+    // A synthetic power-scaled action (no weaponDamageSource/flatBase/percentOfAbility), the same
+    // shape most class abilities used before the Class Style Sheet reforge (and a few, like the
+    // Magic Initiate cantrip, still do) -- added directly so this test doesn't depend on any one
+    // class's current kit still having a pure ability*power action in it.
+    const character = makeArmedWarrior();
+    const warrior = toCombatant(
+      { ...character, actions: [...character.actions, { id: "test-power-attack", name: "Test Power Attack", description: "", kind: "attack", target: "enemy", ability: "str", power: 1.8, damageType: "slashing" }] },
+      "party"
+    );
     const foe = makeFoe({ maxHp: 1000, hp: 1000 });
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // Slash: str 16 * power 1.8 * exact variance 1.0 = round(28.8) = 29 -- no weapon range or Attack Power involved.
+    // str 16 * power 1.8 * exact variance 1.0 = round(28.8) = 29 -- no weapon range or Attack Power involved.
     state = submitPlayerAction(
       state,
-      { actorId: warrior.id, actionId: "slash", targetId: "foe" },
+      { actorId: warrior.id, actionId: "test-power-attack", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 29);
@@ -814,6 +821,58 @@ describe("previewAttack", () => {
     const preview = previewAttack(state, "hero", rootAction, "foe");
     expect(preview.statusName).toBe("Rooted");
     expect(preview.statusTurns).toBe(2);
+  });
+});
+
+describe("Class Style Sheet mechanics", () => {
+  it("Readied (guard) reduces the incoming hit chance and is consumed on the attack that spends it", () => {
+    const hero = makeHero();
+    const foe = { ...makeFoe(), statusEffects: [{ defId: "readied" as const, turnsRemaining: 99, stacksRemaining: 2 }] };
+    const state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    // Foe evasion (dex 10 -> 15%) alone gives a 75% hit chance; Readied's flat -50 knocks it to 25%.
+    // A roll of 30 would hit at 75% but misses at 25%.
+    const after = submitPlayerAction(
+      state,
+      { actorId: hero.id, actionId: "strike", targetId: "foe" },
+      sequenceRng([forPercentRoll(30)])
+    );
+    const foeAfter = after.combatants.find((c) => c.id === "foe")!;
+    expect(foeAfter.hp).toBe(foe.hp); // missed
+    // One stack spent by the hero's attack; turnsRemaining also ticked down once when the foe's own turn started right after.
+    expect(foeAfter.statusEffects).toEqual([{ defId: "readied", turnsRemaining: 98, stacksRemaining: 1 }]);
+  });
+
+  it("Fortified (buff) adds its flat amount to evasion for as long as it's active", () => {
+    const hero = makeHero();
+    const foe = { ...makeFoe(), statusEffects: [{ defId: "fortified" as const, turnsRemaining: 3, amount: 30 }] };
+    const state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    // Foe evasion 15% + Fortified's +30 = 45% -> hit chance 55%. A roll of 50 would hit at 75% (no buff) but misses at 55%.
+    const after = submitPlayerAction(
+      state,
+      { actorId: hero.id, actionId: "strike", targetId: "foe" },
+      sequenceRng([forPercentRoll(50)])
+    );
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(foe.hp); // missed
+  });
+
+  it("Barbed (proc) consumes a stack on a landed hit and applies Bleeding to that target", () => {
+    const hero = { ...makeHero(), statusEffects: [{ defId: "barbedPrimed" as const, turnsRemaining: 99, stacksRemaining: 2 }] };
+    // High HP so the hit doesn't finish it off -- resolveProc only fires when the target survives.
+    const foe = makeFoe({ maxHp: 1000, hp: 1000 });
+    const state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    const after = submitPlayerAction(
+      state,
+      { actorId: hero.id, actionId: "strike", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)]) // guaranteed hit, no crit
+    );
+    const heroAfter = after.combatants.find((c) => c.id === hero.id)!;
+    const foeAfter = after.combatants.find((c) => c.id === "foe")!;
+    // One stack spent by the landed hit; turnsRemaining also ticked down once by the time the hero's next turn comes back around.
+    expect(heroAfter.statusEffects).toEqual([{ defId: "barbedPrimed", turnsRemaining: 98, stacksRemaining: 1 }]);
+    expect(foeAfter.statusEffects.some((e) => e.defId === "bleeding")).toBe(true);
   });
 });
 

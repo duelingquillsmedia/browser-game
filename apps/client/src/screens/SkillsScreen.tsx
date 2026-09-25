@@ -43,9 +43,15 @@ function bucketFor(kind: ActionKind): Exclude<FilterId, "all"> {
   return "utility";
 }
 
-/** A short glyph standing in for real ability art, e.g. "Firebolt" -> "FI", "Arcane Shield" -> "AS". */
+/** A short glyph standing in for real ability art, e.g. "Arcane Bolt" -> "AB", "Wild Swing (Melee)" -> "WSM". */
 function iconGlyph(name: string): string {
-  const words = name.trim().split(/\s+/);
+  // Strips punctuation (e.g. a generated Basic Attack's "(Melee)"/"(Ranged)" suffix) before
+  // taking initials, so a stray "(" never ends up as one of them.
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^A-Za-z0-9]/g, ""))
+    .filter(Boolean);
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return words
     .map((w) => w[0])
@@ -58,23 +64,40 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/** Whether `powerRange` can compute anything meaningful for this action -- every attack/heal/save kind now uses one of three formula shapes (see combat.ts's `computeBaseDamage`). */
+function hasComputableAmount(action: CombatActionDef): boolean {
+  return (
+    action.power !== undefined ||
+    action.flatBase !== undefined ||
+    action.percentOfAbility !== undefined ||
+    action.weaponDamageSource !== undefined
+  );
+}
+
 /**
- * The actual min-max range this action will roll for this character. For the
- * basic Strike with a weapon equipped, that's the weapon's own advertised
- * damage range plus a flat Attack Power bonus from the scaling ability score
- * (see stats.ts) -- combat.ts only ever resolves Strike this way. Every
- * other action (and an unarmed Strike) scales off the ability score directly
- * via its own power coefficient and the 85%-115% variance band.
+ * The actual min-max range this action will roll for this character, mirroring
+ * combat.ts's `computeBaseDamage`/`previewBaseDamageRange`: a weapon-scaled
+ * action (every Basic Attack, plus Cleave/Serrated Blade/Evasive Jab/...) rolls
+ * that weapon's own advertised range plus a flat Attack Power bonus, with no
+ * extra variance on top; a flat-plus-percent action (Mend, Wylde Healing, ...)
+ * passes through the same 85%-115% variance band as a plain power-scaled one.
  */
-function powerRange(
-  action: CombatActionDef,
-  abilityScore: number,
-  weaponDamageMin: number | undefined,
-  weaponDamageMax: number | undefined
-): [number, number] {
-  if (action.id === "strike" && weaponDamageMin !== undefined && weaponDamageMax !== undefined) {
-    const bonus = computeAttackPowerBonusDamage(computeAttackPower(abilityScore));
-    return [weaponDamageMin + bonus, weaponDamageMax + bonus];
+function powerRange(action: CombatActionDef, character: Character): [number, number] {
+  const abilityScore = character.abilityScores[action.ability];
+  const percentAdd =
+    action.percentOfAbility !== undefined ? Math.round(abilityScore * action.percentOfAbility) : 0;
+
+  if (action.weaponDamageSource) {
+    const weaponMin = action.weaponDamageSource === "ranged" ? character.rangedWeaponDamageMin : character.meleeWeaponDamageMin;
+    const weaponMax = action.weaponDamageSource === "ranged" ? character.rangedWeaponDamageMax : character.meleeWeaponDamageMax;
+    if (weaponMin !== undefined && weaponMax !== undefined) {
+      const bonus = computeAttackPowerBonusDamage(computeAttackPower(abilityScore));
+      return [weaponMin + bonus + percentAdd, weaponMax + bonus + percentAdd];
+    }
+  }
+  if (action.flatBase !== undefined || action.percentOfAbility !== undefined) {
+    const base = (action.flatBase ?? 0) + percentAdd;
+    return [Math.round(base * 0.85), Math.round(base * 1.15)];
   }
   const power = action.power ?? 1;
   return [Math.round(abilityScore * power * 0.85), Math.round(abilityScore * power * 1.15)];
@@ -242,17 +265,10 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                     <span className="aow-skill-stat-label">TARGET</span>
                     <span>{TARGET_LABELS[selected.target] ?? capitalize(selected.target)}</span>
                   </div>
-                  {selected.power !== undefined && (selected.kind === "attack" || selected.kind === "heal" || selected.kind === "save") && (
+                  {hasComputableAmount(selected) && (selected.kind === "attack" || selected.kind === "heal" || selected.kind === "save") && (
                     <div className="aow-skill-stat">
                       <span className="aow-skill-stat-label">{selected.kind === "heal" ? "HEALING" : "DAMAGE"}</span>
-                      <span>
-                        {powerRange(
-                          selected,
-                          character.abilityScores[selected.ability],
-                          character.weaponDamageMin,
-                          character.weaponDamageMax
-                        ).join("–")}
-                      </span>
+                      <span>{powerRange(selected, character).join("–")}</span>
                     </div>
                   )}
                   {selected.damageType && (

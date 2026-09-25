@@ -7,6 +7,7 @@ import {
   equipItem,
   ownsItem,
   unequipItem,
+  withClassMigrationIfMissing,
   withStartingGearIfMissing,
 } from "../character.js";
 import type { Character } from "../character.js";
@@ -41,7 +42,8 @@ describe("createCharacter", () => {
     expect(character.gearEvasionBonus).toBe(3);
 
     expect(character.proficiencyBonus).toBe(2);
-    expect(character.actions.some((a) => a.id === "sneak-strike")).toBe(true);
+    // At level 1, only the generated Basic Attack (Rogue's own leveled abilities start at lvl 2) plus Defend/Flee are known.
+    expect(character.actions.some((a) => a.isBasicAttack)).toBe(true);
     expect(character.actions.some((a) => a.id === "defend")).toBe(true);
     expect(character.actions.some((a) => a.id === "flee")).toBe(true);
   });
@@ -89,14 +91,14 @@ describe("createCharacter", () => {
       baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
 
-    expect(character.equipment.weapon).toBe("ironLongsword");
+    expect(character.equipment.meleeWeapon).toBe("ironLongsword");
     expect(character.equipment.armor).toBe("chainShirt");
     expect(character.equipment.accessory).toBeUndefined();
     expect(ownsItem(character, "luckyCharm")).toBe(true);
 
-    // The equipped weapon contributes its own min-max damage range to the shared Strike action.
-    expect(character.weaponDamageMin).toBe(14);
-    expect(character.weaponDamageMax).toBe(20);
+    // The equipped weapon contributes its own min-max damage range to the generated melee Basic Attack.
+    expect(character.meleeWeaponDamageMin).toBe(14);
+    expect(character.meleeWeaponDamageMax).toBe(20);
   });
 
   it("equips the chosen startingEquipmentOptions package instead of the default", () => {
@@ -119,7 +121,7 @@ describe("createCharacter", () => {
       baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
       equipmentOptionId: "sword-and-leather",
     });
-    expect(chosenGear.equipment.weapon).toBe("ironLongsword");
+    expect(chosenGear.equipment.meleeWeapon).toBe("ironLongsword");
     expect(chosenGear.equipment.armor).toBe("studdedLeather");
     expect(ownsItem(chosenGear, "studdedLeather")).toBe(true);
 
@@ -216,7 +218,7 @@ describe("equipItem / unequipItem", () => {
     expect(unequipped.gearEvasionBonus).toBe(equipped.gearEvasionBonus - 3);
   });
 
-  it("reflects the equipped weapon's ability on Strike, and reverts when unequipped", () => {
+  it("reflects the equipped weapon's ability on the Basic Attack, and reverts when unequipped", () => {
     const rogue = createCharacter({
       id: "pc-5",
       name: "Kessa",
@@ -226,18 +228,21 @@ describe("equipItem / unequipItem", () => {
       baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10, spi: 8 },
     });
 
-    // Rogue starts with a Hunter's Shortbow (dex-based) equipped.
-    const equippedStrike = rogue.actions.find((a) => a.id === "strike");
-    expect(equippedStrike?.ability).toBe("dex");
-    expect(rogue.weaponDamageMin).toBe(7);
-    expect(rogue.weaponDamageMax).toBe(10);
+    // Rogue starts with a Hunter's Shortbow (dex-based) equipped in the ranged slot, no melee weapon.
+    const rangedStrike = rogue.actions.find((a) => a.id === "strike-ranged");
+    expect(rangedStrike?.ability).toBe("dex");
+    expect(rogue.rangedWeaponDamageMin).toBe(7);
+    expect(rogue.rangedWeaponDamageMax).toBe(10);
+    // The unarmed melee variant is still offered, scaling off Rogue's primary ability (dex).
+    const meleeStrike = rogue.actions.find((a) => a.id === "strike-melee");
+    expect(meleeStrike?.ability).toBe("dex");
+    expect(rogue.meleeWeaponDamageMin).toBeUndefined();
 
-    // Unequipping the weapon falls back to the default fists-and-steel Strike.
-    const disarmed = unequipItem(rogue, "weapon");
-    const disarmedStrike = disarmed.actions.find((a) => a.id === "strike");
-    expect(disarmedStrike?.ability).toBe("str");
-    expect(disarmed.weaponDamageMin).toBeUndefined();
-    expect(disarmed.weaponDamageMax).toBeUndefined();
+    // Unequipping the ranged weapon removes the ranged Basic Attack variant entirely.
+    const disarmed = unequipItem(rogue, "rangedWeapon");
+    expect(disarmed.actions.some((a) => a.id === "strike-ranged")).toBe(false);
+    expect(disarmed.rangedWeaponDamageMin).toBeUndefined();
+    expect(disarmed.rangedWeaponDamageMax).toBeUndefined();
   });
 
   it("throws when equipping an item the character doesn't own", () => {
@@ -261,7 +266,7 @@ describe("withStartingGearIfMissing", () => {
 
     const migrated = withStartingGearIfMissing(stripped);
 
-    expect(migrated.equipment.weapon).toBe("ironLongsword");
+    expect(migrated.equipment.meleeWeapon).toBe("ironLongsword");
     expect(migrated.equipment.armor).toBe("chainShirt");
     expect(migrated.inventory.length).toBeGreaterThan(0);
     expect(migrated.gearEvasionBonus).toBe(legacy.gearEvasionBonus);
@@ -327,6 +332,105 @@ describe("withStartingGearIfMissing", () => {
       worldMapState: { day: 7, partyHexKey: "16,25", exploredHexKeys: ["16,25"] },
     };
     expect(withStartingGearIfMissing(withState).worldMapState).toEqual(withState.worldMapState);
+  });
+});
+
+describe("level-gating (Class Style Sheet reforge)", () => {
+  function warriorAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-lvl-${level}`,
+      name: "Bram",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      level,
+    });
+  }
+
+  it("knows only the Basic Attack, Enrage (lvl 1), and Defend/Flee/End Turn at level 1", () => {
+    const character = warriorAtLevel(1);
+    expect(character.actions.some((a) => a.id === "enrage")).toBe(true);
+    expect(character.actions.some((a) => a.id === "cleave")).toBe(false);
+    expect(character.actions.some((a) => a.id === "serrated-blade")).toBe(false);
+  });
+
+  it("knows Cleave once at level 2, but not Serrated Blade until level 4", () => {
+    const level2 = warriorAtLevel(2);
+    expect(level2.actions.some((a) => a.id === "cleave")).toBe(true);
+    expect(level2.actions.some((a) => a.id === "serrated-blade")).toBe(false);
+
+    const level4 = warriorAtLevel(4);
+    expect(level4.actions.some((a) => a.id === "cleave")).toBe(true);
+    expect(level4.actions.some((a) => a.id === "serrated-blade")).toBe(true);
+  });
+});
+
+describe("withClassMigrationIfMissing", () => {
+  it("renames a pre-reforge \"mage\" character to \"wizard\" and re-keys its old single weapon slot", () => {
+    const modern = createCharacter({
+      id: "pc-legacy",
+      name: "Old Mage",
+      raceId: "human",
+      classId: "wizard",
+      backgroundId: "sage",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10, spi: 10 },
+    });
+    // Simulate a row persisted before this reforge: classId "mage", a single `weapon` slot.
+    const legacy: Character = {
+      ...modern,
+      classId: "mage",
+      equipment: { weapon: "oakenStaff", armor: modern.equipment.armor },
+    } as unknown as Character;
+
+    const migrated = withClassMigrationIfMissing(legacy);
+
+    expect(migrated.classId).toBe("wizard");
+    expect(migrated.equipment.meleeWeapon).toBe("oakenStaff");
+    expect(migrated.equipment.armor).toBe(modern.equipment.armor);
+    expect((migrated.equipment as { weapon?: string }).weapon).toBeUndefined();
+  });
+
+  it("recurses into nested companions, which carry the same pre-reforge shape", () => {
+    const companion: Character = {
+      ...createCharacter({
+        id: "companion-1",
+        name: "Magnus",
+        raceId: "dwarf",
+        classId: "wizard",
+        backgroundId: "sage",
+        baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10, spi: 10 },
+      }),
+      classId: "mage",
+      equipment: { weapon: "ritualDagger" },
+    } as unknown as Character;
+
+    const player = createCharacter({
+      id: "pc-legacy-2",
+      name: "Player",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    });
+    const withLegacyCompanion: Character = { ...player, companions: { magnus: companion } };
+
+    const migrated = withClassMigrationIfMissing(withLegacyCompanion);
+
+    expect(migrated.companions?.magnus.classId).toBe("wizard");
+    expect(migrated.companions?.magnus.equipment.meleeWeapon).toBe("ritualDagger");
+  });
+
+  it("is a no-op for an already-migrated character", () => {
+    const character = createCharacter({
+      id: "pc-fresh",
+      name: "Fresh",
+      raceId: "human",
+      classId: "wizard",
+      backgroundId: "sage",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10, spi: 10 },
+    });
+    expect(withClassMigrationIfMissing(character)).toEqual(character);
   });
 });
 

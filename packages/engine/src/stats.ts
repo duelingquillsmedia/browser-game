@@ -1,4 +1,4 @@
-import type { AbilityScores } from "./abilities.js";
+import type { AbilityKey, AbilityScores } from "./abilities.js";
 
 /**
  * Homebrew attribute -> derived-stat ratios, replacing the old SRD hit-die/
@@ -25,35 +25,48 @@ export function computeMaxHealth(abilityScores: AbilityScores, classId: string):
   return 100 + abilityScores.vit * 10 + (CLASS_HEALTH_BONUS[classId] ?? 0);
 }
 
-/** Classes whose resource pool is a caster-style mana bar, scaling with Spirit and Intellect. */
-const CASTER_RESOURCE_CLASSES = new Set(["mage", "cleric", "druid"]);
+/**
+ * Fixed resource pool sizes per the Class Style Sheet, for the five classes
+ * whose pool is a small generator/spender integer (built almost entirely by
+ * landing Basic Attacks -- see resources.ts) rather than an ability-scaled
+ * mana bar.
+ */
+const FIXED_RESOURCE_POOL: Record<string, number> = {
+  warrior: 100,
+  soldier: 10,
+  cleric: 5,
+  ranger: 5,
+  rogue: 30,
+};
 
-/** A class's resource pool ceiling, or undefined for a class with no pool (Rogue). */
+/**
+ * Wylde and Arcana are the sheet's two exceptions: "100 point base pool,
+ * scales with Wisdom/Intellect" -- still mana-like (full at the start of a
+ * fight), just also topped up by Basic Attacks like every other pool now.
+ * The sheet gives no scaling formula, so the +6-per-point coefficient here
+ * is homebrew, sized to land in the same big MMO-scale range as the old
+ * caster-mana formula this replaces.
+ */
+const SCALING_RESOURCE_ABILITY: Record<string, AbilityKey> = {
+  druid: "wis",
+  wizard: "int",
+};
+const SCALING_RESOURCE_BASE = 100;
+const SCALING_RESOURCE_PER_POINT = 6;
+
+/** A class's resource pool ceiling, or undefined for a class with no pool. */
 export function computeResourceMax(abilityScores: AbilityScores, classId: string): number | undefined {
-  if (CASTER_RESOURCE_CLASSES.has(classId)) {
-    return 80 + abilityScores.spi * 8 + abilityScores.int * 4;
-  }
-  // Warrior's Rage is a flat builder/spender pool (per the Combat handoff's own
-  // placeholder, which shows Rage/Energy simply as "100" with no formula).
-  if (classId === "warrior") return 100;
+  if (classId in FIXED_RESOURCE_POOL) return FIXED_RESOURCE_POOL[classId];
+  const scalingAbility = SCALING_RESOURCE_ABILITY[classId];
+  if (scalingAbility) return SCALING_RESOURCE_BASE + abilityScores[scalingAbility] * SCALING_RESOURCE_PER_POINT;
   return undefined;
 }
 
-/** A fresh combatant's resource pool: full for a mana-style caster, empty for a builder like Rage. */
+/** A fresh combatant's resource pool: full for a mana-like pool (Wylde/Arcana), empty for a generator/spender pool (everyone else). */
 export function computeResourceStart(abilityScores: AbilityScores, classId: string): number | undefined {
   const max = computeResourceMax(abilityScores, classId);
   if (max === undefined) return undefined;
-  return classId === "warrior" ? 0 : max;
-}
-
-/** A caster's mana trickles back at roughly this fraction of its ceiling each of their own turns. */
-const RESOURCE_REGEN_FRACTION = 0.08;
-
-/** Per-turn resource regen: a percentage of the ceiling for mana-style pools, 0 for a builder like Rage (which only grows by fighting). */
-export function computeResourceRegenPerTurn(abilityScores: AbilityScores, classId: string): number {
-  if (!CASTER_RESOURCE_CLASSES.has(classId)) return 0;
-  const max = computeResourceMax(abilityScores, classId) ?? 0;
-  return Math.round(max * RESOURCE_REGEN_FRACTION);
+  return classId in FIXED_RESOURCE_POOL ? 0 : max;
 }
 
 function clampPercent(value: number): number {

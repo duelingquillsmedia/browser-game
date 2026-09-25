@@ -1,5 +1,5 @@
 import type { AbilityKey } from "./abilities.js";
-import { BASIC_ATTACK, type CombatActionDef } from "./actions.js";
+import type { CombatActionDef } from "./actions.js";
 import type { ItemSlot } from "./items.js";
 
 export interface StartingEquipmentOption {
@@ -17,7 +17,23 @@ export interface CharacterClass {
   savingThrowProficiencies: AbilityKey[];
   /** Flat ability score bonuses granted just for picking this class (design handoff's "10 + race bonus + class bonus" model). */
   abilityScoreBonuses: Partial<Record<AbilityKey, number>>;
+  /** The Class Style Sheet's name for this class's free, resource-building Basic Attack (e.g. "Wild Swing") — the actual action(s) are generated per equipped weapon slot in character.ts's `generateBasicAttacks`, not listed here. */
+  basicAttackName: string;
+  /** Soldier only: the Basic Attack scales off whichever of STR/DEX is higher, instead of `primaryAbility`. */
+  basicAttackAbilityMode?: "highestOfStrDex";
+  /**
+   * The class's 2 leveled active abilities (Basic Attack and Defend/Flee/End
+   * Turn are added separately — see character.ts). Each is filtered by its
+   * own `unlockLevel` against `character.level` at action-list assembly
+   * time; see actions.ts's `unlockLevel` doc for why this mostly gates
+   * everything past a level-1 kit until a leveling system exists.
+   */
   actions: CombatActionDef[];
+  /** Soldier's "Experience with a blade" passive (+5% parry chance) — modeled as flat evasion, since this engine has no separate parry/riposte roll to hang it on (see README). */
+  passiveEvasionBonus?: number;
+  /** Ranger's Sharpshooter passive: flat hit/crit bonus while their ranged weapon is the one swinging. */
+  rangedAttackHitBonus?: number;
+  rangedAttackCritBonus?: number;
   /**
    * SRD-style "choose (a) or (b)" starting gear, respecting the class's weapon/armor
    * restrictions.
@@ -28,68 +44,226 @@ export interface CharacterClass {
 }
 
 /**
- * The five playable classes carried over from the Aetherwyn character
- * creation handoff. The class flavor, ability bonuses, and resource pool
- * assignment (see resources.ts) all follow that handoff; each action's
- * `power` coefficient (see stats.ts), AP cost, cooldown, and status-effect
- * action are homebrew, sized to feel right against the new Vitality-scaled
- * HP pools and the AP economy (see combat.ts/status.ts).
+ * The seven playable classes from the Class Style Sheet (Google Drive,
+ * "Class Information/Age of Broken Wings - Class Style Sheet.docx"): every
+ * resource pool, resource cost, and ability description below is
+ * transcribed directly from it. AP cost, cooldowns (there are none — the
+ * sheet's own resource costs are the limiting factor), damage types where
+ * unstated, and each ability's `schoolId` are homebrew, sized to feel right
+ * against the existing AP economy and Vitality-scaled HP pools — same
+ * precedent as this file's own numbers before this pass.
+ *
+ * A few mechanics don't have a real equivalent in this engine and are
+ * deliberately reinterpreted rather than fabricated wholesale — see
+ * `passiveEvasionBonus`/`rangedAttackHitBonus`'s own comments above, and
+ * README's "Class Style Sheet reforge" section for the full list
+ * (parry-as-evasion, armor-as-evasion, the flat+percent heal/damage
+ * formula, and Rogue's still-"Placeholder" passive, left unimplemented
+ * because the sheet itself hasn't decided it yet).
  */
 export const CLASSES: Record<string, CharacterClass> = {
   warrior: {
     id: "warrior",
     name: "Warrior",
-    description: "Steel and stubbornness. Warriors build Rage by dealing and taking blows, then spend it on crushing strikes.",
+    description: "Steel and stubbornness. Warriors build Fury by dealing and taking blows, then spend it on crushing strikes.",
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "vit"],
     abilityScoreBonuses: { str: 4, vit: 3, dex: 1 },
+    basicAttackName: "Wild Swing",
     actions: [
       {
-        id: "slash",
-        name: "Slash",
-        description: "A powerful melee strike with a sword or axe. Costs Rage, built up by dealing or taking blows.",
-        kind: "attack",
-        target: "enemy",
-        ability: "str",
-        power: 1.8,
-        damageType: "slashing",
-        resourceCost: 6,
-        apCost: 2,
-        schoolId: "martial",
-      },
-      {
-        id: "second-wind",
-        name: "Second Wind",
-        description: "Draw on grit and training to recover a burst of health. Costs Rage.",
-        kind: "heal",
+        id: "enrage",
+        name: "Enrage",
+        description:
+          "A furious battle-cry: for 5 turns, evasion increases by 50% of your Vitality score and you can use abilities that require Enraged. Costs Fury.",
+        kind: "buff",
         target: "self",
         ability: "vit",
-        power: 3,
-        resourceCost: 8,
+        resourceCost: 20,
         apCost: 2,
-        cooldown: 3,
         schoolId: "martial",
+        applyStatus: { defId: "fortified", turns: 5, power: 0.5 },
       },
       {
-        id: "shield-bash",
-        name: "Shield Bash",
-        description: "A stunning blow with the flat of a shield, leaving the target reeling. Costs Rage.",
+        id: "cleave",
+        name: "Cleave",
+        description: "A wide arcing attack that strikes every enemy in the target's row. Weapon damage, scales with Strength. Costs Fury.",
+        kind: "attack",
+        target: "enemy",
+        targetShape: "line",
+        ability: "str",
+        weaponDamageSource: "melee",
+        damageType: "slashing",
+        resourceCost: 50,
+        apCost: 2,
+        schoolId: "martial",
+        unlockLevel: 2,
+      },
+      {
+        id: "serrated-blade",
+        name: "Serrated Blade",
+        description: "A vicious slashing attack that wounds the target, causing them to bleed for 3 turns. Weapon damage. Costs Fury.",
         kind: "attack",
         target: "enemy",
         ability: "str",
-        power: 0.8,
-        damageType: "bludgeoning",
-        resourceCost: 10,
+        weaponDamageSource: "melee",
+        damageType: "slashing",
+        resourceCost: 30,
         apCost: 2,
-        cooldown: 3,
         schoolId: "martial",
-        applyStatus: { defId: "stunned", turns: 1 },
+        applyStatus: { defId: "bleeding", turns: 3, weaponPercent: 0.05 },
+        unlockLevel: 4,
       },
-      BASIC_ATTACK,
     ],
     startingEquipmentOptions: [
-      { id: "sword-and-mail", label: "Longsword & Chain Shirt", equipment: { weapon: "ironLongsword", armor: "chainShirt" } },
-      { id: "sword-and-leather", label: "Longsword & Studded Leather", equipment: { weapon: "ironLongsword", armor: "studdedLeather" } },
+      { id: "sword-and-mail", label: "Longsword & Chain Shirt", equipment: { meleeWeapon: "ironLongsword", armor: "chainShirt" } },
+      { id: "sword-and-leather", label: "Longsword & Studded Leather", equipment: { meleeWeapon: "ironLongsword", armor: "studdedLeather" } },
+    ],
+    startingInventory: ["luckyCharm"],
+  },
+  soldier: {
+    id: "soldier",
+    name: "Soldier",
+    description: "A disciplined blade-and-shield fighter, trading burst damage for tempo: knock foes down and punish their openings.",
+    primaryAbility: "str",
+    savingThrowProficiencies: ["str", "dex"],
+    abilityScoreBonuses: { str: 3, dex: 3, vit: 2 },
+    basicAttackName: "Practiced Strike",
+    basicAttackAbilityMode: "highestOfStrDex",
+    actions: [
+      {
+        id: "defensive-flourish",
+        name: "Defensive Flourish",
+        description:
+          "A slashing attack, then a defensive stance: gain 2 stacks of Readied, each reducing an attacker's chance to hit you by 50% until spent. Weapon damage. Costs Expertise.",
+        kind: "attack",
+        target: "enemy",
+        ability: "str",
+        weaponDamageSource: "melee",
+        damageType: "slashing",
+        resourceCost: 3,
+        apCost: 2,
+        schoolId: "martial",
+        applySelfStatus: { defId: "readied", turns: 99, stacks: 2 },
+        unlockLevel: 2,
+      },
+      {
+        id: "topple",
+        name: "Topple",
+        description: "Hooks the target's leg, knocking them down for 1 turn. Weapon damage. Costs Expertise.",
+        kind: "attack",
+        target: "enemy",
+        ability: "str",
+        weaponDamageSource: "melee",
+        damageType: "bludgeoning",
+        resourceCost: 5,
+        apCost: 2,
+        schoolId: "martial",
+        applyStatus: { defId: "knockedDown", turns: 1 },
+        unlockLevel: 4,
+      },
+    ],
+    // "Experience with a blade": +5% parry chance -- see passiveEvasionBonus's own doc comment.
+    passiveEvasionBonus: 5,
+    startingEquipmentOptions: [
+      { id: "sword-and-mail", label: "Shortsword & Chain Shirt", equipment: { meleeWeapon: "shortsword", armor: "chainShirt" } },
+      { id: "sword-and-leather", label: "Shortsword & Studded Leather", equipment: { meleeWeapon: "shortsword", armor: "studdedLeather" } },
+    ],
+    startingInventory: ["luckyCharm"],
+  },
+  cleric: {
+    id: "cleric",
+    name: "Cleric",
+    description: "A vessel of the dawn. Clerics mend wounds and lash out with radiant judgment, husbanding a slim reserve of Prayer.",
+    primaryAbility: "wis",
+    savingThrowProficiencies: ["wis", "spi"],
+    abilityScoreBonuses: { wis: 4, spi: 3, vit: 1 },
+    basicAttackName: "Swinging Smite",
+    actions: [
+      {
+        id: "mend",
+        name: "Mend",
+        description: "Calls upon your deity to restore health: heals an ally for 50 + 10% of your Wisdom. Costs Prayer.",
+        kind: "heal",
+        target: "ally",
+        ability: "wis",
+        flatBase: 50,
+        percentOfAbility: 0.1,
+        resourceCost: 1,
+        apCost: 2,
+        schoolId: "radiant",
+        unlockLevel: 2,
+      },
+      {
+        id: "radiant-beam",
+        name: "Radiant Beam",
+        description:
+          "Calls down a divine beam, damaging the target and adjacent enemies in their row for 100 + 20% of your Wisdom. Costs Prayer.",
+        kind: "attack",
+        target: "enemy",
+        targetShape: "area",
+        ability: "wis",
+        damageType: "radiant",
+        flatBase: 100,
+        percentOfAbility: 0.2,
+        resourceCost: 4,
+        apCost: 2,
+        schoolId: "radiant",
+        unlockLevel: 4,
+      },
+    ],
+    startingEquipmentOptions: [
+      { id: "mace-and-leather", label: "Ashen Mace & Studded Leather", equipment: { meleeWeapon: "ashenMace", armor: "studdedLeather" } },
+      { id: "mace-and-mail", label: "Ashen Mace & Chain Shirt", equipment: { meleeWeapon: "ashenMace", armor: "chainShirt" } },
+    ],
+    startingInventory: ["ringOfWarding"],
+  },
+  ranger: {
+    id: "ranger",
+    name: "Ranger",
+    description: "A sharpshooting scout, favoring the bow but never without a blade close at hand.",
+    primaryAbility: "dex",
+    savingThrowProficiencies: ["dex", "wis"],
+    abilityScoreBonuses: { dex: 5, wis: 2, vit: 1 },
+    basicAttackName: "Quick Shot",
+    actions: [
+      {
+        id: "barbed-arrow",
+        name: "Barbed Arrow",
+        description: "Arms your next 2 attacks with barbed arrowheads, causing the target to bleed. Costs Focus.",
+        kind: "buff",
+        target: "self",
+        ability: "dex",
+        resourceCost: 2,
+        apCost: 1,
+        schoolId: "martial",
+        applyStatus: { defId: "barbedPrimed", turns: 99, stacks: 2 },
+        unlockLevel: 2,
+      },
+      {
+        id: "natures-remedy",
+        name: "Nature's Remedy",
+        description: "Forages for herbs to mend a wound: heals you for 50 + 10% of your Wisdom. Costs Focus.",
+        kind: "heal",
+        target: "self",
+        ability: "wis",
+        flatBase: 50,
+        percentOfAbility: 0.1,
+        resourceCost: 2,
+        apCost: 2,
+        schoolId: "martial",
+        unlockLevel: 4,
+      },
+    ],
+    // Sharpshooter: +5% hit and crit chance with their ranged weapon (see rangedAttackHitBonus's own doc comment).
+    rangedAttackHitBonus: 5,
+    rangedAttackCritBonus: 5,
+    startingEquipmentOptions: [
+      {
+        id: "bow-and-dagger",
+        label: "Shortbow, Dagger & Leather Armor",
+        equipment: { rangedWeapon: "huntersShortbow", meleeWeapon: "ritualDagger", armor: "leatherArmor" },
+      },
     ],
     startingInventory: ["luckyCharm"],
   },
@@ -100,175 +274,47 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "int"],
     abilityScoreBonuses: { dex: 5, int: 2, str: 1 },
+    basicAttackName: "Subtle Slash",
     actions: [
       {
-        id: "sneak-strike",
-        name: "Sneak Strike",
-        description: "A precise strike that deals extra damage against an already-wounded foe.",
-        kind: "attack",
-        target: "enemy",
-        ability: "dex",
-        power: 1.4,
-        damageType: "piercing",
-        apCost: 2,
-        schoolId: "shadow",
-      },
-      {
-        id: "dagger-throw",
-        name: "Dagger Throw",
-        description: "A thrown blade, quick but light.",
-        kind: "attack",
-        target: "enemy",
-        ability: "dex",
-        power: 0.9,
-        damageType: "piercing",
-        apCost: 1,
-        schoolId: "shadow",
-      },
-      {
-        id: "venomous-strike",
-        name: "Venomous Strike",
-        description: "A blade slicked with a slow-acting toxin, poisoning the target.",
-        kind: "attack",
-        target: "enemy",
-        ability: "dex",
-        power: 1.0,
-        damageType: "piercing",
-        apCost: 2,
-        cooldown: 2,
-        schoolId: "shadow",
-        applyStatus: { defId: "poisoned", turns: 2, power: 0.4 },
-      },
-    ],
-    startingEquipmentOptions: [
-      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { weapon: "huntersShortbow", armor: "leatherArmor" } },
-      { id: "shortsword", label: "Shortsword & Leather Armor", equipment: { weapon: "shortsword", armor: "leatherArmor" } },
-    ],
-    startingInventory: ["ringOfWarding"],
-  },
-  mage: {
-    id: "mage",
-    name: "Mage",
-    description: "Scholars of the arcane, channeling raw magic through years of study.",
-    primaryAbility: "int",
-    savingThrowProficiencies: ["int", "wis"],
-    abilityScoreBonuses: { int: 5, spi: 3 },
-    actions: [
-      {
-        id: "firebolt",
-        name: "Firebolt",
-        description: "A mote of fire hurled at a single enemy. Costs Arcane.",
-        kind: "attack",
-        target: "enemy",
-        ability: "int",
-        power: 1.8,
-        damageType: "fire",
-        resourceCost: 4,
-        apCost: 2,
-        schoolId: "arcane",
-      },
-      {
-        id: "fireball",
-        name: "Fireball",
+        id: "evasive-jab",
+        name: "Evasive Jab",
         description:
-          "A roaring blast of fire engulfs every enemy. Each must succeed on a Dexterity saving throw or " +
-          "take fire damage (half as much on a success). Costs Arcane.",
-        kind: "save",
-        target: "enemies",
-        ability: "int",
-        saveAbility: "dex",
-        power: 1.3,
-        damageType: "fire",
-        resourceCost: 10,
-        apCost: 3,
-        cooldown: 2,
-        schoolId: "arcane",
-      },
-      {
-        id: "arcane-shield",
-        name: "Arcane Shield",
-        description: "A shimmering barrier of force that absorbs incoming damage until your next turn. Costs Arcane.",
-        kind: "buff",
-        target: "self",
-        ability: "int",
-        resourceCost: 5,
-        apCost: 1,
-        cooldown: 2,
-        schoolId: "arcane",
-        applyStatus: { defId: "ward", turns: 1, power: 1.0 },
-      },
-      {
-        id: "chain-lightning",
-        name: "Chain Lightning",
-        description: "A crackling arc of lightning that leaps across every enemy in the target's rank. Costs Arcane.",
+          "A quick strike through your foe's guard: weapon damage + 20% of your Dexterity, then Readied (1 stack, -50% chance to be hit) until spent. Costs Cunning.",
         kind: "attack",
         target: "enemy",
-        targetShape: "line",
-        ability: "int",
-        power: 1.0,
-        damageType: "lightning",
-        resourceCost: 6,
+        ability: "dex",
+        weaponDamageSource: "melee",
+        damageType: "piercing",
+        percentOfAbility: 0.2,
+        resourceCost: 20,
         apCost: 2,
-        cooldown: 2,
-        schoolId: "arcane",
+        schoolId: "shadow",
+        applySelfStatus: { defId: "readied", turns: 99, stacks: 1 },
+        unlockLevel: 2,
       },
-    ],
-    startingEquipmentOptions: [
-      { id: "staff", label: "Oaken Staff & Traveler's Robe", equipment: { weapon: "oakenStaff", armor: "travelersRobe" } },
-      { id: "dagger", label: "Ritual Dagger & Traveler's Robe", equipment: { weapon: "ritualDagger", armor: "travelersRobe" } },
-    ],
-    startingInventory: ["luckyCharm"],
-  },
-  cleric: {
-    id: "cleric",
-    name: "Cleric",
-    description: "A vessel of the dawn. Clerics mend wounds and lash out with radiant judgment.",
-    primaryAbility: "wis",
-    savingThrowProficiencies: ["wis", "spi"],
-    abilityScoreBonuses: { wis: 4, spi: 3, vit: 1 },
-    actions: [
       {
-        id: "smite",
-        name: "Smite",
-        description: "Divine energy lashes out at an enemy. Costs Divinity.",
+        id: "poisoned-throw",
+        name: "Poisoned Throw",
+        description:
+          "A blade dipped in poison: weapon damage + 15% of your Dexterity, poisoning the target for 3 turns. Costs Cunning.",
         kind: "attack",
         target: "enemy",
-        ability: "wis",
-        power: 1.8,
-        damageType: "radiant",
-        resourceCost: 4,
+        ability: "dex",
+        weaponDamageSource: "melee",
+        damageType: "piercing",
+        percentOfAbility: 0.15,
+        resourceCost: 15,
         apCost: 2,
-        schoolId: "radiant",
-      },
-      {
-        id: "heal",
-        name: "Heal",
-        description: "Channel divine energy to mend an ally's wounds. Costs Divinity.",
-        kind: "heal",
-        target: "ally",
-        ability: "wis",
-        power: 3.2,
-        resourceCost: 6,
-        apCost: 2,
-        schoolId: "radiant",
-      },
-      {
-        id: "renewal",
-        name: "Renewal",
-        description: "A blessing of steady restoration, mending your wounds turn after turn. Costs Divinity.",
-        kind: "buff",
-        target: "self",
-        ability: "wis",
-        resourceCost: 5,
-        apCost: 1,
-        cooldown: 1,
-        schoolId: "radiant",
-        applyStatus: { defId: "bloom", turns: 3, power: 0.5 },
+        schoolId: "shadow",
+        applyStatus: { defId: "poisoned", turns: 3, weaponPercent: 0.05 },
+        unlockLevel: 4,
       },
     ],
+    // The Class Style Sheet itself just says "Placeholder" for Rogue's passive -- left unimplemented rather than invented.
     startingEquipmentOptions: [
-      { id: "mace-and-leather", label: "Ashen Mace & Studded Leather", equipment: { weapon: "ashenMace", armor: "studdedLeather" } },
-      { id: "mace-and-mail", label: "Ashen Mace & Chain Shirt", equipment: { weapon: "ashenMace", armor: "chainShirt" } },
+      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { rangedWeapon: "huntersShortbow", armor: "leatherArmor" } },
+      { id: "shortsword", label: "Shortsword & Leather Armor", equipment: { meleeWeapon: "shortsword", armor: "leatherArmor" } },
     ],
     startingInventory: ["ringOfWarding"],
   },
@@ -279,53 +325,89 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "wis",
     savingThrowProficiencies: ["int", "wis"],
     abilityScoreBonuses: { wis: 3, spi: 2, vit: 2, dex: 1 },
+    basicAttackName: "Nature's Strike",
     actions: [
       {
-        id: "thorn-whip",
-        name: "Thorn Whip",
-        description: "Vines lash out to drag and wound a foe. Costs Wylde.",
-        kind: "attack",
-        target: "enemy",
-        ability: "wis",
-        power: 1.6,
-        damageType: "piercing",
-        resourceCost: 4,
-        apCost: 2,
-        schoolId: "nature",
-      },
-      {
-        id: "cure-wounds",
-        name: "Cure Wounds",
-        description: "Nature's magic knits an ally's wounds closed. Costs Wylde.",
+        id: "wylde-healing",
+        name: "Wylde Healing",
+        description: "Summons the will of the Wylde to heal yourself or an ally for 50 + 10% of your Wisdom. Costs Wylde.",
         kind: "heal",
         target: "ally",
         ability: "wis",
-        power: 3,
-        resourceCost: 6,
+        flatBase: 50,
+        percentOfAbility: 0.1,
+        resourceCost: 30,
         apCost: 2,
         schoolId: "nature",
+        unlockLevel: 2,
       },
       {
-        id: "entangling-roots",
-        name: "Entangling Roots",
-        description: "Grasping roots burst from the earth, rooting the target in place. Costs Wylde.",
+        id: "wylde-wrath",
+        name: "Wylde Wrath",
+        description: "A massive vine whips in a wide arc, striking an entire row of enemies for 75 + 25% of your Wisdom. Costs Wylde.",
         kind: "attack",
         target: "enemy",
+        targetShape: "line",
         ability: "wis",
-        power: 0.7,
         damageType: "piercing",
-        resourceCost: 7,
-        apCost: 2,
-        cooldown: 3,
+        flatBase: 75,
+        percentOfAbility: 0.25,
+        resourceCost: 60,
+        apCost: 3,
         schoolId: "nature",
-        applyStatus: { defId: "rooted", turns: 2, chance: 85 },
+        unlockLevel: 4,
       },
     ],
     startingEquipmentOptions: [
-      { id: "mace", label: "Ashen Mace & Leather Armor", equipment: { weapon: "ashenMace", armor: "leatherArmor" } },
-      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { weapon: "huntersShortbow", armor: "leatherArmor" } },
+      { id: "mace", label: "Ashen Mace & Leather Armor", equipment: { meleeWeapon: "ashenMace", armor: "leatherArmor" } },
+      { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { rangedWeapon: "huntersShortbow", armor: "leatherArmor" } },
     ],
     startingInventory: ["ringOfWarding"],
+  },
+  wizard: {
+    id: "wizard",
+    name: "Wizard",
+    description: "Scholars of the arcane, channeling raw magic through years of study.",
+    primaryAbility: "int",
+    savingThrowProficiencies: ["int", "wis"],
+    abilityScoreBonuses: { int: 5, spi: 3 },
+    basicAttackName: "Arcane Bolt",
+    actions: [
+      {
+        id: "elemental-shard",
+        name: "Elemental Shard",
+        description:
+          "Invokes the Arcane, creating a shard of elemental power -- fire, ice, or force at random -- for 65 + 20% of your Intellect. Costs Arcana.",
+        kind: "attack",
+        target: "enemy",
+        ability: "int",
+        randomDamageTypes: ["fire", "cold", "force"],
+        flatBase: 65,
+        percentOfAbility: 0.2,
+        resourceCost: 30,
+        apCost: 2,
+        schoolId: "arcane",
+        unlockLevel: 2,
+      },
+      {
+        id: "arcane-barrier",
+        name: "Arcane Barrier",
+        description: "Conjures a protective shield: evasion increases by 50% of your Intellect for 3 turns. Costs Arcana.",
+        kind: "buff",
+        target: "self",
+        ability: "int",
+        resourceCost: 30,
+        apCost: 2,
+        schoolId: "arcane",
+        applyStatus: { defId: "fortified", turns: 3, power: 0.5 },
+        unlockLevel: 4,
+      },
+    ],
+    startingEquipmentOptions: [
+      { id: "staff", label: "Oaken Staff & Traveler's Robe", equipment: { meleeWeapon: "oakenStaff", armor: "travelersRobe" } },
+      { id: "dagger", label: "Ritual Dagger & Traveler's Robe", equipment: { meleeWeapon: "ritualDagger", armor: "travelersRobe" } },
+    ],
+    startingInventory: ["luckyCharm"],
   },
 };
 

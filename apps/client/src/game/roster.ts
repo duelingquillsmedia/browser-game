@@ -1,4 +1,4 @@
-import { withStartingGearIfMissing, type Character } from "@eridan/engine";
+import { withClassMigrationIfMissing, withStartingGearIfMissing, type Character } from "@eridan/engine";
 import { supabase } from "../lib/supabaseClient";
 import { withWorldMapStateIfMissing } from "./setup";
 
@@ -10,8 +10,10 @@ interface CharacterRow {
 function rowToCharacter(row: CharacterRow): Character {
   // Characters saved before inventory/equipment (or the World Map) existed
   // won't have them in their stored jsonb — backfill so older rows don't
-  // crash the UI.
-  return withWorldMapStateIfMissing(withStartingGearIfMissing({ ...row.data, id: row.id }));
+  // crash the UI. The class migration must run first: it renames "mage" to
+  // "wizard" and re-keys the old single weapon slot, both of which
+  // withStartingGearIfMissing assumes are already in the new shape.
+  return withWorldMapStateIfMissing(withStartingGearIfMissing(withClassMigrationIfMissing({ ...row.data, id: row.id })));
 }
 
 /**

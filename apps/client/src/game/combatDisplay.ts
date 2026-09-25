@@ -10,12 +10,15 @@ import {
   type StatusEffectKind,
 } from "@eridan/engine";
 
-/** Tints a status-effect chip by its kind (cc/dot/hot/shield), independent of any one status's own flavor name. */
+/** Tints a status-effect chip by its kind, independent of any one status's own flavor name. */
 const STATUS_KIND_COLOR: Record<StatusEffectKind, string> = {
   cc: "var(--aow-violet)",
   dot: "var(--aow-hp)",
   hot: "var(--aow-green)",
   shield: "var(--aow-frost)",
+  guard: "var(--aow-gold)",
+  buff: "var(--aow-ember)",
+  proc: "var(--aow-mana)",
 };
 
 export function statusKindColor(kind: StatusEffectKind): string {
@@ -32,7 +35,13 @@ export function statusKindColor(kind: StatusEffectKind): string {
 
 /** A short 1-3 letter tag standing in for real portrait art, e.g. "Cinder Cultist" -> "CC". */
 export function initialsFor(name: string): string {
-  const words = name.trim().split(/\s+/);
+  // Strips punctuation (e.g. the "(Melee)"/"(Ranged)" suffix on a generated Basic Attack's
+  // name) before taking initials, so a stray "(" never ends up as one of them.
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^A-Za-z0-9]/g, ""))
+    .filter(Boolean);
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return words
     .map((w) => w[0])

@@ -1,6 +1,6 @@
 import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier, rollD20, rollD20WithEdge, type RNG } from "./dice.js";
-import { BASIC_ATTACK, DEFEND_ACTION, type CombatActionDef } from "./actions.js";
+import { DEFEND_ACTION, type CombatActionDef } from "./actions.js";
 import type { Character } from "./character.js";
 import { getClass } from "./classes.js";
 import type { Monster } from "./monsters.js";
@@ -17,7 +17,6 @@ import {
   computeCritChance,
   computeEvasion,
   computeResourceMax,
-  computeResourceRegenPerTurn,
   computeResourceStart,
   computeSaveChance,
   randomVariance,
@@ -25,7 +24,10 @@ import {
 import {
   STATUS_EFFECT_DEFS,
   absorbDamage,
+  activeBuffAmount,
   applyStatusEffect,
+  consumeStatusStack,
+  hasActiveEffectOfKind,
   hasCrowdControl,
   tickStatusEffects,
   type StatusEffect,
@@ -58,11 +60,13 @@ export interface Combatant {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  /** Flat evasion-percentage bonus from gear (party) or natural armor (monsters), on top of the Dexterity-based base (see stats.ts). */
+  /** Flat evasion-percentage bonus from gear (party) or natural armor (monsters), plus any class passive (e.g. a Soldier's Parry), on top of the Dexterity-based base (see stats.ts). */
   evasionBonus: number;
-  /** The equipped weapon's own min-max damage range, rolled for the basic Strike only; monsters and an unarmed party member have none, falling back to Strike's ability-scaled default. */
-  weaponDamageMin?: number;
-  weaponDamageMax?: number;
+  /** The equipped melee/ranged weapon's own min-max damage range, rolled for whichever Basic Attack variant (or `weaponDamageSource` ability) uses it; monsters and an unarmed party member have neither, falling back to an ability-scaled default. */
+  meleeWeaponDamageMin?: number;
+  meleeWeaponDamageMax?: number;
+  rangedWeaponDamageMin?: number;
+  rangedWeaponDamageMax?: number;
   /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; monsters have none. */
   proficiencyBonus?: number;
   actions: CombatActionDef[];
@@ -74,7 +78,7 @@ export interface Combatant {
   damageResistances: DamageType[];
   damageVulnerabilities: DamageType[];
   damageImmunities: DamageType[];
-  /** Current value in this combatant's class resource pool (Arcane/Divinity/Wylde/Rage); undefined if their class has none. */
+  /** Current value in this combatant's class resource pool (Fury/Expertise/Prayer/Focus/Cunning/Wylde/Arcana); undefined if their class has none. */
   resource?: number;
   /** From buff actions (e.g. Arcane Shield) and Defend; cleared at the start of this combatant's own next turn. */
   tempEvasionBonus: number;
@@ -111,8 +115,10 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     maxHp: source.maxHp,
     hp: source.hp,
     evasionBonus: "gearEvasionBonus" in source ? source.gearEvasionBonus : source.evasionBonus,
-    weaponDamageMin: "weaponDamageMin" in source ? source.weaponDamageMin : undefined,
-    weaponDamageMax: "weaponDamageMax" in source ? source.weaponDamageMax : undefined,
+    meleeWeaponDamageMin: "meleeWeaponDamageMin" in source ? source.meleeWeaponDamageMin : undefined,
+    meleeWeaponDamageMax: "meleeWeaponDamageMax" in source ? source.meleeWeaponDamageMax : undefined,
+    rangedWeaponDamageMin: "rangedWeaponDamageMin" in source ? source.rangedWeaponDamageMin : undefined,
+    rangedWeaponDamageMax: "rangedWeaponDamageMax" in source ? source.rangedWeaponDamageMax : undefined,
     proficiencyBonus: "classId" in source ? source.proficiencyBonus : undefined,
     actions: source.actions,
     actionUses: { ...source.actionUses },
@@ -211,6 +217,124 @@ function rollUniform(min: number, max: number, rng: RNG): number {
 }
 
 /**
+ * The min-max damage range for whichever weapon slot `source` names, or
+ * undefined if that slot is empty -- or if the action never asked for
+ * weapon-scaled damage at all (`source` undefined). That last case matters:
+ * an action with no `weaponDamageSource` (Radiant Beam, Wylde Wrath,
+ * Elemental Shard, every pre-existing power-scaled ability, ...) must never
+ * pick up an actor's equipped melee weapon's range just because they happen
+ * to have one equipped.
+ */
+function weaponDamageRange(actor: Combatant, source: "melee" | "ranged" | undefined): { min: number; max: number } | undefined {
+  if (source === "ranged") {
+    if (actor.rangedWeaponDamageMin === undefined || actor.rangedWeaponDamageMax === undefined) return undefined;
+    return { min: actor.rangedWeaponDamageMin, max: actor.rangedWeaponDamageMax };
+  }
+  if (source !== "melee") return undefined;
+  if (actor.meleeWeaponDamageMin === undefined || actor.meleeWeaponDamageMax === undefined) return undefined;
+  return { min: actor.meleeWeaponDamageMin, max: actor.meleeWeaponDamageMax };
+}
+
+/** Total flat evasion: gear/passives, Defend's temporary bonus, and any active "buff"-kind status (Enrage, Arcane Barrier). */
+function effectiveEvasionBonus(c: Combatant): number {
+  return c.evasionBonus + c.tempEvasionBonus + activeBuffAmount(c);
+}
+
+/** Ranger's Sharpshooter-style flat hit/crit bonus while swinging their ranged weapon (see classes.ts's `rangedAttackHitBonus`/`rangedAttackCritBonus`). This engine only tracks melee-vs-ranged, not weapon sub-types, so it applies to any ranged Basic Attack or weapon-scaled ability. */
+function rangedAttackBonuses(actor: Combatant, action: CombatActionDef): { hit: number; crit: number } {
+  if (action.weaponDamageSource !== "ranged" || !actor.classId) return { hit: 0, crit: 0 };
+  const cls = getClass(actor.classId);
+  return { hit: cls.rangedAttackHitBonus ?? 0, crit: cls.rangedAttackCritBonus ?? 0 };
+}
+
+/** Soldier's Readied / Rogue's Evasive Jab: a flat hit-chance reduction for one incoming attack. Doesn't consume the stack itself — see `consumeStatusStack`. */
+function guardHitChanceReduction(target: Combatant): number {
+  return hasActiveEffectOfKind(target, "guard") ? 50 : 0;
+}
+
+/** Warrior's Furious passive: a fraction of damage taken converted to resource, in place of a flat per-hit amount. */
+function beingStruckResourceGain(target: Combatant, damageTaken: number): number | undefined {
+  const percent = getClassResource(target.classId)?.gainOnBeingStruckPercent;
+  if (!percent) return undefined;
+  return Math.round(damageTaken * percent);
+}
+
+/**
+ * An action's base damage/healing before crit/variance-band-on-top -- the
+ * single formula both `previewAttack` and `resolveAttack` share. Three
+ * shapes coexist:
+ *  - no `weaponDamageSource`/`flatBase`/`percentOfAbility` at all: the
+ *    original `ability * power * variance` formula, byte-identical to
+ *    before this pass (every pre-existing action keeps using this).
+ *  - `weaponDamageSource` set: rolls that weapon's own min-max range plus
+ *    a flat Attack Power bonus (every Basic Attack, plus a few abilities
+ *    the Style Sheet describes as "weapon damage" -- Cleave, Serrated
+ *    Blade, Evasive Jab, ...).
+ *  - `flatBase`/`percentOfAbility` set (with no weapon): the Style
+ *    Sheet's "50 + 10% of WIS" shape (Mend, Wylde Healing, ...), which does
+ *    pass through the same 0.85-1.15 variance band as the original formula.
+ * The weapon and flat/percent shapes can combine (Evasive Jab: weapon roll
+ * + 20% of DEX) -- when a weapon roll is involved, there's no additional
+ * variance band on top of it (matching the original Basic-Attack-only
+ * formula this generalizes): the weapon's own min-max range already is the
+ * randomness.
+ */
+function computeBaseDamage(actor: Combatant, action: CombatActionDef, rng: RNG): number {
+  const weaponRange = weaponDamageRange(actor, action.weaponDamageSource);
+  const canSavage = actor.originFeatId === "savageAttacker";
+  const usesNewFormula = weaponRange !== undefined || action.flatBase !== undefined || action.percentOfAbility !== undefined;
+
+  if (!usesNewFormula) {
+    let variance = randomVariance(rng);
+    if (canSavage) variance = Math.max(variance, randomVariance(rng));
+    return Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance));
+  }
+
+  if (weaponRange) {
+    // A weapon roll is its own source of randomness (MMO-tooltip style) -- no extra variance
+    // band on top, same as the original Basic-Attack-only formula this generalizes.
+    let roll = rollUniform(weaponRange.min, weaponRange.max, rng);
+    // Savage Attacker: roll the weapon's damage twice and keep the higher result, once per turn.
+    if (canSavage) roll = Math.max(roll, rollUniform(weaponRange.min, weaponRange.max, rng));
+    let base = roll + computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]));
+    if (action.percentOfAbility !== undefined) {
+      base += Math.round(actor.abilityScores[action.ability] * action.percentOfAbility);
+    }
+    return Math.max(0, base);
+  }
+
+  // flatBase/percentOfAbility with no weapon roll: the same variance band as every power-scaled action.
+  const base = action.flatBase ?? 0;
+  const withPercent = base + Math.round(actor.abilityScores[action.ability] * (action.percentOfAbility ?? 0));
+  const variance = randomVariance(rng);
+  return Math.max(0, Math.round(withPercent * variance));
+}
+
+/** Same shape as `computeBaseDamage`, deterministic bounds instead of a roll -- for `previewAttack`'s hover tooltip. */
+function previewBaseDamageRange(actor: Combatant, action: CombatActionDef): { min: number; max: number } {
+  const weaponRange = weaponDamageRange(actor, action.weaponDamageSource);
+  const usesNewFormula = weaponRange !== undefined || action.flatBase !== undefined || action.percentOfAbility !== undefined;
+
+  if (!usesNewFormula) {
+    const base = actor.abilityScores[action.ability] * (action.power ?? 1);
+    return { min: Math.max(0, Math.round(base * 0.85)), max: Math.max(0, Math.round(base * 1.15)) };
+  }
+
+  if (weaponRange) {
+    // No variance band on a weapon roll (see computeBaseDamage) -- the weapon's own range already is the spread.
+    const bonus = computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]));
+    const percentAdd =
+      action.percentOfAbility !== undefined ? Math.round(actor.abilityScores[action.ability] * action.percentOfAbility) : 0;
+    return { min: weaponRange.min + bonus + percentAdd, max: weaponRange.max + bonus + percentAdd };
+  }
+
+  const flatWithPercent =
+    (action.flatBase ?? 0) +
+    (action.percentOfAbility !== undefined ? Math.round(actor.abilityScores[action.ability] * action.percentOfAbility) : 0);
+  return { min: Math.max(0, Math.round(flatWithPercent * 0.85)), max: Math.max(0, Math.round(flatWithPercent * 1.15)) };
+}
+
+/**
  * Expands a single clicked target into the full set an attack actually
  * hits, per its `targetShape`. "line" hits every living member of the
  * target's rank; "area" hits the target plus its immediate rank-neighbors.
@@ -266,30 +390,21 @@ export function previewAttack(
   const actor = findCombatant(state, actorId);
   const target = findCombatant(state, targetId);
 
-  const evasion = computeEvasion(target.abilityScores.dex) + target.evasionBonus + target.tempEvasionBonus;
+  const evasion = computeEvasion(target.abilityScores.dex) + effectiveEvasionBonus(target);
+  const guardReduction = action.kind === "attack" ? guardHitChanceReduction(target) : 0;
+  const rangedBonus = rangedAttackBonuses(actor, action);
   const hitChance = target.unconscious
     ? 100
-    : Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion));
-  const critChance = target.unconscious ? 100 : computeCritChance(actor.abilityScores.dex);
+    : Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion - guardReduction + rangedBonus.hit));
+  const critChance = target.unconscious
+    ? 100
+    : Math.max(0, Math.min(100, computeCritChance(actor.abilityScores.dex) + rangedBonus.crit));
 
-  const isWeaponStrike =
-    action.id === BASIC_ATTACK.id && actor.weaponDamageMin !== undefined && actor.weaponDamageMax !== undefined;
+  const { min: rawMin, max: rawMax } = previewBaseDamageRange(actor, action);
 
-  let rawMin: number;
-  let rawMax: number;
-  if (isWeaponStrike) {
-    const attackPower = computeAttackPower(actor.abilityScores[action.ability]);
-    const bonus = computeAttackPowerBonusDamage(attackPower);
-    rawMin = actor.weaponDamageMin! + bonus;
-    rawMax = actor.weaponDamageMax! + bonus;
-  } else {
-    // Same 0.85-1.15 band as randomVariance's own range (stats.ts), expressed as fixed bounds instead of a roll.
-    const base = actor.abilityScores[action.ability] * (action.power ?? 1);
-    rawMin = Math.max(0, Math.round(base * 0.85));
-    rawMax = Math.max(0, Math.round(base * 1.15));
-  }
-
-  const damageType = action.damageType ?? "bludgeoning";
+  // A random-damage-type action (Elemental Shard) can't know its roll ahead of time -- the first
+  // listed type is shown as a representative approximation for the preview tooltip.
+  const damageType = action.randomDamageTypes?.[0] ?? action.damageType ?? "bludgeoning";
   const minDamage = applyDamageModifiers(rawMin, damageType, target);
   const maxDamage = applyDamageModifiers(rawMax, damageType, target);
   const hitsCount = resolveTargetsForShape(state, target, action).length;
@@ -417,70 +532,60 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
   log(state, `${target.name} drops to 0 HP and falls unconscious!`, { kind: "down", targetId: target.id });
 }
 
-/** Rolls to see if `actor`'s attack/spell against `target` connects, then how hard it hits. */
+/** Rolls to see if `actor`'s attack/spell against `target` connects, then how hard it hits. Returns whether it landed and whether it crit, so the caller (a Basic Attack) can award the right amount of resource. */
 function resolveAttack(
   state: CombatState,
   actor: Combatant,
   target: Combatant,
   action: CombatActionDef,
   rng: RNG
-): void {
+): { hit: boolean; crit: boolean } {
+  // An attack that also buffs its own caster (Defensive Flourish, Evasive Jab) does so
+  // unconditionally, whether or not the attack itself connects -- it's the stance taken
+  // by using the ability, not a reward for landing it.
+  if (action.applySelfStatus) {
+    resolveApplyStatus(state, actor, actor, { ...action, applyStatus: action.applySelfStatus }, rng);
+  }
+
   let isCrit: boolean;
 
   // Any hit against an Unconscious target is an automatic Critical Hit.
   if (target.unconscious) {
     isCrit = true;
   } else {
-    const evasion = computeEvasion(target.abilityScores.dex) + target.evasionBonus + target.tempEvasionBonus;
-    const hitChance = Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion));
+    const evasion = computeEvasion(target.abilityScores.dex) + effectiveEvasionBonus(target);
+    const guardReduction = guardHitChanceReduction(target);
+    const rangedBonus = rangedAttackBonuses(actor, action);
+    const hitChance = Math.max(
+      MIN_HIT_CHANCE,
+      Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion - guardReduction + rangedBonus.hit)
+    );
     const hits = rng() * 100 < hitChance;
+    // Readied/Evasive Jab's guard is spent by the incoming attack whether it lands or not.
+    consumeStatusStack(target, "guard");
     if (!hits) {
       log(state, `${actor.name} attacks ${target.name} with ${action.name} — misses!`, {
         kind: "miss",
         actorId: actor.id,
         targetId: target.id,
       });
-      return;
+      return { hit: false, crit: false };
     }
-    const critChance = computeCritChance(actor.abilityScores.dex);
+    const critChance = Math.max(0, Math.min(100, computeCritChance(actor.abilityScores.dex) + rangedBonus.crit));
     isCrit = rng() * 100 < critChance;
   }
 
-  // The basic Strike, with a weapon equipped, rolls that weapon's own advertised
-  // min-max damage range directly (MMO-tooltip style) plus a flat Attack Power
-  // bonus from the scaling ability score -- everything else (class abilities
-  // like Slash/Firebolt, or an unarmed Strike) keeps scaling off the ability
-  // score directly via its own `power` coefficient and the variance band.
-  const isWeaponStrike =
-    action.id === BASIC_ATTACK.id && actor.weaponDamageMin !== undefined && actor.weaponDamageMax !== undefined;
-
-  let damage: number;
-  if (isWeaponStrike) {
-    const min = actor.weaponDamageMin!;
-    const max = actor.weaponDamageMax!;
-    let roll = rollUniform(min, max, rng);
-    if (!isCrit && actor.originFeatId === "savageAttacker") {
-      // Savage Attacker: roll the weapon's damage twice and keep the higher result, once per turn.
-      roll = Math.max(roll, rollUniform(min, max, rng));
-    }
-    const attackPower = computeAttackPower(actor.abilityScores[action.ability]);
-    damage = roll + computeAttackPowerBonusDamage(attackPower);
-  } else {
-    let variance = randomVariance(rng);
-    if (!isCrit && actor.originFeatId === "savageAttacker") {
-      // Savage Attacker: roll damage variance twice and keep the higher result, once per turn.
-      variance = Math.max(variance, randomVariance(rng));
-    }
-    damage = Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance));
-  }
+  let damage = computeBaseDamage(actor, action, rng);
   if (isCrit) damage = Math.round(damage * CRIT_MULTIPLIER);
-  const damageType = action.damageType ?? "bludgeoning";
+  const damageType = action.randomDamageTypes
+    ? action.randomDamageTypes[Math.floor(rng() * action.randomDamageTypes.length)]
+    : (action.damageType ?? "bludgeoning");
   damage = applyDamageModifiers(damage, damageType, target);
   const { damage: finalDamage, absorbed } = absorbDamage(target, damage);
 
   const hpBefore = target.hp;
   target.hp = Math.max(0, target.hp - finalDamage);
-  gainResource(target, getClassResource(target.classId)?.gainOnBeingStruck);
+  gainResource(target, beingStruckResourceGain(target, finalDamage));
 
   const crit = isCrit ? " Critical hit!" : "";
   const shieldNote = absorbed > 0 ? ` (${absorbed} absorbed by its Ward)` : "";
@@ -492,7 +597,24 @@ function resolveAttack(
   );
 
   if (target.side === "party") handlePartyDamageOutcome(state, target, finalDamage, hpBefore);
-  if (target.hp > 0) resolveApplyStatus(state, actor, target, action, rng);
+  if (target.hp > 0) {
+    resolveApplyStatus(state, actor, target, action, rng);
+    resolveProc(state, actor, target);
+  }
+  return { hit: true, crit: isCrit };
+}
+
+/** Ranger's Barbed Arrow: consumes one "primed" stack on `actor` and, if one was spent, applies a weapon-damage-scaled bleed to the target they just hit. */
+function resolveProc(state: CombatState, actor: Combatant, target: Combatant): void {
+  if (!consumeStatusStack(actor, "proc")) return;
+  const range = weaponDamageRange(actor, "ranged") ?? weaponDamageRange(actor, "melee");
+  const amount = range ? Math.max(1, Math.round(((range.min + range.max) / 2) * 0.05)) : 1;
+  applyStatusEffect(target, { defId: "bleeding", turnsRemaining: 3, amount });
+  log(state, `${target.name} begins bleeding from ${actor.name}'s barbed shot.`, {
+    kind: "info",
+    actorId: actor.id,
+    targetId: target.id,
+  });
 }
 
 /** Resolves a saving-throw effect (e.g. Fireball) against every opposing combatant, one damage roll for all. */
@@ -518,7 +640,7 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
 
     const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - finalDamage);
-    gainResource(target, getClassResource(target.classId)?.gainOnBeingStruck);
+    gainResource(target, beingStruckResourceGain(target, finalDamage));
     const shieldNote = absorbed > 0 ? ` (${absorbed} absorbed by its Ward)` : "";
     log(
       state,
@@ -537,7 +659,16 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
 }
 
 function resolveHeal(state: CombatState, actor: Combatant, target: Combatant, action: CombatActionDef, rng: RNG): void {
-  const amount = Math.max(1, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * randomVariance(rng)));
+  let base: number;
+  if (action.flatBase !== undefined || action.percentOfAbility !== undefined) {
+    base = action.flatBase ?? 0;
+    if (action.percentOfAbility !== undefined) {
+      base += Math.round(actor.abilityScores[action.ability] * action.percentOfAbility);
+    }
+  } else {
+    base = actor.abilityScores[action.ability] * (action.power ?? 1);
+  }
+  const amount = Math.max(1, Math.round(base * randomVariance(rng)));
   const before = target.hp;
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const healed = target.hp - before;
@@ -577,13 +708,30 @@ function resolveApplyStatus(state: CombatState, actor: Combatant, target: Combat
   const spec = action.applyStatus;
   if (!spec) return;
   if (spec.chance !== undefined && rng() * 100 >= spec.chance) return;
-  const amount =
-    spec.power !== undefined
-      ? Math.max(1, Math.round(actor.abilityScores[action.ability] * spec.power * randomVariance(rng)))
-      : undefined;
-  applyStatusEffect(target, { defId: spec.defId, turnsRemaining: spec.turns, amount });
+
+  let amount: number | undefined;
+  if (spec.weaponPercent !== undefined) {
+    // Bleed/poison-style ticks scaled off the acting weapon's average damage, not the ability score.
+    const range = weaponDamageRange(actor, action.weaponDamageSource);
+    amount = range ? Math.max(1, Math.round(((range.min + range.max) / 2) * spec.weaponPercent)) : undefined;
+  } else if (spec.power !== undefined) {
+    amount = Math.max(1, Math.round(actor.abilityScores[action.ability] * spec.power * randomVariance(rng)));
+  }
+
+  applyStatusEffect(target, { defId: spec.defId, turnsRemaining: spec.turns, amount, stacksRemaining: spec.stacks });
   const def = STATUS_EFFECT_DEFS[spec.defId];
-  log(state, `${target.name} is afflicted with ${def.name}${spec.turns > 1 ? ` (${spec.turns} turns)` : ""}.`, {
+  // A guard/proc effect actually expires by stack count, not turn count (see StatusEffect.turnsRemaining's
+  // own comment) -- so its detail note names the stacks applied instead of a meaningless turn count.
+  const detail =
+    def.kind === "guard" || def.kind === "proc"
+      ? spec.stacks && spec.stacks > 1
+        ? ` (${spec.stacks} stacks)`
+        : ""
+      : spec.turns > 1
+        ? ` (${spec.turns} turns)`
+        : "";
+  const verb = target.id === actor.id ? "gains" : "is afflicted with";
+  log(state, `${target.name} ${verb} ${def.name}${detail}.`, {
     kind: "info",
     actorId: actor.id,
     targetId: target.id,
@@ -672,19 +820,22 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     if (actor.ap < apCost) throw new Error(`${actor.name} doesn't have enough AP to use ${action.name}.`);
     actor.ap -= apCost;
   }
-  // The basic weapon Strike builds a Warrior's Rage on use, hit or miss —
-  // a class without a matching pool is unaffected.
-  if (action.id === BASIC_ATTACK.id) {
-    gainResource(actor, getClassResource(actor.classId)?.gainOnBasicAttack);
-  }
-
   switch (action.kind) {
     case "attack": {
       if (!request.targetId) throw new Error(`${action.name} requires a target.`);
       const primary = findCombatant(state, request.targetId);
       if (!isTargetable(primary)) throw new Error(`${primary.name} is not a valid target.`);
+      let anyCrit = false;
       for (const target of resolveTargetsForShape(state, primary, action)) {
-        resolveAttack(state, actor, target, action, rng);
+        const result = resolveAttack(state, actor, target, action, rng);
+        anyCrit = anyCrit || result.crit;
+      }
+      // The Basic Attack builds its class's resource on use, hit or miss (more on a crit) --
+      // a class without a matching pool is unaffected. Moved to after resolution (rather than
+      // before, like the old flat-Rage-only version) so the crit-scaled amount is accurate.
+      if (action.isBasicAttack) {
+        const resourceConfig = getClassResource(actor.classId);
+        gainResource(actor, anyCrit ? resourceConfig?.gainOnBasicAttackCrit : resourceConfig?.gainOnBasicAttack);
       }
       break;
     }
@@ -720,9 +871,9 @@ function logStatusTickEvent(state: CombatState, c: Combatant, e: StatusTickEvent
     log(state, `${c.name} takes ${e.amount} damage from ${def.name}.`, { kind: "hit", targetId: c.id, amount: e.amount });
   } else if (e.kind === "hot") {
     log(state, `${c.name} recovers ${e.amount} HP from ${def.name}.`, { kind: "heal", targetId: c.id, amount: e.amount });
-  } else if (e.kind === "shield-expire") {
+  } else if (e.kind === "shield-expire" || e.kind === "buff-expire") {
     log(state, `${c.name}'s ${def.name} fades.`, { kind: "info", targetId: c.id });
-  } else if (e.kind === "cc-expire") {
+  } else if (e.kind === "cc-expire" || e.kind === "guard-expire" || e.kind === "proc-expire") {
     log(state, `${c.name} is no longer ${def.name}.`, { kind: "info", targetId: c.id });
   }
 }
@@ -758,7 +909,6 @@ function settleTurnStart(state: CombatState, combatant: Combatant): boolean {
   combatant.tempEvasionBonus = 0;
   combatant.dodging = false;
   if (combatant.apMax !== undefined) combatant.ap = combatant.apMax;
-  gainResource(combatant, computeResourceRegenPerTurn(combatant.abilityScores, combatant.classId ?? ""));
   return true;
 }
 

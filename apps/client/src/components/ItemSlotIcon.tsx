@@ -6,7 +6,7 @@ export interface ItemSlotIconProps {
 
 /** A small gold line-art glyph per equipment slot, since the GUI kit has no dedicated item icons. */
 export function ItemSlotIcon({ slot }: ItemSlotIconProps) {
-  if (slot === "weapon") {
+  if (slot === "meleeWeapon") {
     return (
       <svg viewBox="0 0 24 24" className="slot-icon" aria-hidden="true">
         <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -14,6 +14,19 @@ export function ItemSlotIcon({ slot }: ItemSlotIconProps) {
           <path d="M12 6 L18 12 L20 10 L14 4 Z" />
           <path d="M10 8 L8 6" />
           <path d="M16 14 L18 16" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (slot === "rangedWeapon") {
+    return (
+      <svg viewBox="0 0 24 24" className="slot-icon" aria-hidden="true">
+        <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <path d="M6 4 C14 8 14 16 6 20" strokeLinejoin="round" />
+          <path d="M6 4 L6 20" strokeDasharray="1.5 1.8" strokeWidth="1.1" />
+          <path d="M11 12 L20 12" />
+          <path d="M17 9 L20 12 L17 15" strokeLinejoin="round" />
         </g>
       </svg>
     );

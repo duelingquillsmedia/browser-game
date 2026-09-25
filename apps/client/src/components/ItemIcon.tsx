@@ -164,7 +164,8 @@ const ITEM_ICONS: Record<string, ReactElement> = {
 };
 
 const FALLBACK_ICONS: Record<ItemSlot, ReactElement> = {
-  weapon: <Sword />,
+  meleeWeapon: <Sword />,
+  rangedWeapon: <Bow />,
   armor: ArmorVest("#7a5a2b", "#4a3417"),
   accessory: <Ring />,
 };

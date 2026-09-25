@@ -42,7 +42,9 @@ export function HomeScreen({
   const resourcePct =
     resourceConfig && resourceMax ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceMax) * 100)) : 0;
 
-  const equippedSlots = (["weapon", "armor", "accessory"] as const).filter((slot) => character.equipment[slot]);
+  const equippedSlots = (["meleeWeapon", "rangedWeapon", "armor", "accessory"] as const).filter(
+    (slot) => character.equipment[slot]
+  );
 
   return (
     <div className="aow-home">

@@ -1,7 +1,7 @@
 import type { AbilityKey } from "./abilities.js";
 import type { DamageType } from "./damage.js";
 
-export type ItemSlot = "weapon" | "armor" | "accessory";
+export type ItemSlot = "meleeWeapon" | "rangedWeapon" | "armor" | "accessory";
 
 export interface ItemTemplate {
   id: string;
@@ -36,7 +36,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "ironLongsword",
     name: "Hunter's Longsword",
     description: "A well-balanced blade, standard issue for Ridgeton's watch.",
-    slot: "weapon",
+    slot: "meleeWeapon",
     damageMin: 14,
     damageMax: 20,
     damageType: "slashing",
@@ -46,7 +46,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "huntersShortbow",
     name: "Hunter's Shortbow",
     description: "A simple recurve bow favored by scouts along the Tameless Shore.",
-    slot: "weapon",
+    slot: "rangedWeapon",
     damageMin: 7,
     damageMax: 10,
     ability: "dex",
@@ -57,7 +57,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "oakenStaff",
     name: "Hunter's Staff",
     description: "A gnarled staff that channels arcane focus as well as it strikes.",
-    slot: "weapon",
+    slot: "meleeWeapon",
     damageMin: 8,
     damageMax: 12,
     ability: "int",
@@ -68,7 +68,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "ashenMace",
     name: "Hunter's Mace",
     description: "A temple mace, blessed for both battle and ritual.",
-    slot: "weapon",
+    slot: "meleeWeapon",
     damageMin: 9,
     damageMax: 13,
     ability: "wis",
@@ -79,7 +79,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "practicedKnuckles",
     name: "Hunter's Knuckles",
     description: "Wrapped hands and years of drilling — a trained unarmed strike is a weapon in its own right.",
-    slot: "weapon",
+    slot: "meleeWeapon",
     damageMin: 4,
     damageMax: 6,
     ability: "dex",
@@ -90,7 +90,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "ritualDagger",
     name: "Hunter's Dagger",
     description: "A light blade carried more for ceremony and backup than for war.",
-    slot: "weapon",
+    slot: "meleeWeapon",
     damageMin: 6,
     damageMax: 9,
     damageType: "piercing",
@@ -100,7 +100,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     id: "shortsword",
     name: "Hunter's Shortsword",
     description: "A quick, double-edged blade light enough for a fencer's grip.",
-    slot: "weapon",
+    slot: "meleeWeapon",
     damageMin: 9,
     damageMax: 13,
     ability: "dex",

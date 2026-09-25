@@ -1,37 +1,48 @@
-export const RESOURCE_KEYS = ["arcane", "divinity", "wylde", "rage"] as const;
+export const RESOURCE_KEYS = ["fury", "expertise", "prayer", "focus", "cunning", "wylde", "arcana"] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
 export interface ResourceConfig {
   key: ResourceKey;
   name: string;
-  /** Gained whenever this combatant uses their basic weapon Strike (a Warrior's Rage) — not their class's other actions. */
-  gainOnBasicAttack?: number;
-  /** Gained whenever this combatant is hit by an enemy's attack or save (a Warrior's Rage only). */
-  gainOnBeingStruck?: number;
+  /** Gained whenever this combatant lands their Basic Attack (hit or miss). */
+  gainOnBasicAttack: number;
+  /** Gained instead of `gainOnBasicAttack` when the Basic Attack crits. */
+  gainOnBasicAttackCrit: number;
+  /** Warrior's Furious passive only: fraction of incoming damage taken converted to resource. */
+  gainOnBeingStruckPercent?: number;
 }
 
 /**
- * The four class resource pools' identity and flavor name. Their actual
- * ceiling and regen rate are attribute-derived now (see stats.ts's
- * computeResourceMax/computeResourceRegenPerTurn) rather than fixed here —
- * Arcane/Divinity/Wylde behave like a classic MMO mana pool: full at the
- * start of a fight, spent on spells, trickling back a little each turn.
- * Rage is a builder resource instead — it starts empty and is earned by
- * dealing or taking blows, then spent on a Warrior's stronger moves.
+ * Per the Class Style Sheet, every class's resource is now a generator/
+ * spender pool: the Basic Attack costs nothing and builds it (more on a
+ * crit), and every other action spends it. Five of the seven pools are
+ * small fixed integers that start empty each fight (Fury, Expertise,
+ * Prayer, Focus, Cunning) -- a sharp departure from the old "big mana pool"
+ * feel. Wylde and Arcana are the two exceptions: they're still "like mana
+ * from traditional MMOs" per the sheet's own wording, so they start full
+ * and scale with an ability score (see stats.ts's computeResourceMax) --
+ * they just *also* pick up extra resource from landing the Basic Attack,
+ * same as everyone else.
  */
 export const RESOURCE_CONFIGS: Record<ResourceKey, ResourceConfig> = {
-  arcane: { key: "arcane", name: "Arcane" },
-  divinity: { key: "divinity", name: "Divinity" },
-  wylde: { key: "wylde", name: "Wylde" },
-  rage: { key: "rage", name: "Rage", gainOnBasicAttack: 15, gainOnBeingStruck: 15 },
+  fury: { key: "fury", name: "Fury", gainOnBasicAttack: 15, gainOnBasicAttackCrit: 30, gainOnBeingStruckPercent: 0.25 },
+  expertise: { key: "expertise", name: "Expertise", gainOnBasicAttack: 1, gainOnBasicAttackCrit: 2 },
+  prayer: { key: "prayer", name: "Prayer", gainOnBasicAttack: 1, gainOnBasicAttackCrit: 2 },
+  focus: { key: "focus", name: "Focus", gainOnBasicAttack: 1, gainOnBasicAttackCrit: 2 },
+  cunning: { key: "cunning", name: "Cunning", gainOnBasicAttack: 5, gainOnBasicAttackCrit: 15 },
+  wylde: { key: "wylde", name: "Wylde", gainOnBasicAttack: 10, gainOnBasicAttackCrit: 20 },
+  arcana: { key: "arcana", name: "Arcana", gainOnBasicAttack: 10, gainOnBasicAttackCrit: 20 },
 };
 
-/** Which resource pool (if any) a class draws its abilities from. */
+/** Which resource pool a class draws its abilities from. Every class has exactly one now. */
 export const CLASS_RESOURCE: Partial<Record<string, ResourceKey>> = {
-  mage: "arcane",
-  cleric: "divinity",
+  warrior: "fury",
+  soldier: "expertise",
+  cleric: "prayer",
+  ranger: "focus",
+  rogue: "cunning",
   druid: "wylde",
-  warrior: "rage",
+  wizard: "arcana",
 };
 
 /** The resource config for a class, or undefined if that class doesn't use one (yet). */

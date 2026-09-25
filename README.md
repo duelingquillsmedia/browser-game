@@ -758,6 +758,84 @@ handoff's showcased Cleric 1:1:
   bar labeled "×2" (there's no vulnerability precedent in the source to
   copy, so this reversed-color treatment is designed, not ported).
 
+## Class Style Sheet Reforge
+
+Rebuilds every class from the ground up per the **Class Style Sheet**
+(Google Drive, `Class Information/Age of Broken Wings - Class Style
+Sheet.docx`), which defines the full release roster and replaces the old
+five-class, mostly-mana-pool resource model with a **generator/spender
+resource on all seven classes**: **Warrior, Soldier, Cleric, Ranger,
+Rogue, Druid, Wizard** (Mage renamed in place, with a migration for
+existing saves). A Basic Attack costs nothing and builds that class's
+resource (more on a crit); every other action spends it. Five of the
+seven pools are small fixed integers that start empty each fight —
+Fury (100), Expertise (10), Prayer (5), Focus (5), Cunning (30) — a sharp
+departure from the old big-mana-pool feel for Cleric in particular. Wylde
+and Druid's Wizard-equivalent Arcana stay "mana-like": full at the start
+of a fight, scaling with an ability score (Wisdom/Intellect × 6 — the
+sheet gives no formula, so this coefficient is homebrew, same precedent
+as this project's other derived-stat formulas).
+
+- **Real dual melee/ranged weapon slots.** Every class's Basic Attack can
+  now be thrown as melee or ranged, each scaling off its own equipped
+  weapon — `ItemSlot` split into `meleeWeapon`/`rangedWeapon`, and
+  `generateBasicAttacks` (character.ts) produces up to two concrete
+  actions per character (only for slots that are actually filled; no
+  "unarmed ranged" attack exists). The Character screen's weapon row
+  became "Melee Weapon"/"Ranged Weapon" instead of the old single
+  slot + disabled Off Hand.
+- **A second damage/heal formula shape.** The sheet's numbers are all
+  "50 + 10% of WIS," not the old `power × ability` coefficient — so
+  `CombatActionDef` gained `flatBase`/`percentOfAbility`/
+  `weaponDamageSource` fields, resolved by a new shared
+  `computeBaseDamage` in combat.ts. Every pre-existing action keeps using
+  the untouched original formula; only the sheet's new abilities use the
+  new one. A weapon roll never gets an *extra* variance band on top of
+  itself — the weapon's own min-max range already is the randomness,
+  exactly like the old Basic-Attack-only special case this generalizes.
+- **Level-gating is enforced for real.** Each ability's sheet-given level
+  (`unlockLevel` on `CombatActionDef`) is now a hard requirement —
+  `applyEquipmentEffects` filters `character.actions` by
+  `character.level`. Since there's still no leveling/XP system, this
+  means a level-1 character only knows their Basic Attack and lvl-1
+  ability today; deliberate, so the data model doesn't need a second
+  redesign once leveling ships.
+- **Three new status-effect kinds** (status.ts): `guard` (Soldier's
+  Readied / Rogue's Evasive Jab — a stacking flat hit-chance reduction,
+  one stack spent per incoming attack regardless of outcome), `buff`
+  (Warrior's Enrage / Wizard's Arcane Barrier — a flat, timed evasion
+  bonus), and `proc` (Ranger's Barbed Arrow — primes the caster's own
+  next N landed hits to also apply a linked effect). Guard/proc effects
+  are given a long safety-net `turnsRemaining` at application time since
+  they actually expire by stack count (`consumeStatusStack`), not by
+  turn count.
+- **Reused targeting, no new mechanic needed.** Cleave/Wylde Wrath ("every
+  enemy in a row") map directly onto the existing `targetShape: "line"`;
+  Radiant Beam ("target + adjacent") onto `targetShape: "area"`; Wylde
+  Healing ("heal yourself or an ally") onto the existing `target: "ally"`,
+  which already lets a caster select their own portrait.
+
+**Deliberate reinterpretations**, where this engine has no real
+equivalent to the sheet's mechanic:
+- **Parry (Soldier) → +5 flat evasion.** The sheet gives no effect beyond
+  the number, and there's no separate parry/riposte roll to hang it on.
+- **"Armor" (Warrior's Enrage, Wizard's Arcane Barrier) → evasion.** Same
+  substitution as the Character screen's own "Armor Bonus" stat — this
+  engine has no flat damage-mitigation stat, only evasion.
+- **Sharpshooter (Ranger) → applies to any ranged attack**, not
+  specifically "with bows," since the engine tracks melee-vs-ranged only,
+  not weapon sub-types.
+- **Rogue's passive is left unimplemented.** The sheet itself says
+  "Placeholder" for it — noted, not invented.
+
+### Critical files
+`packages/engine/src/resources.ts`, `stats.ts`, `status.ts`, `items.ts`,
+`actions.ts`, `classes.ts`, `character.ts`, `combat.ts`, `companions.ts`;
+`apps/client/src/game/sprites.ts`, `characterDisplay.ts`,
+`combatDisplay.ts`, `roster.ts`; `apps/client/src/screens/
+CharacterCreationScreen.tsx`, `CharacterScreen.tsx`, `InventoryScreen.tsx`,
+`SkillsScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

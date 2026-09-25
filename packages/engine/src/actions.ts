@@ -44,7 +44,7 @@ export interface CombatActionDef {
    * combat degenerates into repeating the same action.
    */
   cooldown?: number;
-  /** Resource cost (from the actor's class resource pool — Arcane, Divinity, Wylde, or Rage) to use this action. */
+  /** Resource cost (from the actor's class resource pool — Fury, Expertise, Prayer, Focus, Cunning, Wylde, or Arcana) to use this action. */
   resourceCost?: number;
   /**
    * Action Points spent from the actor's per-turn AP budget. Applies only to
@@ -59,6 +59,27 @@ export interface CombatActionDef {
   targetShape?: TargetShape;
   /** A status effect this action additionally applies — to the attack/save target(s), or to the actor itself for a self buff/heal. */
   applyStatus?: StatusApplication;
+  /** An *attack*-kind action that also buffs its own caster (e.g. Defensive Flourish, Evasive Jab) — applied to the actor after the attack resolves, alongside `applyStatus` on the target. */
+  applySelfStatus?: StatusApplication;
+  /** Marks the generated Basic Attack variants (see character.ts's `generateBasicAttacks`) — the action that builds the actor's class resource on use. */
+  isBasicAttack?: boolean;
+  /**
+   * This action rolls the named weapon slot's own min-max damage range
+   * (MMO-tooltip style) plus a flat Attack Power bonus, instead of scaling
+   * purely off `power * ability`. Used by every Basic Attack and by a few
+   * class abilities the Style Sheet describes as "weapon damage" (Cleave,
+   * Serrated Blade, Evasive Jab, ...). Combined with `percentOfAbility`,
+   * the ability's own bonus is added on top of the weapon roll.
+   */
+  weaponDamageSource?: "melee" | "ranged";
+  /** Flat amount added before the random variance band — the "50" in "50 health + 10% of WIS" (Mend, Wylde Healing, Nature's Remedy, ...). */
+  flatBase?: number;
+  /** Fraction of the scaling ability score added on top of `flatBase` and/or the weapon roll — the "0.10" in the same. */
+  percentOfAbility?: number;
+  /** Elemental Shard-style actions: one damage type is picked at random (via the fight's own RNG) each time this resolves, overriding `damageType`. */
+  randomDamageTypes?: DamageType[];
+  /** The character level this action requires (default 1). Enforced in `applyEquipmentEffects` — a character below it simply doesn't know the action yet. */
+  unlockLevel?: number;
 }
 
 export const BASIC_ATTACK: CombatActionDef = {

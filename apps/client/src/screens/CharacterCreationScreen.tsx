@@ -24,26 +24,40 @@ export interface CharacterCreationScreenProps {
 }
 
 const RACE_GLYPHS: Record<string, string> = { elf: "ᛖ", human: "ᛗ", dwarf: "ᛟ" };
-const CLASS_GLYPHS: Record<string, string> = { cleric: "ᛋ", warrior: "ᛏ", rogue: "ᚾ", mage: "ᚨ", druid: "ᛜ" };
+const CLASS_GLYPHS: Record<string, string> = {
+  cleric: "ᛋ",
+  warrior: "ᛏ",
+  soldier: "ᚦ",
+  rogue: "ᚾ",
+  ranger: "ᚱ",
+  wizard: "ᚨ",
+  druid: "ᛜ",
+};
 const CLASS_COLOR_VAR: Record<string, string> = {
   cleric: "var(--aow-gold)",
   warrior: "var(--aow-hp)",
+  soldier: "var(--aow-ember)",
   rogue: "var(--aow-violet)",
-  mage: "var(--aow-frost)",
+  ranger: "var(--aow-mana)",
+  wizard: "var(--aow-frost)",
   druid: "var(--aow-green)",
 };
 const CLASS_ROLE: Record<string, string> = {
   cleric: "HEALER · RADIANT CASTER",
   warrior: "FRONT-LINE · MELEE",
+  soldier: "DEFENDER · MELEE",
   rogue: "STRIKER · MELEE",
-  mage: "CASTER · RANGED",
+  ranger: "SHARPSHOOTER · RANGED",
+  wizard: "CASTER · RANGED",
   druid: "HYBRID · NATURE",
 };
 const CLASS_ARMOR: Record<string, string> = {
   cleric: "Cloth / Mail",
   warrior: "Plate",
+  soldier: "Mail / Leather",
   rogue: "Leather",
-  mage: "Cloth",
+  ranger: "Leather",
+  wizard: "Cloth",
   druid: "Leather",
 };
 
@@ -303,14 +317,14 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                       </div>
                     </div>
                     <div className="aow-creation-skill-list">
-                      {cls.actions
-                        .filter((a) => a.id !== "strike" && a.id !== "defend" && a.id !== "flee")
-                        .map((a) => (
-                          <div key={a.id} className="aow-trait-card">
-                            <h3>{a.name}</h3>
-                            <p>{a.description}</p>
-                          </div>
-                        ))}
+                      {/* cls.actions (the class definition's static list) holds only its leveled abilities now --
+                          the Basic Attack, Defend, and Flee are generated per-character in character.ts, not listed here. */}
+                      {cls.actions.map((a) => (
+                        <div key={a.id} className="aow-trait-card">
+                          <h3>{a.name}</h3>
+                          <p>{a.description}</p>
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}

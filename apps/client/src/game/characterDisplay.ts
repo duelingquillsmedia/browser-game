@@ -5,7 +5,6 @@ import {
   computeAttackPower,
   computeCritChance,
   computeEvasion,
-  computeResourceRegenPerTurn,
   getClassResource,
   getItem,
   initiativeModifier,
@@ -86,8 +85,7 @@ function formatModifier(value: number): string {
 export function combatStatGroups(character: Character): CombatStatGroup[] {
   const race = RACES[character.raceId];
   const resourceConfig = getClassResource(character.classId);
-  const resourceRegen = computeResourceRegenPerTurn(character.abilityScores, character.classId);
-  const weaponId = character.equipment.weapon;
+  const weaponId = character.equipment.meleeWeapon ?? character.equipment.rangedWeapon;
   const weapon = weaponId ? getItem(weaponId) : undefined;
   const attackPower = computeAttackPower(character.abilityScores[weapon?.ability ?? "str"]);
   const totalEvasion = Math.round(computeEvasion(character.abilityScores.dex) + character.gearEvasionBonus);
@@ -98,7 +96,7 @@ export function combatStatGroups(character: Character): CombatStatGroup[] {
     { label: "Speed", value: `${race?.speed ?? 30} ft` },
   ];
   if (resourceConfig) {
-    tempoRows.push({ label: `${resourceConfig.name} per turn`, value: `+${resourceRegen}` });
+    tempoRows.push({ label: `${resourceConfig.name} per Hit`, value: `+${resourceConfig.gainOnBasicAttack}` });
   }
 
   return [

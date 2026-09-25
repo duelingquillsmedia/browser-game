@@ -23,7 +23,8 @@ type FilterId = "all" | ItemSlot;
 
 const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
-  { id: "weapon", label: "Weapon" },
+  { id: "meleeWeapon", label: "Melee" },
+  { id: "rangedWeapon", label: "Ranged" },
   { id: "armor", label: "Armor" },
   { id: "accessory", label: "Accessory" },
 ];
@@ -48,7 +49,7 @@ function compareToEquipped(character: Character, candidate: ItemTemplate) {
   const equippedId = character.equipment[candidate.slot];
   if (!equippedId || equippedId === candidate.id) return null;
   const equipped = getItem(equippedId);
-  if (candidate.slot === "weapon") {
+  if (candidate.slot === "meleeWeapon" || candidate.slot === "rangedWeapon") {
     return { kind: "weapon" as const, from: formatItemStats(equipped), to: formatItemStats(candidate) };
   }
   const delta = (candidate.evasionBonus ?? 0) - (equipped.evasionBonus ?? 0);
@@ -62,7 +63,8 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
   const equippedIds = new Set(Object.values(character.equipment));
   const counts: Record<FilterId, number> = {
     all: character.inventory.length,
-    weapon: 0,
+    meleeWeapon: 0,
+    rangedWeapon: 0,
     armor: 0,
     accessory: 0,
   };

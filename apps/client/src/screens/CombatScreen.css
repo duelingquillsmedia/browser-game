@@ -479,7 +479,10 @@
   transition: width 0.3s;
 }
 
-.cbt-resource-rage .cbt-resource-fill {
+/* Per-resource fill colors for the Class Style Sheet's 7 pools. Arcana (Wizard) has none of
+   its own -- it uses the same mana-blue as the base .cbt-resource-fill above. */
+
+.cbt-resource-fury .cbt-resource-fill {
   background: linear-gradient(90deg, #6b2320, var(--aow-hp));
   box-shadow: 0 0 8px rgba(208, 96, 74, 0.5);
 }
@@ -489,9 +492,24 @@
   box-shadow: 0 0 8px rgba(134, 196, 111, 0.5);
 }
 
-.cbt-resource-divinity .cbt-resource-fill {
+.cbt-resource-prayer .cbt-resource-fill {
   background: linear-gradient(90deg, var(--aow-gold-deep), var(--aow-gold));
   box-shadow: 0 0 8px rgba(217, 184, 101, 0.5);
+}
+
+.cbt-resource-expertise .cbt-resource-fill {
+  background: linear-gradient(90deg, #7a2f22, var(--aow-ember));
+  box-shadow: 0 0 8px rgba(224, 138, 114, 0.5);
+}
+
+.cbt-resource-focus .cbt-resource-fill {
+  background: linear-gradient(90deg, #1f4a5c, var(--aow-frost));
+  box-shadow: 0 0 8px rgba(143, 198, 230, 0.5);
+}
+
+.cbt-resource-cunning .cbt-resource-fill {
+  background: linear-gradient(90deg, #4a2f6b, var(--aow-violet));
+  box-shadow: 0 0 8px rgba(178, 135, 230, 0.5);
 }
 
 /* ---------- Targeting preview tooltip ---------- */

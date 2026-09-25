@@ -22,9 +22,9 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     id: "magnus",
     name: "Magnus",
     raceId: "dwarf",
-    classId: "mage",
+    classId: "wizard",
     backgroundId: "sage",
-    bio: "A learned mage who studied at the Academy Arcanum in Eldrin City, Magnus reasons his way through danger alongside his hot-headed brother Magnar in the Tameless Shore.",
+    bio: "A learned wizard who studied at the Academy Arcanum in Eldrin City, Magnus reasons his way through danger alongside his hot-headed brother Magnar in the Tameless Shore.",
   },
   {
     id: "magnar",

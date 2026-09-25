@@ -26,11 +26,13 @@ export interface Character {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  /** Flat evasion-percentage bonus from equipped armor/accessories (see stats.ts's computeEvasion for the Dexterity-based base). */
+  /** Flat evasion-percentage bonus from equipped armor/accessories and any class passive (e.g. a Soldier's Parry) (see stats.ts's computeEvasion for the Dexterity-based base). */
   gearEvasionBonus: number;
-  /** The equipped weapon's own min-max damage range for Strike (see items.ts); undefined when unarmed, which falls back to Strike's ability-scaled default. */
-  weaponDamageMin?: number;
-  weaponDamageMax?: number;
+  /** The equipped melee/ranged weapon's own min-max damage range for the Basic Attack (see items.ts); undefined when that slot is empty. An empty melee slot falls back to an unarmed, ability-scaled strike; an empty ranged slot simply offers no ranged Basic Attack variant. */
+  meleeWeaponDamageMin?: number;
+  meleeWeaponDamageMax?: number;
+  rangedWeaponDamageMin?: number;
+  rangedWeaponDamageMax?: number;
   /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; no longer feeds attack rolls (see stats.ts). */
   proficiencyBonus: number;
   actions: CombatActionDef[];
@@ -43,7 +45,7 @@ export interface Character {
   damageResistances?: DamageType[];
   damageVulnerabilities?: DamageType[];
   damageImmunities?: DamageType[];
-  /** Current value in this class's resource pool (Arcane/Divinity/Wylde/Rage), if it has one. */
+  /** Current value in this class's resource pool (Fury/Expertise/Prayer/Focus/Cunning/Wylde/Arcana), if it has one. */
   resource?: number;
   /** This player's six Misfit Six companions, keyed by companion id. Built once via `ensureCompanionRoster`. */
   companions?: Record<string, Character>;
@@ -114,39 +116,76 @@ function buildMagicInitiateAction(character: Pick<Character, "abilityScores">): 
   };
 }
 
-/** Recomputes evasion, resistances, and actions from base stats plus race/feat traits and whatever's equipped. */
+/**
+ * Every class's Basic Attack is generated here, not listed in `CharacterClass.actions`
+ * -- one variant per filled weapon slot, named from the class's own `basicAttackName`
+ * (e.g. "Wild Swing"). An empty melee slot still falls back to an unarmed,
+ * ability-scaled strike (matching the old single-weapon behavior); an empty ranged
+ * slot simply means no ranged variant is offered -- there's no "unarmed ranged" attack.
+ */
+function generateBasicAttacks(character: Character, cls: CharacterClass): CombatActionDef[] {
+  const meleeWeapon = character.equipment.meleeWeapon ? getItem(character.equipment.meleeWeapon) : undefined;
+  const rangedWeapon = character.equipment.rangedWeapon ? getItem(character.equipment.rangedWeapon) : undefined;
+
+  const effectiveAbility = (weapon: ReturnType<typeof getItem> | undefined): AbilityKey => {
+    if (weapon?.ability) return weapon.ability;
+    if (cls.basicAttackAbilityMode === "highestOfStrDex") {
+      return character.abilityScores.str >= character.abilityScores.dex ? "str" : "dex";
+    }
+    return cls.primaryAbility;
+  };
+
+  const attacks: CombatActionDef[] = [
+    {
+      ...BASIC_ATTACK,
+      id: "strike-melee",
+      name: `${cls.basicAttackName} (Melee)`,
+      description: `A basic melee attack${meleeWeapon ? ` with your equipped ${meleeWeapon.name}` : ""}.`,
+      ability: effectiveAbility(meleeWeapon),
+      damageType: meleeWeapon?.damageType ?? BASIC_ATTACK.damageType,
+      isBasicAttack: true,
+      weaponDamageSource: "melee",
+    },
+  ];
+  if (rangedWeapon) {
+    attacks.push({
+      ...BASIC_ATTACK,
+      id: "strike-ranged",
+      name: `${cls.basicAttackName} (Ranged)`,
+      description: `A basic ranged attack with your equipped ${rangedWeapon.name}.`,
+      ability: effectiveAbility(rangedWeapon),
+      damageType: rangedWeapon.damageType ?? BASIC_ATTACK.damageType,
+      isBasicAttack: true,
+      weaponDamageSource: "ranged",
+    });
+  }
+  return attacks;
+}
+
+/** Recomputes evasion, resistances, and actions from base stats plus race/feat traits, class passives, level, and whatever's equipped. */
 function applyEquipmentEffects(character: Character, cls: CharacterClass, race: Race): Character {
   const armor = character.equipment.armor ? getItem(character.equipment.armor) : undefined;
   const accessory = character.equipment.accessory ? getItem(character.equipment.accessory) : undefined;
-  const weapon = character.equipment.weapon ? getItem(character.equipment.weapon) : undefined;
+  const meleeWeapon = character.equipment.meleeWeapon ? getItem(character.equipment.meleeWeapon) : undefined;
+  const rangedWeapon = character.equipment.rangedWeapon ? getItem(character.equipment.rangedWeapon) : undefined;
 
-  const gearEvasionBonus = (armor?.evasionBonus ?? 0) + (accessory?.evasionBonus ?? 0);
+  const gearEvasionBonus = (armor?.evasionBonus ?? 0) + (accessory?.evasionBonus ?? 0) + (cls.passiveEvasionBonus ?? 0);
 
-  const strike: CombatActionDef =
-    weapon !== undefined
-      ? {
-          ...BASIC_ATTACK,
-          name: weapon.name,
-          description: `A basic attack with your equipped ${weapon.name}.`,
-          ability: weapon.ability ?? BASIC_ATTACK.ability,
-          damageType: weapon.damageType ?? BASIC_ATTACK.damageType,
-        }
-      : BASIC_ATTACK;
-  const weaponDamageMin = weapon?.damageMin;
-  const weaponDamageMax = weapon?.damageMax;
-
-  const withStrike = cls.actions.some((a) => a.id === BASIC_ATTACK.id)
-    ? cls.actions.map((a) => (a.id === BASIC_ATTACK.id ? strike : a))
-    : [...cls.actions, strike];
+  const basicAttacks = generateBasicAttacks(character, cls);
+  // Enforces each ability's Class Style Sheet unlock level; a character below it simply
+  // doesn't know that action yet (see classes.ts -- there's no leveling system to raise
+  // `character.level` yet, so today this mostly just gates a level-1 character's kit
+  // down to their Basic Attack + lvl-1 ability, ready for when leveling ships).
+  const leveledActions = cls.actions.filter((a) => (a.unlockLevel ?? 1) <= character.level);
 
   const bonusActions = [...(race.actions ?? [])];
-  // Mages already have an at-will cantrip attack of their own (Firebolt) --
+  // Wizards already have an at-will cantrip attack of their own (Arcane Bolt) --
   // a Magic Initiate cantrip on top of that would just be a redundant duplicate.
-  if (character.originFeatId === "magicInitiate" && character.classId !== "mage") {
+  if (character.originFeatId === "magicInitiate" && character.classId !== "wizard") {
     bonusActions.push(buildMagicInitiateAction(character));
   }
 
-  const actions = [...withStrike, ...bonusActions, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
+  const actions = [...basicAttacks, ...leveledActions, ...bonusActions, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
   );
 
@@ -154,8 +193,10 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     ...character,
     gearEvasionBonus,
     actions,
-    weaponDamageMin,
-    weaponDamageMax,
+    meleeWeaponDamageMin: meleeWeapon?.damageMin,
+    meleeWeaponDamageMax: meleeWeapon?.damageMax,
+    rangedWeaponDamageMin: rangedWeapon?.damageMin,
+    rangedWeaponDamageMax: rangedWeapon?.damageMax,
     damageResistances: race.damageResistances ?? [],
   };
 }
@@ -232,6 +273,37 @@ function buildStartingInventory(cls: CharacterClass, equipment: Partial<Record<I
     counts.set(itemId, (counts.get(itemId) ?? 0) + 1);
   }
   return Array.from(counts, ([itemId, quantity]) => ({ itemId, quantity }));
+}
+
+/** The shape a `Character`'s `equipment`/`classId` could still be in from before the Class Style Sheet reforge (single `weapon` slot, `classId: "mage"`). */
+interface LegacyCharacterShape {
+  classId: string;
+  equipment: Partial<Record<ItemSlot, string>> & { weapon?: string };
+  companions?: Record<string, Character>;
+}
+
+/**
+ * Migrates a character (and every nested companion, which carries the same
+ * shape) saved before the Class Style Sheet reforge: `classId: "mage"` ->
+ * `"wizard"` (same class slot, new kit — see classes.ts), and the old
+ * single `equipment.weapon` into `meleeWeapon`/`rangedWeapon` by looking up
+ * that item's now-real slot. A no-op for an already-migrated character.
+ */
+export function withClassMigrationIfMissing(character: Character): Character {
+  const legacy = character as unknown as LegacyCharacterShape;
+
+  let equipment = character.equipment;
+  if (legacy.equipment.weapon) {
+    const { weapon, ...rest } = legacy.equipment;
+    equipment = { ...rest, [getItem(weapon).slot]: weapon };
+  }
+
+  const classId = legacy.classId === "mage" ? "wizard" : character.classId;
+  const companions = character.companions
+    ? Object.fromEntries(Object.entries(character.companions).map(([id, c]) => [id, withClassMigrationIfMissing(c)]))
+    : character.companions;
+
+  return { ...character, classId, equipment, companions };
 }
 
 /**

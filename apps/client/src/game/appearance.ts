@@ -38,8 +38,10 @@ export const NAME_POOLS: Record<string, string[]> = {
 /** Which existing Background best fits a class's flavor, since the new creation flow no longer asks for one. */
 export const DEFAULT_BACKGROUND_BY_CLASS: Record<string, string> = {
   warrior: "soldier",
+  soldier: "soldier",
   rogue: "criminal",
-  mage: "sage",
+  ranger: "criminal",
+  wizard: "sage",
   cleric: "acolyte",
   druid: "sage",
 };

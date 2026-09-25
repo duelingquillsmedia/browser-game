@@ -41,13 +41,13 @@ describe("MISFIT_SIX", () => {
 describe("createCompanion", () => {
   it("gives the class-default (standard array) stats by default, with the highest score on the primary ability", () => {
     const magnus = createCompanion("magnus");
-    const primary = getClass("mage").primaryAbility;
+    const primary = getClass("wizard").primaryAbility;
     expect(magnus.abilityScores[primary]).toBeGreaterThanOrEqual(
       Math.max(...Object.values(magnus.abilityScores))
     );
     expect(magnus.name).toBe("Magnus");
     expect(magnus.raceId).toBe("dwarf");
-    expect(magnus.classId).toBe("mage");
+    expect(magnus.classId).toBe("wizard");
   });
 
   it("rolls ability scores instead when useRolledStats is set, using the provided RNG deterministically", () => {

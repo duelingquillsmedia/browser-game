@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  activeBuffAmount,
   applyStatusEffect,
+  consumeStatusStack,
+  hasActiveEffectOfKind,
   hasCrowdControl,
   tickStatusEffects,
   absorbDamage,
@@ -117,5 +120,58 @@ describe("absorbDamage", () => {
   it("passes damage through unchanged with no shield", () => {
     const t = target();
     expect(absorbDamage(t, 25)).toEqual({ damage: 25, absorbed: 0 });
+  });
+});
+
+describe("guard/buff/proc mechanics (Class Style Sheet reforge)", () => {
+  it("consumes one stack of a guard effect per call, removing it once stacks reach 0", () => {
+    const t = target({ statusEffects: [{ defId: "readied", turnsRemaining: 99, stacksRemaining: 2 }] });
+    expect(consumeStatusStack(t, "guard")).toBe(true);
+    expect(t.statusEffects).toEqual([{ defId: "readied", turnsRemaining: 99, stacksRemaining: 1 }]);
+    expect(consumeStatusStack(t, "guard")).toBe(true);
+    expect(t.statusEffects).toEqual([]);
+    // Nothing left to consume.
+    expect(consumeStatusStack(t, "guard")).toBe(false);
+  });
+
+  it("only consumes stacks of the requested kind", () => {
+    const t = target({ statusEffects: [{ defId: "barbedPrimed", turnsRemaining: 99, stacksRemaining: 2 }] });
+    expect(consumeStatusStack(t, "guard")).toBe(false);
+    expect(consumeStatusStack(t, "proc")).toBe(true);
+    expect(t.statusEffects).toEqual([{ defId: "barbedPrimed", turnsRemaining: 99, stacksRemaining: 1 }]);
+  });
+
+  it("sums every active buff-kind effect's amount, ignoring other kinds", () => {
+    const t = target({
+      statusEffects: [
+        { defId: "fortified", turnsRemaining: 3, amount: 12 },
+        { defId: "ward", turnsRemaining: 1, amount: 30 },
+        { defId: "rooted", turnsRemaining: 1 },
+      ],
+    });
+    expect(activeBuffAmount(t)).toBe(12);
+  });
+
+  it("hasActiveEffectOfKind checks by kind, not defId", () => {
+    const t = target({ statusEffects: [{ defId: "knockedDown", turnsRemaining: 1 }] });
+    expect(hasActiveEffectOfKind(t, "cc")).toBe(true);
+    expect(hasActiveEffectOfKind(t, "guard")).toBe(false);
+  });
+
+  it("tickStatusEffects reports guard/buff/proc expiry the same way it reports cc/shield expiry", () => {
+    const t = target({
+      statusEffects: [
+        { defId: "fortified", turnsRemaining: 1, amount: 10 },
+        { defId: "readied", turnsRemaining: 1, stacksRemaining: 2 },
+        { defId: "barbedPrimed", turnsRemaining: 1, stacksRemaining: 1 },
+      ],
+    });
+    const events = tickStatusEffects(t);
+    expect(t.statusEffects).toEqual([]);
+    expect(events).toEqual([
+      { defId: "fortified", kind: "buff-expire" },
+      { defId: "readied", kind: "guard-expire" },
+      { defId: "barbedPrimed", kind: "proc-expire" },
+    ]);
   });
 });
