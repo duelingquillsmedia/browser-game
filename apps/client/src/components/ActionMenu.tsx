@@ -33,20 +33,35 @@ export function ActionMenu({ actor, round, pendingActionId, onSelectAction, onCa
   }
 
   const resourceConfig = getClassResource(actor.classId);
+  const endTurnAction = actor.actions.find((a) => a.kind === "endTurn");
+  const skillActions = actor.actions.filter((a) => a.kind !== "endTurn");
 
   return (
     <div className="ability-bar">
-      <p className="actor-turn-label">{actor.name}'s Turn</p>
-      {actor.actions.map((action) => {
+      <div className="ability-bar-header">
+        <p className="actor-turn-label">{actor.name}'s Turn</p>
+        {endTurnAction && (
+          <button type="button" className="end-turn-button" onClick={() => onSelectAction(endTurnAction)}>
+            End Turn
+          </button>
+        )}
+      </div>
+      {skillActions.map((action) => {
         const usesLeft = action.usesPerCombat !== undefined ? actor.actionUses[action.id] ?? 0 : null;
         const roundsUntilReady =
           action.cooldown !== undefined ? Math.max(0, (actor.actionCooldowns[action.id] ?? 0) - round) : 0;
         const onCooldown = roundsUntilReady > 0;
         const canAfford = action.resourceCost === undefined || (actor.resource ?? 0) >= action.resourceCost;
-        const disabled = (usesLeft !== null && usesLeft <= 0) || onCooldown || !canAfford;
+        const apCost = action.apCost ?? 1;
+        const canAffordAp = actor.ap === undefined || actor.ap >= apCost;
+        const disabled = (usesLeft !== null && usesLeft <= 0) || onCooldown || !canAfford || !canAffordAp;
+        const costParts = [
+          actor.ap !== undefined ? `${apCost} AP` : null,
+          action.resourceCost !== undefined && resourceConfig ? `${action.resourceCost} ${resourceConfig.name}` : null,
+        ].filter(Boolean);
         const title =
-          action.resourceCost !== undefined && resourceConfig
-            ? `${action.name} — ${action.description} (${action.resourceCost} ${resourceConfig.name})`
+          costParts.length > 0
+            ? `${action.name} — ${action.description} (${costParts.join(", ")})`
             : `${action.name} — ${action.description}`;
         return (
           <button
@@ -60,6 +75,9 @@ export function ActionMenu({ actor, round, pendingActionId, onSelectAction, onCa
             <span className="ability-icon">{iconGlyph(action.name)}</span>
             <span className="ability-name">{action.name}</span>
             {usesLeft !== null && <span className="ability-badge">{usesLeft}</span>}
+            {actor.ap !== undefined && (
+              <span className={`ability-cost-badge ap${canAffordAp ? "" : " unaffordable"}`}>{apCost}</span>
+            )}
             {action.resourceCost !== undefined && (
               <span className={`ability-cost-badge${canAfford ? "" : " unaffordable"}`}>{action.resourceCost}</span>
             )}

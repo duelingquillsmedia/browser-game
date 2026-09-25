@@ -1,4 +1,4 @@
-import { computeEvasion, computeResourceMax, getClassResource, type Combatant } from "@eridan/engine";
+import { computeEvasion, computeResourceMax, getClassResource, STATUS_EFFECT_DEFS, type Combatant } from "@eridan/engine";
 import { HealthBar } from "./HealthBar";
 import { ResourceBar } from "./ResourceBar";
 import { CharacterSprite, type SpriteState } from "./CharacterSprite";
@@ -25,6 +25,8 @@ export interface CombatantPortraitTileProps {
   isCurrentTurn: boolean;
   isSelectableTarget: boolean;
   isHovered?: boolean;
+  /** True while this tile is inside a hovered line/area attack's actual affected set (not just the hovered tile itself). */
+  isInAreaPreview?: boolean;
   onHoverChange?: (hovering: boolean) => void;
   effect?: CombatantEffect;
   onSelect?: () => void;
@@ -36,6 +38,7 @@ export function CombatantPortraitTile({
   isCurrentTurn,
   isSelectableTarget,
   isHovered,
+  isInAreaPreview,
   onHoverChange,
   effect,
   onSelect,
@@ -48,6 +51,7 @@ export function CombatantPortraitTile({
     isDown ? "down" : "",
     isSelectableTarget ? "selectable" : "",
     isHovered ? "hovered" : "",
+    isInAreaPreview ? "area-preview" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -110,13 +114,24 @@ export function CombatantPortraitTile({
   );
 }
 
+/** Rotated-square (diamond) pips showing an actor's remaining Action Points this turn. */
+export function ApPips({ current, max }: { current: number; max: number }) {
+  return (
+    <div className="ap-pips" aria-label={`AP ${current} of ${max}`}>
+      {Array.from({ length: max }, (_, i) => (
+        <span key={i} className={`ap-pip${i < current ? " filled" : ""}`} />
+      ))}
+    </div>
+  );
+}
+
 export interface CombatantInfoPanelProps {
   combatant: Combatant;
   isCurrentTurn: boolean;
   isHovered?: boolean;
 }
 
-/** The combatant's name, HP bar, evasion and status, shown in the side rail off the battlefield. */
+/** The combatant's name, HP bar, AP, evasion and status, shown in the side rail off the battlefield. */
 export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: CombatantInfoPanelProps) {
   const isDown = combatant.hp <= 0 || combatant.fled;
   const rowClassNames = [
@@ -159,7 +174,20 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: Comb
           max={resourceMax}
         />
       )}
+      {combatant.apMax !== undefined && <ApPips current={combatant.ap ?? 0} max={combatant.apMax} />}
       <div className="combatant-meta">Evasion {totalEvasion}%</div>
+      {combatant.statusEffects.length > 0 && (
+        <div className="status-effect-chips">
+          {combatant.statusEffects.map((e) => {
+            const def = STATUS_EFFECT_DEFS[e.defId];
+            return (
+              <span key={e.defId} className={`status-chip status-${def.kind}`} title={def.description}>
+                {def.name} {e.turnsRemaining}
+              </span>
+            );
+          })}
+        </div>
+      )}
       {statusTag && <div className="status-tag">{statusTag}</div>}
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
-import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION } from "../actions.js";
+import { currentCombatant, startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
+import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "../actions.js";
 import { createCharacter } from "../character.js";
 import {
   GUARANTEED_FAILURE,
@@ -21,7 +21,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     hp: 20,
     evasionBonus: 0,
     proficiencyBonus: 2,
-    actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION],
+    actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
     actionUses: {},
     actionCooldowns: {},
     savingThrowProficiencies: [],
@@ -35,6 +35,14 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     unconscious: false,
     dead: false,
     usedSilverleafStep: false,
+    // A 1-AP budget means any default-cost (1 AP) action immediately
+    // exhausts it, reproducing "exactly one action per turn" for every
+    // existing test below without touching their bodies. Tests exercising
+    // the real multi-action AP economy override this explicitly.
+    ap: 1,
+    apMax: 1,
+    rank: "front",
+    statusEffects: [],
     ...overrides,
   };
 }
@@ -73,6 +81,8 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     unconscious: false,
     dead: false,
     usedSilverleafStep: false,
+    rank: "front",
+    statusEffects: [],
     ...overrides,
   };
 }
@@ -460,5 +470,191 @@ describe("multi-member party", () => {
     expect(hit?.crit).toBe(true);
     expect(state.status).toBe("active");
     expect(state.combatants.find((c) => c.id === "up")!.hp).toBe(20);
+  });
+});
+
+describe("AP economy", () => {
+  it("holds the turn across multiple actions until AP runs out or End Turn is submitted", () => {
+    let state = startCombat(
+      [makeHero({ ap: 4, apMax: 4 })],
+      [makeFoe({ maxHp: 100, hp: 100 })],
+      sequenceRng([forD20(15), forD20(5)])
+    );
+    expect(currentCombatant(state).id).toBe("hero");
+
+    // First Strike (1 AP, default cost): still the hero's turn.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "strike", targetId: "foe" }, sequenceRng([GUARANTEED_FAILURE]));
+    expect(currentCombatant(state).id).toBe("hero");
+    expect(state.combatants.find((c) => c.id === "hero")!.ap).toBe(3);
+
+    // Second Strike: still the hero's turn, AP keeps draining.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "strike", targetId: "foe" }, sequenceRng([GUARANTEED_FAILURE]));
+    expect(currentCombatant(state).id).toBe("hero");
+    expect(state.combatants.find((c) => c.id === "hero")!.ap).toBe(2);
+
+    // End Turn hands control to the foe (target pick + a guaranteed miss), then
+    // back to the hero next round with AP refilled to max.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "end-turn" }, sequenceRng([0, GUARANTEED_FAILURE]));
+    expect(currentCombatant(state).id).toBe("hero");
+    expect(state.combatants.find((c) => c.id === "hero")!.ap).toBe(4);
+  });
+
+  it("auto-ends the turn once an action exhausts all remaining AP", () => {
+    const costlyStrike: CombatActionDef = { ...BASIC_ATTACK, apCost: 2 };
+    const hero = makeHero({ ap: 2, apMax: 2, actions: [costlyStrike, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    let state = startCombat([hero], [makeFoe({ maxHp: 100, hp: 100 })], sequenceRng([forD20(15), forD20(5)]));
+    expect(currentCombatant(state).id).toBe("hero");
+
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "strike", targetId: "foe" }, sequenceRng([GUARANTEED_FAILURE, 0, GUARANTEED_FAILURE]));
+    // 2 AP spent by a single 2-AP action -> turn advances with no explicit End Turn.
+    expect(currentCombatant(state).id).toBe("hero");
+    expect(state.combatants.find((c) => c.id === "hero")!.ap).toBe(2); // refilled for the new turn
+  });
+
+  it("always ends the turn on Flee, even with AP left over", () => {
+    let state = startCombat(
+      [makeHero({ ap: 4, apMax: 4 })],
+      [makeFoe({ maxHp: 100, hp: 100 })],
+      sequenceRng([forD20(15), forD20(5)])
+    );
+    // hero dex mod +2, roll 3 -> total 5, fails the DC-10 flee check.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "flee" }, sequenceRng([forD20(3), 0, GUARANTEED_FAILURE]));
+    expect(state.combatants.find((c) => c.id === "hero")!.fled).toBe(false);
+    // Only 1 AP was spent on the failed Flee, but the turn still ended and came
+    // back around with AP refilled -- not left sitting at 3.
+    expect(currentCombatant(state).id).toBe("hero");
+    expect(state.combatants.find((c) => c.id === "hero")!.ap).toBe(4);
+  });
+});
+
+describe("status effects", () => {
+  it("skips a Rooted combatant's turn for its full duration, then lets them act again", () => {
+    // Foe (higher initiative) acts first every round; hero starts Rooted for 2
+    // of their own turns and always misses back, so this whole cascade auto-
+    // resolves inside startCombat with zero player actions submitted.
+    const hero = makeHero({ statusEffects: [{ defId: "rooted", turnsRemaining: 2 }] });
+    const state = startCombat(
+      [hero],
+      [makeFoe()],
+      sequenceRng([
+        forD20(5), // hero init
+        forD20(15), // foe init -> foe goes first
+        0, // foe targets hero (only option)
+        GUARANTEED_FAILURE, // foe misses (round 1)
+        0,
+        GUARANTEED_FAILURE, // foe misses (round 2, hero still Rooted)
+        0,
+        GUARANTEED_FAILURE, // foe misses (round 3, hero finally free)
+      ])
+    );
+    const skips = state.log.filter((e) => e.message.includes("Rooted and cannot act"));
+    expect(skips).toHaveLength(2);
+    expect(state.status).toBe("active");
+    expect(state.round).toBe(3);
+    expect(currentCombatant(state).id).toBe("hero"); // finally able to act
+    expect(state.combatants.find((c) => c.id === "hero")!.statusEffects).toEqual([]);
+  });
+
+  it("never drops a party member below 1 HP from a DoT tick", () => {
+    const hero = makeHero({ hp: 5, maxHp: 20, statusEffects: [{ defId: "burning", turnsRemaining: 2, amount: 20 }] });
+    const state = startCombat(
+      [hero],
+      [makeFoe()],
+      sequenceRng([forD20(5), forD20(15), 0, GUARANTEED_FAILURE]) // foe goes first and misses; hero's turn starts, ticking Burning
+    );
+    expect(state.combatants.find((c) => c.id === "hero")!.hp).toBe(1);
+    expect(state.status).toBe("active");
+  });
+
+  it("can kill an enemy outright with a DoT tick (no floor), ending the fight", () => {
+    const foe = makeFoe({ hp: 5, maxHp: 5, statusEffects: [{ defId: "poisoned", turnsRemaining: 1, amount: 999 }] });
+    // hero (higher initiative) acts first with Defend, which exhausts their
+    // 1-AP budget and hands the turn to the foe -- whose fatal DoT tick fires
+    // before they can act.
+    let state = startCombat([makeHero()], [foe], sequenceRng([forD20(15), forD20(5)]));
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([]));
+    expect(state.status).toBe("party_won");
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(0);
+  });
+
+  it("absorbs incoming damage with a Ward until it's exhausted", () => {
+    const hero = makeHero({
+      hp: 100,
+      maxHp: 100,
+      statusEffects: [{ defId: "ward", turnsRemaining: 1, amount: 6 }],
+    });
+    const state = startCombat(
+      [hero],
+      [makeFoe()],
+      sequenceRng([
+        forD20(5), // hero init
+        forD20(15), // foe init -> foe goes first
+        0, // foe targets hero
+        GUARANTEED_SUCCESS, // guaranteed hit
+        GUARANTEED_FAILURE, // no crit
+        forVariance(1), // exact damage: 10 str * 1 power * 1.0 variance = 10
+      ])
+    );
+    // 10 raw damage, 6 absorbed by the Ward, 4 gets through.
+    expect(state.combatants.find((c) => c.id === "hero")!.hp).toBe(96);
+    const hit = state.log.find((e) => e.kind === "hit" && e.targetId === "hero");
+    expect(hit?.amount).toBe(4);
+    expect(hit?.message).toContain("absorbed by its Ward");
+  });
+});
+
+describe("multi-enemy ranks", () => {
+  function makeLineAction(): CombatActionDef {
+    return { ...BASIC_ATTACK, id: "line-attack", targetShape: "line" };
+  }
+  function makeAreaAction(): CombatActionDef {
+    return { ...BASIC_ATTACK, id: "area-attack", targetShape: "area" };
+  }
+
+  it("hits every living member of the target's rank with a line attack, and nobody else", () => {
+    const front1 = makeFoe({ id: "front1", name: "Front1", rank: "front" });
+    const front2 = makeFoe({ id: "front2", name: "Front2", rank: "front" });
+    const back = makeFoe({ id: "back", name: "Back", rank: "back" });
+    const hero = makeHero({ ap: 4, apMax: 4, actions: [makeLineAction(), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const state = startCombat(
+      [hero],
+      [front1, front2, back],
+      sequenceRng([forD20(20), forD20(1), forD20(1), forD20(1)])
+    );
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "line-attack", targetId: "front1" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1), GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
+    );
+    expect(after.combatants.find((c) => c.id === "front1")!.hp).toBeLessThan(front1.hp);
+    expect(after.combatants.find((c) => c.id === "front2")!.hp).toBeLessThan(front2.hp);
+    expect(after.combatants.find((c) => c.id === "back")!.hp).toBe(back.hp);
+  });
+
+  it("hits only the target's immediate rank-neighbors with an area attack", () => {
+    const a = makeFoe({ id: "a", name: "A", rank: "front" });
+    const b = makeFoe({ id: "b", name: "B", rank: "front" });
+    const c = makeFoe({ id: "c", name: "C", rank: "front" });
+    const d = makeFoe({ id: "d", name: "D", rank: "front" });
+    const hero = makeHero({ ap: 4, apMax: 4, actions: [makeAreaAction(), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const state = startCombat(
+      [hero],
+      [a, b, c, d],
+      sequenceRng([forD20(20), forD20(1), forD20(1), forD20(1), forD20(1)])
+    );
+    // Targeting b (index 1 of [a,b,c,d]) hits a, b, c (indices 0-2) but not d.
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "area-attack", targetId: "b" },
+      sequenceRng([
+        GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1),
+        GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1),
+        GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1),
+      ])
+    );
+    expect(after.combatants.find((x) => x.id === "a")!.hp).toBeLessThan(a.hp);
+    expect(after.combatants.find((x) => x.id === "b")!.hp).toBeLessThan(b.hp);
+    expect(after.combatants.find((x) => x.id === "c")!.hp).toBeLessThan(c.hp);
+    expect(after.combatants.find((x) => x.id === "d")!.hp).toBe(d.hp);
   });
 });

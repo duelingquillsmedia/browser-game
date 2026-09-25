@@ -684,13 +684,45 @@ button.ghost {
   padding: 0 0.5rem;
 }
 
-.arena-party,
-.arena-enemy {
+.arena-party {
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+/* Enemies split into up to two ranks, back row stacked above (farther from
+   the player) and front row below -- a simple two-row JRPG-style formation. */
+.arena-enemy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.arena-enemy-rank {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.arena-enemy-rank-back {
+  opacity: 0.92;
+}
+
+.enemy-rail-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.enemy-rail-rank + .enemy-rail-rank {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
 }
 
 @media (max-width: 900px) {
@@ -768,6 +800,12 @@ button.ghost {
   background: var(--bg-panel-alt);
 }
 
+/* A line/area attack's full affected set, previewed on hover before a target is clicked. */
+.combatant-tile.area-preview {
+  border-color: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+
 .combatant-portrait {
   position: relative;
   flex: none;
@@ -824,6 +862,57 @@ button.ghost {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 0.3rem;
+}
+
+.ap-pips {
+  display: flex;
+  gap: 3px;
+  margin-top: 0.35rem;
+}
+
+.ap-pip {
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: #1a1310;
+  border: 1px solid #6b5a33;
+}
+
+.ap-pip.filled {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.status-effect-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.status-chip {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid currentColor;
+}
+
+.status-chip.status-cc {
+  color: var(--accent);
+}
+
+.status-chip.status-dot {
+  color: var(--danger);
+}
+
+.status-chip.status-hot {
+  color: var(--success);
+}
+
+.status-chip.status-shield {
+  color: #8fc6e6;
 }
 
 .status-tag {
@@ -1132,14 +1221,38 @@ button.ghost {
   z-index: 5;
 }
 
-.actor-turn-label {
+.ability-bar-header {
   flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
   margin: 0 0 2px;
-  text-align: center;
+}
+
+.actor-turn-label {
+  margin: 0;
   font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.end-turn-button {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.end-turn-button:hover {
+  background: var(--accent);
+  color: #100d13;
 }
 
 .ability-bar-targeting {
@@ -1222,6 +1335,17 @@ button.ghost {
 }
 
 .ability-cost-badge.unaffordable {
+  color: var(--danger);
+}
+
+.ability-cost-badge.ap {
+  bottom: auto;
+  top: 2px;
+  left: 3px;
+  color: var(--accent);
+}
+
+.ability-cost-badge.ap.unaffordable {
   color: var(--danger);
 }
 

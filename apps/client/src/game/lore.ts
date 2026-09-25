@@ -24,12 +24,18 @@ export const HOME_TOWN_DESCRIPTION =
 
 export const HOME_TOWN_BACKGROUND = ridgetonBg;
 
+export interface EncounterMonster {
+  templateId: string;
+  /** Overrides the template's default rank for this specific encounter; falls back to the template's own default. */
+  rank?: "front" | "back";
+}
+
 export interface Encounter {
   id: string;
   name: string;
   location: string;
   flavorText: string;
-  monsterTemplateIds: string[];
+  monsters: EncounterMonster[];
   backgroundImage: string;
 }
 
@@ -41,28 +47,29 @@ export const ENCOUNTERS: Encounter[] = [
     location: "The Tameless Shore",
     flavorText:
       "Smoke rises from a burned way-shrine along the coast road out of Ridgeton. Two goblin " +
-      "raiders out of Claw Bay are still picking through the wreckage when they spot you.",
-    monsterTemplateIds: ["goblin", "goblin"],
+      "raiders out of Claw Bay are picking through the wreckage while a third keeps back, " +
+      "already winding up a sling.",
+    monsters: [{ templateId: "goblin" }, { templateId: "goblin" }, { templateId: "goblinSlinger" }],
     backgroundImage: tamelessShoreBg,
   },
   {
     id: "tiuv-forest-hunter",
-    name: "The Hunter of Tiuv Forest",
+    name: "The Hunters of Tiuv Forest",
     location: "Tiuv Forest",
     flavorText:
-      "A low growl rolls out from beneath Tiuv Forest's tangled canopy. A dire wolf, ribs " +
-      "showing beneath a matted coat, stalks out to bar your path.",
-    monsterTemplateIds: ["direWolf"],
+      "A low growl rolls out from beneath Tiuv Forest's tangled canopy. A pair of dire wolves, " +
+      "ribs showing beneath matted coats, stalk out together to bar your path.",
+    monsters: [{ templateId: "direWolf" }, { templateId: "direWolf" }],
     backgroundImage: tiuvForestBg,
   },
   {
     id: "collmhor-wood-marauder",
-    name: "A Collmhor Wood Marauder",
+    name: "A Collmhor Wood Warband",
     location: "Collmhor Wood",
     flavorText:
-      "A lone orc marauder stands over a fallen way-marker at the edge of Collmhor Wood, " +
-      "greataxe resting on one shoulder, sizing you up as easy plunder.",
-    monsterTemplateIds: ["orcMarauder"],
+      "An orc marauder stands over a fallen way-marker at the edge of Collmhor Wood, greataxe " +
+      "resting on one shoulder, while a bone-adorned shaman mutters curses from behind him.",
+    monsters: [{ templateId: "orcMarauder" }, { templateId: "orcShaman" }],
     backgroundImage: collmhorWoodBg,
   },
 ];

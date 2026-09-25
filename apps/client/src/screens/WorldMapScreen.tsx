@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MONSTER_TEMPLATES, type Character } from "@eridan/engine";
-import { ENCOUNTERS, HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME, WORLD_NAME, type Encounter } from "../game/lore";
+import { ENCOUNTERS, HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME, WORLD_NAME, type Encounter, type EncounterMonster } from "../game/lore";
 import eridanMap from "../assets/world/eridan-map.jpg";
 import "./WorldMapScreen.css";
 
@@ -24,9 +24,9 @@ const ENCOUNTER_PINS: Record<string, { x: number; y: number }> = {
   "collmhor-wood-marauder": { x: (330 / MAP_WIDTH) * 100, y: (1230 / MAP_HEIGHT) * 100 },
 };
 
-function describeFoes(monsterTemplateIds: string[]): string {
+function describeFoes(monsters: EncounterMonster[]): string {
   const counts = new Map<string, number>();
-  for (const id of monsterTemplateIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+  for (const m of monsters) counts.set(m.templateId, (counts.get(m.templateId) ?? 0) + 1);
   return Array.from(counts.entries())
     .map(([id, count]) => {
       const name = MONSTER_TEMPLATES[id]?.name ?? id;
@@ -104,7 +104,7 @@ export function WorldMapScreen({ character, onChooseEncounter }: WorldMapScreenP
                 <div className="aow-skill-stat-grid">
                   <div className="aow-skill-stat aow-map-foes-stat">
                     <span className="aow-skill-stat-label">FOES</span>
-                    <span>{describeFoes(selected.monsterTemplateIds)}</span>
+                    <span>{describeFoes(selected.monsters)}</span>
                   </div>
                 </div>
                 {!canVenture && <p className="aow-warning">Too wounded to venture out — rest first.</p>}

@@ -1,8 +1,12 @@
 import type { AbilityKey } from "./abilities.js";
 import type { DamageType } from "./damage.js";
+import type { SchoolId } from "./schools.js";
+import type { StatusApplication } from "./status.js";
 
-export type ActionKind = "attack" | "heal" | "buff" | "defend" | "flee" | "save";
+export type ActionKind = "attack" | "heal" | "buff" | "defend" | "flee" | "save" | "endTurn";
 export type ActionTarget = "enemy" | "enemies" | "ally" | "self" | "none";
+/** Enemy-targeted attacks only: "single" hits just the chosen target, "line" hits every living enemy in its rank, "area" hits it plus its immediate rank-neighbors. */
+export type TargetShape = "single" | "line" | "area";
 
 export interface CombatActionDef {
   id: string;
@@ -42,6 +46,19 @@ export interface CombatActionDef {
   cooldown?: number;
   /** Resource cost (from the actor's class resource pool — Arcane, Divinity, Wylde, or Rage) to use this action. */
   resourceCost?: number;
+  /**
+   * Action Points spent from the actor's per-turn AP budget. Applies only to
+   * `side: "party"` actors — monsters never consume AP, so their turns stay
+   * single-action as before. Omitted defaults to 1 AP for a party actor; set
+   * explicitly to 0 to make an action free (only END_TURN_ACTION does this).
+   */
+  apCost?: number;
+  /** Flavor-only skill school (see schools.ts); never gates usability. */
+  schoolId?: SchoolId;
+  /** Enemy-targeted attacks only. Unused on "save" (already hits every enemy) and on ally/self targets. */
+  targetShape?: TargetShape;
+  /** A status effect this action additionally applies — to the attack/save target(s), or to the actor itself for a self buff/heal. */
+  applyStatus?: StatusApplication;
 }
 
 export const BASIC_ATTACK: CombatActionDef = {
@@ -71,4 +88,14 @@ export const FLEE_ACTION: CombatActionDef = {
   kind: "flee",
   target: "none",
   ability: "dex",
+};
+
+export const END_TURN_ACTION: CombatActionDef = {
+  id: "end-turn",
+  name: "End Turn",
+  description: "Pass the rest of your turn, ending it immediately regardless of remaining AP.",
+  kind: "endTurn",
+  target: "none",
+  ability: "str",
+  apCost: 0,
 };

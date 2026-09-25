@@ -4,7 +4,7 @@ import { getRace, type Race } from "./races.js";
 import { getClass, type CharacterClass } from "./classes.js";
 import { getBackground } from "./backgrounds.js";
 import type { OriginFeatId } from "./feats.js";
-import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
+import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
 import { computeMaxHealth, computeResourceStart } from "./stats.js";
@@ -123,7 +123,7 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     bonusActions.push(buildMagicInitiateAction(character));
   }
 
-  const actions = [...withStrike, ...bonusActions, DEFEND_ACTION, FLEE_ACTION].filter(
+  const actions = [...withStrike, ...bonusActions, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
   );
 

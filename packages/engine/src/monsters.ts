@@ -17,6 +17,8 @@ export interface MonsterTemplate {
   damageResistances?: DamageType[];
   damageVulnerabilities?: DamageType[];
   damageImmunities?: DamageType[];
+  /** Default battlefield rank when spawned; "front" if omitted (every pre-existing template keeps today's behavior). */
+  rank?: "front" | "back";
 }
 
 export interface Monster {
@@ -32,6 +34,7 @@ export interface Monster {
   damageResistances: DamageType[];
   damageVulnerabilities: DamageType[];
   damageImmunities: DamageType[];
+  rank: "front" | "back";
 }
 
 /**
@@ -116,9 +119,53 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
       BASIC_ATTACK,
     ],
   },
+  goblinSlinger: {
+    id: "goblinSlinger",
+    name: "Goblin Slinger",
+    description: "A goblin skirmisher lobbing stones from behind its kin's shields, out of Claw Bay.",
+    abilityScores: { str: 7, dex: 15, vit: 8, int: 9, wis: 9, spi: 8 },
+    maxHp: 55,
+    evasionBonus: 5,
+    rank: "back",
+    actions: [
+      {
+        id: "sling-stone",
+        name: "Sling Stone",
+        description: "A stone flung from a leather sling.",
+        kind: "attack",
+        target: "enemy",
+        ability: "dex",
+        power: 1.1,
+        damageType: "bludgeoning",
+      },
+    ],
+  },
+  orcShaman: {
+    id: "orcShaman",
+    name: "Orc Shaman",
+    description: "A bone-adorned spellcaster chanting curses from behind Collmhor Wood's warbands.",
+    abilityScores: { str: 9, dex: 10, vit: 11, int: 10, wis: 15, spi: 13 },
+    maxHp: 110,
+    evasionBonus: 0,
+    rank: "back",
+    actions: [
+      {
+        id: "cursed-bolt",
+        name: "Cursed Bolt",
+        description: "A crackling bolt of dark energy.",
+        kind: "attack",
+        target: "enemy",
+        ability: "wis",
+        power: 1.3,
+        damageType: "necrotic",
+        cooldown: 2,
+      },
+      BASIC_ATTACK,
+    ],
+  },
 };
 
-export function createMonster(templateId: string, instanceId: string): Monster {
+export function createMonster(templateId: string, instanceId: string, rankOverride?: "front" | "back"): Monster {
   const template = MONSTER_TEMPLATES[templateId];
   if (!template) throw new Error(`Unknown monster template: "${templateId}"`);
 
@@ -137,5 +184,6 @@ export function createMonster(templateId: string, instanceId: string): Monster {
     damageResistances: template.damageResistances ?? [],
     damageVulnerabilities: template.damageVulnerabilities ?? [],
     damageImmunities: template.damageImmunities ?? [],
+    rank: rankOverride ?? template.rank ?? "front",
   };
 }

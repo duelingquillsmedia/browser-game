@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActionRequest, CombatActionDef, CombatLogEntry, CombatState } from "@eridan/engine";
-import { currentCombatant, isTargetable, type Combatant } from "@eridan/engine";
+import { currentCombatant, isTargetable, previewTargetsForShape, type Combatant } from "@eridan/engine";
 import { CombatantPortraitTile, CombatantInfoPanel, type CombatantEffect } from "../components/CombatantCard";
 import { CombatLog } from "../components/CombatLog";
 import { ActionMenu } from "../components/ActionMenu";
@@ -81,6 +81,8 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
       fled: false,
       dodging: false,
       tempEvasionBonus: 0,
+      ap: c.apMax,
+      statusEffects: [],
     })),
     log: [],
   }));
@@ -136,6 +138,15 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
   const actor = !isAnimating && visualState.status === "active" ? currentCombatant(visualState) : null;
   const party = visualState.combatants.filter((c) => c.side === "party");
   const enemies = visualState.combatants.filter((c) => c.side === "enemy");
+  const enemyFront = enemies.filter((c) => c.rank === "front");
+  const enemyBack = enemies.filter((c) => c.rank === "back");
+
+  // For a line/area attack, hovering one enemy previews every enemy it will
+  // actually hit -- computed via the same resolution the engine itself uses.
+  const areaPreviewIds =
+    pendingAction && (pendingAction.targetShape === "line" || pendingAction.targetShape === "area") && hoveredEnemyId
+      ? new Set(previewTargetsForShape(visualState, pendingAction, hoveredEnemyId))
+      : null;
 
   function handleSelectAction(action: CombatActionDef) {
     if (action.target === "self" || action.target === "none" || action.target === "enemies") {
@@ -186,30 +197,64 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
               ))}
             </div>
             <div className="arena-enemy">
-              {enemies.map((c) => (
-                <CombatantPortraitTile
-                  key={c.id}
-                  combatant={c}
-                  isCurrentTurn={actor?.id === c.id}
-                  isSelectableTarget={isSelectable(c)}
-                  isHovered={hoveredEnemyId === c.id}
-                  onHoverChange={(hovering) => setHoveredEnemyId(hovering ? c.id : null)}
-                  effect={effects[c.id]}
-                  onSelect={() => handlePickTarget(c.id)}
-                />
-              ))}
+              {enemyBack.length > 0 && (
+                <div className="arena-enemy-rank arena-enemy-rank-back">
+                  {enemyBack.map((c) => (
+                    <CombatantPortraitTile
+                      key={c.id}
+                      combatant={c}
+                      isCurrentTurn={actor?.id === c.id}
+                      isSelectableTarget={isSelectable(c)}
+                      isHovered={hoveredEnemyId === c.id}
+                      isInAreaPreview={areaPreviewIds?.has(c.id) ?? false}
+                      onHoverChange={(hovering) => setHoveredEnemyId(hovering ? c.id : null)}
+                      effect={effects[c.id]}
+                      onSelect={() => handlePickTarget(c.id)}
+                    />
+                  ))}
+                </div>
+              )}
+              <div className="arena-enemy-rank arena-enemy-rank-front">
+                {enemyFront.map((c) => (
+                  <CombatantPortraitTile
+                    key={c.id}
+                    combatant={c}
+                    isCurrentTurn={actor?.id === c.id}
+                    isSelectableTarget={isSelectable(c)}
+                    isHovered={hoveredEnemyId === c.id}
+                    isInAreaPreview={areaPreviewIds?.has(c.id) ?? false}
+                    onHoverChange={(hovering) => setHoveredEnemyId(hovering ? c.id : null)}
+                    effect={effects[c.id]}
+                    onSelect={() => handlePickTarget(c.id)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="battlefield-rail enemy-rail">
-            {enemies.map((c) => (
-              <CombatantInfoPanel
-                key={c.id}
-                combatant={c}
-                isCurrentTurn={actor?.id === c.id}
-                isHovered={hoveredEnemyId === c.id}
-              />
-            ))}
+            {enemyBack.length > 0 && (
+              <div className="enemy-rail-rank">
+                {enemyBack.map((c) => (
+                  <CombatantInfoPanel
+                    key={c.id}
+                    combatant={c}
+                    isCurrentTurn={actor?.id === c.id}
+                    isHovered={hoveredEnemyId === c.id}
+                  />
+                ))}
+              </div>
+            )}
+            <div className="enemy-rail-rank">
+              {enemyFront.map((c) => (
+                <CombatantInfoPanel
+                  key={c.id}
+                  combatant={c}
+                  isCurrentTurn={actor?.id === c.id}
+                  isHovered={hoveredEnemyId === c.id}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

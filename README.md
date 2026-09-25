@@ -379,9 +379,9 @@ placeholders, meant to be swapped for "the game's data definitions." This
 pass (`packages/engine/src/stats.ts`) replaces the SRD's d20-vs-AC combat
 roll and dice-based damage with attribute-scaled, percentage-based math
 targeting the design's MMO-style numbers (health in the hundreds, hits in
-the tens), while deliberately **not** building the separate Combat
-handoff's full AP-economy/ranks/schools/status-effect system — that
-remains a future, bigger rebuild.
+the tens). The separate Combat handoff's AP-economy/ranks/schools/status-
+effect system, deferred at the time this section was written, was built in
+a later pass — see "AP-Economy Combat Rebuild" below.
 
 Adopted directly from the design handoffs:
 - **Health** = `100 + VIT×10 + class bonus` (class bonus: Warrior 60,
@@ -424,9 +424,75 @@ to class signature abilities); `CombatActionDef.dice` → `power`; classes'
 `proficiencyBonus` survives only for the Alert feat's initiative bonus and
 the Flee saving throw — both still plain d20 rolls, untouched by this pass.
 
-Still deferred to the future Combat-handoff rebuild: Action Points as a
-resource separate from the class-specific pools above, front/back ranks,
-skill schools, and status effects (Rooted, Burning, Consecrated, etc.).
+(Action Points, front/back ranks, skill schools, and status effects were
+deferred at the time this section was written — see "AP-Economy Combat
+Rebuild" below for that follow-up pass.)
+
+## AP-Economy Combat Rebuild
+
+Builds the piece of the Combat handoff (`Fantasy Combat Game - Combat UI/
+design_handoff_aetherwyn_combat/`) deferred by the pass above: Action
+Points, multi-enemy encounters in front/back ranks, a generic status-effect
+engine, and skill schools — layered on top of the existing percentage-based
+hit/crit/evasion math rather than replacing it. The handoff itself was
+written for one hero vs. 4–6 enemies; this pass adapts it to a party-based
+game with 5 classes and (for now) a single controlled character per fight.
+
+- **Action Points**: every party member gets a 4-AP budget (`PLAYER_AP_PER_TURN`
+  in `combat.ts`) that refills at the start of each of their own turns. A
+  turn is no longer "pick exactly one action" — it's "spend AP across
+  multiple actions, then End Turn" (a new always-available action,
+  `apCost: 0`). Each action's `apCost` (new field on `CombatActionDef`,
+  defaulting to 1) sits *alongside* its existing class-resource cost from
+  the prior pass (Rage/Arcane/Divinity/Wylde), matching the handoff's own
+  "1 AP / 30 Mana"-style skill costs — nothing about the resource-pool
+  balancing from that pass was thrown out. Monsters are deliberately
+  AP-exempt and keep today's one-action-per-turn AI, since the handoff's
+  AP economy was only ever about the player's own turn.
+- **Multi-enemy ranks**: `Combatant`/`MonsterTemplate` gained a `rank`
+  ("front" | "back"). Attacks gained a `targetShape` (`single` default,
+  `line` = every living member of the target's rank, `area` = the target
+  plus its immediate rank-neighbors) resolved by `resolveTargetsForShape`
+  in `combat.ts`. All 3 existing encounters (`apps/client/src/game/lore.ts`)
+  became small mixed-rank lineups reusing two new back-rank monster
+  templates (Goblin Slinger, Orc Shaman) sized against the existing
+  goblin/direWolf/orcMarauder stat blocks — party-side ranks weren't
+  needed yet (still a single controlled character) and aren't modeled.
+- **Status effects** (`packages/engine/src/status.ts`, dependency-free from
+  `combat.ts` so it's independently unit tested): a generic stackable list
+  per combatant covering crowd-control (Rooted, Stunned — skips the
+  afflicted combatant's next N turns), damage-over-time (Burning,
+  Poisoned), heal-over-time (Bloom), and a shield (Ward, absorbing incoming
+  damage until it's exhausted). Effects tick at the start of the affected
+  combatant's own turn, not a global per-round tick; a DoT can never drop a
+  party member below 1 HP (direct attack damage still can), but has no such
+  floor against a monster — matching the design's own "can't take Kel'hos
+  below 1 HP" placeholder rule, generalized. Every class gained one action
+  built around a status effect it didn't have before (Warrior's Shield
+  Bash → Stunned, Rogue's Venomous Strike → Poisoned, Mage's reworked
+  Arcane Shield → Ward and new Chain Lightning → a `line`-shape attack,
+  Cleric's Renewal → Bloom, Druid's Entangling Roots → Rooted).
+- **Skill schools** (`packages/engine/src/schools.ts`): a small
+  `SchoolId`/`color` registry (Radiant, Nature, Protection, Arcane,
+  Martial, Shadow, Racial) matching the handoff's own school framing,
+  purely presentational — an action's `schoolId` is read only by the UI for
+  coloring, never by any engine mechanic.
+- **UI**: `CombatScreen.tsx`'s enemy arena and side rail split into
+  front/back sub-groups; hovering an enemy while a line/area attack is
+  armed previews its exact affected set (via the newly-exported
+  `previewTargetsForShape`) with a highlighted ring, not just the hovered
+  tile. `ActionMenu.tsx` gained an always-visible End Turn button and a
+  gold AP-cost badge per skill (alongside the existing resource-cost
+  badge); `CombatantCard.tsx` gained rotated-diamond AP pips and a list of
+  status-effect chips, replacing the single-tag status display.
+
+**Deliberately out of scope for this pass**: combat-usable consumable
+items (the handoff's Healing Draught/Mana Tincture item slots) — no
+inventory-during-combat system exists yet, and this pass didn't build one.
+Party-side ranks and a second, multi-character-party turn structure are
+also untouched, since `apps/client/src/game/setup.ts` still builds a
+single-character party on purpose (the Misfit Six companion system stays
+unwired, per its own long-standing "Solo play for now" comment).
 
 ## Lore
 

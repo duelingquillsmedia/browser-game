@@ -44,6 +44,8 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     unconscious: false,
     dead: false,
     usedSilverleafStep: false,
+    rank: "front",
+    statusEffects: [],
     ...overrides,
   };
 }
@@ -132,12 +134,19 @@ describe("class resource pools", () => {
     // topping the pool back off.
     const mage = { ...toCombatant(makeCharacter("mage"), "party"), resource: 100 };
     const state = startCombat([mage], [makeFoe()], sequenceRng([forD20(15), forD20(5)]));
-    // Mage casts Firebolt (misses, -4 Arcane); foe's turn auto-resolves (targets
-    // mage and also misses); back on the mage, their turn start regens mana.
-    const after = submitPlayerAction(
+    // Mage casts Firebolt (misses, -4 Arcane) but still has AP left, so the
+    // turn doesn't auto-advance; End Turn explicitly hands it to the foe.
+    const afterFirebolt = submitPlayerAction(
       state,
       { actorId: mage.id, actionId: "firebolt", targetId: "foe" },
-      sequenceRng([GUARANTEED_FAILURE, 0, GUARANTEED_FAILURE])
+      sequenceRng([GUARANTEED_FAILURE])
+    );
+    // Foe's turn auto-resolves (targets mage and also misses); back on the
+    // mage, their turn start regens mana.
+    const after = submitPlayerAction(
+      afterFirebolt,
+      { actorId: mage.id, actionId: "end-turn" },
+      sequenceRng([0, GUARANTEED_FAILURE])
     );
     // 100 - 4 spent, then + round(256 * 0.08) = 20 regen = 116.
     expect(after.combatants.find((c) => c.id === mage.id)!.resource).toBe(116);

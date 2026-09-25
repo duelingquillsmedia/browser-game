@@ -20,11 +20,24 @@ import {
   computeSaveChance,
   randomVariance,
 } from "./stats.js";
+import {
+  STATUS_EFFECT_DEFS,
+  absorbDamage,
+  applyStatusEffect,
+  hasCrowdControl,
+  tickStatusEffects,
+  type StatusEffect,
+  type StatusTickEvent,
+} from "./status.js";
 
 export type Side = "party" | "enemy";
+export type Rank = "front" | "back";
 
 /** Flat evasion-percentage bonus from using Defend, on top of the target's own Dexterity-based evasion. */
 const DEFEND_EVASION_BONUS = 25;
+
+/** Every party member's Action Points refill to this at the start of each of their own turns. Monsters never use the AP economy — they act via a single free action each turn, as before. */
+const PLAYER_AP_PER_TURN = 4;
 
 export interface Combatant {
   id: string;
@@ -70,6 +83,13 @@ export interface Combatant {
   dead: boolean;
   /** Whether an Elf's Silverleaf Step has already discounted a resource cost this fight. */
   usedSilverleafStep: boolean;
+  /** Current Action Points this turn; refills to apMax at the start of each of this combatant's own turns. Undefined for monsters — they're AP-exempt. */
+  ap?: number;
+  apMax?: number;
+  /** Front/back battlefield rank, for line/area attack shapes. Party members are always "front" this pass — no party-side rank mechanic yet. */
+  rank: Rank;
+  /** Every crowd-control/DoT/HoT/shield effect currently affecting this combatant. */
+  statusEffects: StatusEffect[];
 }
 
 export function toCombatant(source: Character | Monster, side: Side): Combatant {
@@ -106,6 +126,10 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     unconscious: side === "party" && source.hp <= 0,
     dead: false,
     usedSilverleafStep: false,
+    ap: side === "party" ? PLAYER_AP_PER_TURN : undefined,
+    apMax: side === "party" ? PLAYER_AP_PER_TURN : undefined,
+    rank: side === "party" ? "front" : (source as Monster).rank,
+    statusEffects: [],
   };
 }
 
@@ -174,11 +198,43 @@ function abilityMod(c: Combatant, key: AbilityKey): number {
   return abilityModifier(c.abilityScores[key]);
 }
 
-/** Whether `actor` can use `action` right now — respects usesPerCombat, cooldown, and resource cost. */
+/**
+ * Expands a single clicked target into the full set an attack actually
+ * hits, per its `targetShape`. "line" hits every living member of the
+ * target's rank; "area" hits the target plus its immediate rank-neighbors.
+ * "Neighbor" is adjacency by index among the currently-living members of
+ * that rank, in encounter-authoring order — there's no 2D grid, so this is
+ * a deliberate simplification that still gives stable, predictable results.
+ */
+function resolveTargetsForShape(state: CombatState, primary: Combatant, action: CombatActionDef): Combatant[] {
+  const shape = action.targetShape ?? "single";
+  if (shape === "single") return [primary];
+  const rankMates = state.combatants.filter((c) => c.side === primary.side && c.rank === primary.rank && isTargetable(c));
+  if (shape === "line") return rankMates;
+  const index = rankMates.findIndex((c) => c.id === primary.id);
+  return rankMates.filter((_, i) => Math.abs(i - index) <= 1);
+}
+
+/** Exported so the UI's hover preview can compute the exact same affected set as actual resolution, before a target is clicked. */
+export function previewTargetsForShape(state: CombatState, action: CombatActionDef, primaryTargetId: string): string[] {
+  return resolveTargetsForShape(state, findCombatant(state, primaryTargetId), action).map((c) => c.id);
+}
+
+/** AP cost from the actor's per-turn budget; omitted defaults to 1 for a party actor. Monsters never spend AP. */
+function effectiveApCost(action: CombatActionDef): number {
+  return action.apCost ?? 1;
+}
+
+function hasEnoughAp(actor: Combatant, action: CombatActionDef): boolean {
+  return actor.side !== "party" || actor.ap === undefined || actor.ap >= effectiveApCost(action);
+}
+
+/** Whether `actor` can use `action` right now — respects usesPerCombat, cooldown, resource cost, and AP. */
 export function isActionReady(actor: Combatant, action: CombatActionDef, round: number): boolean {
   if (action.usesPerCombat !== undefined && (actor.actionUses[action.id] ?? 0) <= 0) return false;
   if (action.cooldown !== undefined && round < (actor.actionCooldowns[action.id] ?? 0)) return false;
   if (action.resourceCost !== undefined && (actor.resource ?? 0) < action.resourceCost) return false;
+  if (!hasEnoughAp(actor, action)) return false;
   return true;
 }
 
@@ -246,6 +302,11 @@ export function startCombat(
     log(state, `${c.name} rolls initiative: ${c.initiative}.`, { kind: "info", actorId: c.id });
   }
 
+  // Deliberately no settleTurnStart pass for the very first actor: they enter
+  // combat already fully initialized (toCombatant sets ap/apMax and starting
+  // resource), so a synthetic "turn start" tick here would apply a resource
+  // regen before they've taken a single turn. advancePastDeadOrEnemies's own
+  // skip loop already covers a combatant who starts down or CC'd.
   return advancePastDeadOrEnemies(state, rng);
 }
 
@@ -307,22 +368,23 @@ function resolveAttack(
   if (isCrit) damage = Math.round(damage * CRIT_MULTIPLIER);
   const damageType = action.damageType ?? "bludgeoning";
   damage = applyDamageModifiers(damage, damageType, target);
+  const { damage: finalDamage, absorbed } = absorbDamage(target, damage);
 
   const hpBefore = target.hp;
-  target.hp = Math.max(0, target.hp - damage);
+  target.hp = Math.max(0, target.hp - finalDamage);
   gainResource(target, getClassResource(target.classId)?.gainOnBeingStruck);
 
   const crit = isCrit ? " Critical hit!" : "";
+  const shieldNote = absorbed > 0 ? ` (${absorbed} absorbed by its Ward)` : "";
   const fell = target.side === "enemy" && target.hp === 0 ? ` ${target.name} falls!` : "";
-  log(state, `${actor.name} hits ${target.name} with ${action.name} for ${damage} ${damageType} damage.${crit}${fell}`, {
-    kind: "hit",
-    actorId: actor.id,
-    targetId: target.id,
-    amount: damage,
-    crit: isCrit,
-  });
+  log(
+    state,
+    `${actor.name} hits ${target.name} with ${action.name} for ${finalDamage} ${damageType} damage.${shieldNote}${crit}${fell}`,
+    { kind: "hit", actorId: actor.id, targetId: target.id, amount: finalDamage, crit: isCrit }
+  );
 
-  if (target.side === "party") handlePartyDamageOutcome(state, target, damage, hpBefore);
+  if (target.side === "party") handlePartyDamageOutcome(state, target, finalDamage, hpBefore);
+  if (target.hp > 0) resolveApplyStatus(state, actor, target, action, rng);
 }
 
 /** Resolves a saving-throw effect (e.g. Fireball) against every opposing combatant, one damage roll for all. */
@@ -344,22 +406,25 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
 
     let damage = succeeded ? Math.floor(baseDamage / 2) : baseDamage;
     damage = applyDamageModifiers(damage, damageType, target);
+    const { damage: finalDamage, absorbed } = absorbDamage(target, damage);
 
     const hpBefore = target.hp;
-    target.hp = Math.max(0, target.hp - damage);
+    target.hp = Math.max(0, target.hp - finalDamage);
     gainResource(target, getClassResource(target.classId)?.gainOnBeingStruck);
+    const shieldNote = absorbed > 0 ? ` (${absorbed} absorbed by its Ward)` : "";
     log(
       state,
       `${target.name} ${succeeded ? "partially resists" : "fails to resist"} ${actor.name}'s ${action.name} ` +
-        `(${saveChance}% chance) and takes ${damage} ${damageType} damage.`,
+        `(${saveChance}% chance) and takes ${finalDamage} ${damageType} damage.${shieldNote}`,
       {
         kind: succeeded ? "save-succeed" : "save-fail",
         actorId: actor.id,
         targetId: target.id,
-        amount: damage,
+        amount: finalDamage,
       }
     );
-    if (target.side === "party") handlePartyDamageOutcome(state, target, damage, hpBefore);
+    if (target.side === "party") handlePartyDamageOutcome(state, target, finalDamage, hpBefore);
+    if (target.hp > 0) resolveApplyStatus(state, actor, target, action, rng);
   }
 }
 
@@ -380,11 +445,40 @@ function resolveHeal(state: CombatState, actor: Combatant, target: Combatant, ac
   });
 }
 
-function resolveBuff(state: CombatState, actor: Combatant, action: CombatActionDef): void {
-  actor.tempEvasionBonus += action.effectValue ?? 0;
-  log(state, `${actor.name} uses ${action.name}, gaining +${action.effectValue ?? 0} evasion until their next turn.`, {
-    kind: "buff",
+function resolveBuff(state: CombatState, actor: Combatant, action: CombatActionDef, rng: RNG): void {
+  if (action.effectValue) {
+    actor.tempEvasionBonus += action.effectValue;
+    log(state, `${actor.name} uses ${action.name}, gaining +${action.effectValue} evasion until their next turn.`, {
+      kind: "buff",
+      actorId: actor.id,
+    });
+  } else {
+    log(state, `${actor.name} uses ${action.name}.`, { kind: "buff", actorId: actor.id });
+  }
+  resolveApplyStatus(state, actor, actor, action, rng);
+}
+
+/**
+ * Applies an action's `applyStatus` spec (if any) to `target` — used by
+ * attacks/saves against an opponent and by self buffs/heals alike. Rolls
+ * `chance` independently of the action's own hit/save resolution, and
+ * computes a DoT/HoT amount or shield capacity from the actor's scaling
+ * ability score, once, at application time.
+ */
+function resolveApplyStatus(state: CombatState, actor: Combatant, target: Combatant, action: CombatActionDef, rng: RNG): void {
+  const spec = action.applyStatus;
+  if (!spec) return;
+  if (spec.chance !== undefined && rng() * 100 >= spec.chance) return;
+  const amount =
+    spec.power !== undefined
+      ? Math.max(1, Math.round(actor.abilityScores[action.ability] * spec.power * randomVariance(rng)))
+      : undefined;
+  applyStatusEffect(target, { defId: spec.defId, turnsRemaining: spec.turns, amount });
+  const def = STATUS_EFFECT_DEFS[spec.defId];
+  log(state, `${target.name} is afflicted with ${def.name}${spec.turns > 1 ? ` (${spec.turns} turns)` : ""}.`, {
+    kind: "info",
     actorId: actor.id,
+    targetId: target.id,
   });
 }
 
@@ -450,6 +544,11 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     }
     actor.resource = available - cost;
   }
+  if (actor.side === "party" && actor.ap !== undefined) {
+    const apCost = effectiveApCost(action);
+    if (actor.ap < apCost) throw new Error(`${actor.name} doesn't have enough AP to use ${action.name}.`);
+    actor.ap -= apCost;
+  }
   // The basic weapon Strike builds a Warrior's Rage on use, hit or miss —
   // a class without a matching pool is unaffected.
   if (action.id === BASIC_ATTACK.id) {
@@ -459,9 +558,11 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
   switch (action.kind) {
     case "attack": {
       if (!request.targetId) throw new Error(`${action.name} requires a target.`);
-      const target = findCombatant(state, request.targetId);
-      if (!isTargetable(target)) throw new Error(`${target.name} is not a valid target.`);
-      resolveAttack(state, actor, target, action, rng);
+      const primary = findCombatant(state, request.targetId);
+      if (!isTargetable(primary)) throw new Error(`${primary.name} is not a valid target.`);
+      for (const target of resolveTargetsForShape(state, primary, action)) {
+        resolveAttack(state, actor, target, action, rng);
+      }
       break;
     }
     case "save":
@@ -476,7 +577,7 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
       break;
     }
     case "buff":
-      resolveBuff(state, actor, action);
+      resolveBuff(state, actor, action, rng);
       break;
     case "defend":
       resolveDefend(state, actor);
@@ -484,7 +585,58 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     case "flee":
       resolveFlee(state, actor, rng);
       break;
+    case "endTurn":
+      log(state, `${actor.name} ends their turn.`, { kind: "info", actorId: actor.id });
+      break;
   }
+}
+
+function logStatusTickEvent(state: CombatState, c: Combatant, e: StatusTickEvent): void {
+  const def = STATUS_EFFECT_DEFS[e.defId];
+  if (e.kind === "dot") {
+    log(state, `${c.name} takes ${e.amount} damage from ${def.name}.`, { kind: "hit", targetId: c.id, amount: e.amount });
+  } else if (e.kind === "hot") {
+    log(state, `${c.name} recovers ${e.amount} HP from ${def.name}.`, { kind: "heal", targetId: c.id, amount: e.amount });
+  } else if (e.kind === "shield-expire") {
+    log(state, `${c.name}'s ${def.name} fades.`, { kind: "info", targetId: c.id });
+  } else if (e.kind === "cc-expire") {
+    log(state, `${c.name} is no longer ${def.name}.`, { kind: "info", targetId: c.id });
+  }
+}
+
+/**
+ * Ticks status effects and decides whether `combatant` can act this turn —
+ * called exactly once, right as their turn begins. Returns false when
+ * they're down/fled, a DoT tick just finished off a monster, or they're
+ * under an active crowd-control effect (which still ticks its own duration
+ * down while skipping the turn it causes).
+ */
+function settleTurnStart(state: CombatState, combatant: Combatant): boolean {
+  if (!isUp(combatant)) return false;
+  // Read BEFORE ticking, so a 2-turn CC skips 2 full turns, and so the
+  // skip message below can name the actual effect (Rooted, Stunned, ...).
+  const ccEffect = combatant.statusEffects.find((e) => STATUS_EFFECT_DEFS[e.defId].kind === "cc");
+  const events = tickStatusEffects(combatant);
+  // cc-expire is logged after the "cannot act" message below (not here), so
+  // a CC that expires on its own final skipped turn reads as "Rooted and
+  // cannot act this turn. X is no longer Rooted." rather than the reverse.
+  for (const e of events) {
+    if (e.kind !== "cc-expire") logStatusTickEvent(state, combatant, e);
+  }
+  if (!isUp(combatant)) return false; // a DoT tick just finished off a monster (no 1-HP floor for them)
+  if (ccEffect) {
+    const def = STATUS_EFFECT_DEFS[ccEffect.defId];
+    log(state, `${combatant.name} is ${def.name} and cannot act this turn.`, { kind: "info", actorId: combatant.id });
+    for (const e of events) {
+      if (e.kind === "cc-expire") logStatusTickEvent(state, combatant, e);
+    }
+    return false;
+  }
+  combatant.tempEvasionBonus = 0;
+  combatant.dodging = false;
+  if (combatant.apMax !== undefined) combatant.ap = combatant.apMax;
+  gainResource(combatant, computeResourceRegenPerTurn(combatant.abilityScores, combatant.classId ?? ""));
+  return true;
 }
 
 /** Moves turnIndex forward to the next combatant with a turn to take, advancing rounds as needed. */
@@ -498,12 +650,7 @@ function advanceTurn(state: CombatState): void {
       log(state, `— Round ${state.round} —`, { kind: "round" });
     }
     const next = findCombatant(state, state.turnOrder[state.turnIndex]);
-    if (isUp(next)) {
-      next.tempEvasionBonus = 0;
-      next.dodging = false;
-      gainResource(next, computeResourceRegenPerTurn(next.abilityScores, next.classId ?? ""));
-      return;
-    }
+    if (settleTurnStart(state, next)) return;
   }
 }
 
@@ -547,7 +694,7 @@ function advancePastDeadOrEnemies(state: CombatState, rng: RNG): CombatState {
   state.status = computeStatus(state);
   while (state.status === "active") {
     const actor = currentCombatant(state);
-    if (!isUp(actor)) {
+    if (!isUp(actor) || hasCrowdControl(actor)) {
       advanceTurn(state);
       state.status = computeStatus(state);
       continue;
@@ -576,9 +723,19 @@ export function submitPlayerAction(state: CombatState, request: ActionRequest, r
   if (actor.side !== "party") throw new Error("It is not the party's turn.");
   if (actor.id !== request.actorId) throw new Error(`It is ${actor.name}'s turn, not this actor's.`);
 
+  const action = actor.actions.find((a) => a.id === request.actionId);
+  if (!action) throw new Error(`${actor.name} does not know action "${request.actionId}".`);
+
   performAction(next, request, rng);
   next.status = computeStatus(next);
   if (next.status !== "active") return next;
+
+  // With an AP economy, a turn can hold multiple actions: only advance once
+  // the actor explicitly ends their turn, fails to flee, or runs out of AP.
+  const actorAfter = findCombatant(next, request.actorId);
+  const outOfAp = actorAfter.ap !== undefined && actorAfter.ap <= 0;
+  const forcesTurnEnd = action.kind === "endTurn" || action.kind === "flee" || outOfAp;
+  if (!forcesTurnEnd) return next;
 
   advanceTurn(next);
   return advancePastDeadOrEnemies(next, rng);

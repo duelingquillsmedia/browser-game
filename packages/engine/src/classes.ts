@@ -31,10 +31,9 @@ export interface CharacterClass {
  * The five playable classes carried over from the Aetherwyn character
  * creation handoff. The class flavor, ability bonuses, and resource pool
  * assignment (see resources.ts) all follow that handoff; each action's
- * `power` coefficient (see stats.ts) is homebrew, sized to feel right
- * against the new Vitality-scaled HP pools. Multi-target cleaves,
- * damage-over-time poison, and stuns described in the handoff's own skill
- * list are the future AP-based combat system's job, not this pass's.
+ * `power` coefficient (see stats.ts), AP cost, cooldown, and status-effect
+ * action are homebrew, sized to feel right against the new Vitality-scaled
+ * HP pools and the AP economy (see combat.ts/status.ts).
  */
 export const CLASSES: Record<string, CharacterClass> = {
   warrior: {
@@ -55,6 +54,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         power: 1.8,
         damageType: "slashing",
         resourceCost: 6,
+        apCost: 2,
+        schoolId: "martial",
       },
       {
         id: "second-wind",
@@ -65,6 +66,24 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "vit",
         power: 3,
         resourceCost: 8,
+        apCost: 2,
+        cooldown: 3,
+        schoolId: "martial",
+      },
+      {
+        id: "shield-bash",
+        name: "Shield Bash",
+        description: "A stunning blow with the flat of a shield, leaving the target reeling. Costs Rage.",
+        kind: "attack",
+        target: "enemy",
+        ability: "str",
+        power: 0.8,
+        damageType: "bludgeoning",
+        resourceCost: 10,
+        apCost: 2,
+        cooldown: 3,
+        schoolId: "martial",
+        applyStatus: { defId: "stunned", turns: 1 },
       },
       BASIC_ATTACK,
     ],
@@ -91,6 +110,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         power: 1.4,
         damageType: "piercing",
+        apCost: 2,
+        schoolId: "shadow",
       },
       {
         id: "dagger-throw",
@@ -101,6 +122,22 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "dex",
         power: 0.9,
         damageType: "piercing",
+        apCost: 1,
+        schoolId: "shadow",
+      },
+      {
+        id: "venomous-strike",
+        name: "Venomous Strike",
+        description: "A blade slicked with a slow-acting toxin, poisoning the target.",
+        kind: "attack",
+        target: "enemy",
+        ability: "dex",
+        power: 1.0,
+        damageType: "piercing",
+        apCost: 2,
+        cooldown: 2,
+        schoolId: "shadow",
+        applyStatus: { defId: "poisoned", turns: 2, power: 0.4 },
       },
     ],
     startingEquipmentOptions: [
@@ -127,6 +164,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         power: 1.8,
         damageType: "fire",
         resourceCost: 4,
+        apCost: 2,
+        schoolId: "arcane",
       },
       {
         id: "fireball",
@@ -141,16 +180,37 @@ export const CLASSES: Record<string, CharacterClass> = {
         power: 1.3,
         damageType: "fire",
         resourceCost: 10,
+        apCost: 3,
+        cooldown: 2,
+        schoolId: "arcane",
       },
       {
         id: "arcane-shield",
         name: "Arcane Shield",
-        description: "A shimmering barrier of force, granting +20 evasion until your next turn. Costs Arcane.",
+        description: "A shimmering barrier of force that absorbs incoming damage until your next turn. Costs Arcane.",
         kind: "buff",
         target: "self",
         ability: "int",
-        effectValue: 20,
         resourceCost: 5,
+        apCost: 1,
+        cooldown: 2,
+        schoolId: "arcane",
+        applyStatus: { defId: "ward", turns: 1, power: 1.0 },
+      },
+      {
+        id: "chain-lightning",
+        name: "Chain Lightning",
+        description: "A crackling arc of lightning that leaps across every enemy in the target's rank. Costs Arcane.",
+        kind: "attack",
+        target: "enemy",
+        targetShape: "line",
+        ability: "int",
+        power: 1.0,
+        damageType: "lightning",
+        resourceCost: 6,
+        apCost: 2,
+        cooldown: 2,
+        schoolId: "arcane",
       },
     ],
     startingEquipmentOptions: [
@@ -177,6 +237,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         power: 1.8,
         damageType: "radiant",
         resourceCost: 4,
+        apCost: 2,
+        schoolId: "radiant",
       },
       {
         id: "heal",
@@ -187,6 +249,21 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "wis",
         power: 3.2,
         resourceCost: 6,
+        apCost: 2,
+        schoolId: "radiant",
+      },
+      {
+        id: "renewal",
+        name: "Renewal",
+        description: "A blessing of steady restoration, mending your wounds turn after turn. Costs Divinity.",
+        kind: "buff",
+        target: "self",
+        ability: "wis",
+        resourceCost: 5,
+        apCost: 1,
+        cooldown: 1,
+        schoolId: "radiant",
+        applyStatus: { defId: "bloom", turns: 3, power: 0.5 },
       },
     ],
     startingEquipmentOptions: [
@@ -213,6 +290,8 @@ export const CLASSES: Record<string, CharacterClass> = {
         power: 1.6,
         damageType: "piercing",
         resourceCost: 4,
+        apCost: 2,
+        schoolId: "nature",
       },
       {
         id: "cure-wounds",
@@ -223,6 +302,23 @@ export const CLASSES: Record<string, CharacterClass> = {
         ability: "wis",
         power: 3,
         resourceCost: 6,
+        apCost: 2,
+        schoolId: "nature",
+      },
+      {
+        id: "entangling-roots",
+        name: "Entangling Roots",
+        description: "Grasping roots burst from the earth, rooting the target in place. Costs Wylde.",
+        kind: "attack",
+        target: "enemy",
+        ability: "wis",
+        power: 0.7,
+        damageType: "piercing",
+        resourceCost: 7,
+        apCost: 2,
+        cooldown: 3,
+        schoolId: "nature",
+        applyStatus: { defId: "rooted", turns: 2, chance: 85 },
       },
     ],
     startingEquipmentOptions: [
