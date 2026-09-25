@@ -1,11 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import type { ActionRequest, CombatActionDef, CombatLogEntry, CombatState } from "@eridan/engine";
-import { currentCombatant, isTargetable, previewTargetsForShape, type Combatant } from "@eridan/engine";
-import { CombatantPortraitTile, CombatantInfoPanel, type CombatantEffect } from "../components/CombatantCard";
-import { CombatLog } from "../components/CombatLog";
-import { ActionMenu } from "../components/ActionMenu";
-import { LocationBackdrop } from "../components/LocationBackdrop";
+import {
+  currentCombatant,
+  isTargetable,
+  previewTargetsForShape,
+  type ActionRequest,
+  type Combatant,
+  type CombatActionDef,
+  type CombatLogEntry,
+  type CombatState,
+} from "@eridan/engine";
+import { CombatHeader } from "../components/combat/CombatHeader";
+import { CombatStage, type CombatantEffect } from "../components/combat/CombatStage";
+import { CombatHud } from "../components/combat/CombatHud";
+import { CombatResultOverlay } from "../components/combat/CombatResultOverlay";
 import type { Encounter } from "../game/lore";
+// Combat, like Title and Character Creation, renders outside <GameShell> (a full letterboxed
+// canvas, not a screen with the left nav) -- so it imports the shared design tokens directly
+// rather than relying on GameShell having already loaded them first.
+import "../theme/aow-theme.css";
+import "./CombatScreen.css";
 
 export interface CombatScreenProps {
   combat: CombatState;
@@ -14,12 +27,6 @@ export interface CombatScreenProps {
   /** Called when the player clicks Continue after a finished fight, once they're done reviewing the battlefield and log. */
   onContinue?: () => void;
 }
-
-const RESULT_PROMPT: Record<Exclude<CombatState["status"], "active">, string> = {
-  party_won: "Victory! Review the battle, then continue whenever you're ready.",
-  enemies_won: "Defeated. Review the battle, then continue whenever you're ready.",
-  party_fled: "You escaped. Review the battle, then continue whenever you're ready.",
-};
 
 /** How long each new log entry stays on screen before the next one plays. */
 const EVENT_DELAY_MS = 900;
@@ -64,9 +71,25 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
   return effects;
 }
 
+/** `scale = min(innerWidth/1600, innerHeight/900)` -- the handoff's own "contain" letterbox formula, recomputed on resize. */
+function useCanvasScale(): number {
+  const [scale, setScale] = useState(() => Math.min(window.innerWidth / 1600, window.innerHeight / 900));
+  useEffect(() => {
+    function measure() {
+      setScale(Math.min(window.innerWidth / 1600, window.innerHeight / 900));
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  return scale;
+}
+
 export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: CombatScreenProps) {
+  const scale = useCanvasScale();
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
+  const [hoveredActionId, setHoveredActionId] = useState<string | null>(null);
   // Starts from each combatant's pre-fight HP and an empty log, rather than the fully
   // resolved state `combat` already carries on mount -- otherwise a bad initiative roll
   // (enemies acting, and possibly winning, before the player's first turn) would already
@@ -135,11 +158,12 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [combat]);
 
-  const actor = !isAnimating && visualState.status === "active" ? currentCombatant(visualState) : null;
-  const party = visualState.combatants.filter((c) => c.side === "party");
-  const enemies = visualState.combatants.filter((c) => c.side === "enemy");
-  const enemyFront = enemies.filter((c) => c.rank === "front");
-  const enemyBack = enemies.filter((c) => c.rank === "back");
+  // Whoever's turn it is right now, either side -- distinct from `canAct` below, which is
+  // only true when it's actually the human player's own turn (for gating the skill bar,
+  // End Turn, Flee, and keyboard shortcuts). Solo play only, so there's exactly one party member.
+  const currentActor = !isAnimating && visualState.status === "active" ? currentCombatant(visualState) : null;
+  const player = visualState.combatants.find((c) => c.side === "party")!;
+  const canAct = currentActor?.side === "party";
 
   // For a line/area attack, hovering one enemy previews every enemy it will
   // actually hit -- computed via the same resolution the engine itself uses.
@@ -149,16 +173,23 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
       : null;
 
   function handleSelectAction(action: CombatActionDef) {
-    if (action.target === "self" || action.target === "none" || action.target === "enemies") {
-      onSubmitAction({ actorId: actor!.id, actionId: action.id });
+    if (pendingAction?.id === action.id) {
+      setPendingAction(null);
+      return;
+    }
+    // "none" (Defend, Flee) and "enemies" (a full-team nuke) actions have nothing sensible
+    // to click as a target, so they fire immediately; "self" now arms and waits for a click
+    // on the player's own portrait, matching the handoff's exact self-cast interaction.
+    if (action.target === "none" || action.target === "enemies") {
+      onSubmitAction({ actorId: currentActor!.id, actionId: action.id });
       return;
     }
     setPendingAction(action);
   }
 
   function handlePickTarget(targetId: string) {
-    if (!pendingAction || !actor) return;
-    onSubmitAction({ actorId: actor.id, actionId: pendingAction.id, targetId });
+    if (!pendingAction || !currentActor) return;
+    onSubmitAction({ actorId: currentActor.id, actionId: pendingAction.id, targetId });
     setPendingAction(null);
   }
 
@@ -166,123 +197,73 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
     if (!pendingAction || !isTargetable(combatant)) return false;
     if (pendingAction.target === "enemy") return combatant.side === "enemy";
     if (pendingAction.target === "ally") return combatant.side === "party";
+    if (pendingAction.target === "self") return combatant.side === "party";
     return false;
   }
 
+  function handleEndTurn() {
+    if (!canAct || !currentActor) return;
+    const endTurnAction = currentActor.actions.find((a) => a.kind === "endTurn");
+    if (endTurnAction) onSubmitAction({ actorId: currentActor.id, actionId: endTurnAction.id });
+  }
+
+  function handleFlee() {
+    if (!canAct || !currentActor) return;
+    const fleeAction = currentActor.actions.find((a) => a.kind === "flee");
+    if (fleeAction) onSubmitAction({ actorId: currentActor.id, actionId: fleeAction.id });
+  }
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!canAct || !currentActor) return;
+      if (e.key >= "1" && e.key <= "9") {
+        const skillActions = currentActor.actions.filter((a) => a.kind !== "flee" && a.kind !== "endTurn");
+        const action = skillActions[Number(e.key) - 1];
+        if (action) handleSelectAction(action);
+      } else if (e.key === "Escape") {
+        setPendingAction(null);
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        handleEndTurn();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // Re-subscribes each render so the listener always closes over the latest actor/pendingAction --
+    // a cheap trade for a global keydown listener, simpler than threading everything through refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+
   return (
-    <>
-      <LocationBackdrop image={encounter.backgroundImage} />
-      <div className="screen combat-screen">
-        <h1>{encounter.name}</h1>
-        <p className="subtitle">{encounter.location}</p>
-
-        <div className="battlefield">
-          <div className="battlefield-rail party-rail">
-            {party.map((c) => (
-              <CombatantInfoPanel key={c.id} combatant={c} isCurrentTurn={actor?.id === c.id} />
-            ))}
-          </div>
-
-          <div className="battlefield-arena">
-            <div className="arena-party">
-              {party.map((c) => (
-                <CombatantPortraitTile
-                  key={c.id}
-                  combatant={c}
-                  isCurrentTurn={actor?.id === c.id}
-                  isSelectableTarget={isSelectable(c)}
-                  effect={effects[c.id]}
-                  onSelect={() => handlePickTarget(c.id)}
-                />
-              ))}
-            </div>
-            <div className="arena-enemy">
-              {enemyBack.length > 0 && (
-                <div className="arena-enemy-rank arena-enemy-rank-back">
-                  {enemyBack.map((c) => (
-                    <CombatantPortraitTile
-                      key={c.id}
-                      combatant={c}
-                      isCurrentTurn={actor?.id === c.id}
-                      isSelectableTarget={isSelectable(c)}
-                      isHovered={hoveredEnemyId === c.id}
-                      isInAreaPreview={areaPreviewIds?.has(c.id) ?? false}
-                      onHoverChange={(hovering) => setHoveredEnemyId(hovering ? c.id : null)}
-                      effect={effects[c.id]}
-                      onSelect={() => handlePickTarget(c.id)}
-                    />
-                  ))}
-                </div>
-              )}
-              <div className="arena-enemy-rank arena-enemy-rank-front">
-                {enemyFront.map((c) => (
-                  <CombatantPortraitTile
-                    key={c.id}
-                    combatant={c}
-                    isCurrentTurn={actor?.id === c.id}
-                    isSelectableTarget={isSelectable(c)}
-                    isHovered={hoveredEnemyId === c.id}
-                    isInAreaPreview={areaPreviewIds?.has(c.id) ?? false}
-                    onHoverChange={(hovering) => setHoveredEnemyId(hovering ? c.id : null)}
-                    effect={effects[c.id]}
-                    onSelect={() => handlePickTarget(c.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="battlefield-rail enemy-rail">
-            {enemyBack.length > 0 && (
-              <div className="enemy-rail-rank">
-                {enemyBack.map((c) => (
-                  <CombatantInfoPanel
-                    key={c.id}
-                    combatant={c}
-                    isCurrentTurn={actor?.id === c.id}
-                    isHovered={hoveredEnemyId === c.id}
-                  />
-                ))}
-              </div>
-            )}
-            <div className="enemy-rail-rank">
-              {enemyFront.map((c) => (
-                <CombatantInfoPanel
-                  key={c.id}
-                  combatant={c}
-                  isCurrentTurn={actor?.id === c.id}
-                  isHovered={hoveredEnemyId === c.id}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <CombatLog entries={visualState.log} />
-
-        {isAnimating ? (
-          <div className="ability-bar ability-bar-targeting">
-            <p className="action-prompt">Resolving…</p>
-          </div>
-        ) : visualState.status !== "active" ? (
-          <div className="ability-bar ability-bar-targeting">
-            <p className="action-prompt">{RESULT_PROMPT[visualState.status]}</p>
-            <button type="button" className="primary" onClick={onContinue}>
-              Continue
-            </button>
-          </div>
-        ) : (
-          actor && (
-            <ActionMenu
-              actor={actor}
-              round={visualState.round}
-              pendingActionId={pendingAction?.id ?? null}
-              onSelectAction={handleSelectAction}
-              onCancel={() => setPendingAction(null)}
-            />
-          )
+    <div className="cbt-letterbox">
+      <div className="cbt-artboard" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+        <CombatHeader state={visualState} encounter={encounter} player={player} canAct={!!canAct} onFlee={handleFlee} />
+        <CombatStage
+          state={visualState}
+          encounter={encounter}
+          currentActor={currentActor}
+          pendingAction={pendingAction}
+          hoveredEnemyId={hoveredEnemyId}
+          onHoverEnemy={setHoveredEnemyId}
+          areaPreviewIds={areaPreviewIds}
+          effects={effects}
+          isSelectable={isSelectable}
+          onPickTarget={handlePickTarget}
+        />
+        <CombatHud
+          state={visualState}
+          player={player}
+          hoveredActionId={hoveredActionId}
+          pendingAction={pendingAction}
+          canAct={!!canAct}
+          onHoverAction={setHoveredActionId}
+          onSelectAction={handleSelectAction}
+          onEndTurn={handleEndTurn}
+        />
+        {visualState.status !== "active" && !isAnimating && (
+          <CombatResultOverlay status={visualState.status} round={visualState.round} onContinue={() => onContinue?.()} />
         )}
       </div>
-    </>
+    </div>
   );
 }

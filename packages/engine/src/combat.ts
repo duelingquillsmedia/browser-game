@@ -53,6 +53,8 @@ export interface Combatant {
   templateId?: string;
   /** A party member's Origin feat (for feat-specific mechanics like Alert or Savage Attacker); monsters have none. */
   originFeatId?: OriginFeatId;
+  /** A party member's character level (for UI display, e.g. the Combat screen's "LV n"); monsters have no level concept. */
+  level?: number;
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
@@ -104,6 +106,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     classId: "classId" in source ? source.classId : undefined,
     templateId: "templateId" in source ? source.templateId : undefined,
     originFeatId: "originFeatId" in source ? source.originFeatId : undefined,
+    level: "classId" in source ? source.level : undefined,
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,
     hp: source.hp,
@@ -227,6 +230,82 @@ function resolveTargetsForShape(state: CombatState, primary: Combatant, action: 
 /** Exported so the UI's hover preview can compute the exact same affected set as actual resolution, before a target is clicked. */
 export function previewTargetsForShape(state: CombatState, action: CombatActionDef, primaryTargetId: string): string[] {
   return resolveTargetsForShape(state, findCombatant(state, primaryTargetId), action).map((c) => c.id);
+}
+
+export interface AttackPreview {
+  hitChance: number;
+  critChance: number;
+  minDamage: number;
+  maxDamage: number;
+  /** The minimum possible roll alone would drop the target to 0 HP. */
+  isLethal: boolean;
+  /** The maximum possible roll (no crit) would drop the target to 0 HP. */
+  canKill: boolean;
+  /** Only a critical hit on the maximum roll would drop the target to 0 HP. */
+  killsOnCrit: boolean;
+  /** How many combatants this action's target shape would actually hit. */
+  hitsCount: number;
+  statusName?: string;
+  statusTurns?: number;
+}
+
+/**
+ * A non-mutating preview of what casting `action` at `targetId` would do
+ * right now, for the UI's hover tooltip. Mirrors `resolveAttack`'s own
+ * formulas (same hit/crit math, same weapon-strike-vs-ability-scaled damage
+ * branch, same damage-modifier application) without rolling any dice or
+ * touching state -- the same relationship `previewTargetsForShape` already
+ * has to its own resolution counterpart.
+ */
+export function previewAttack(
+  state: CombatState,
+  actorId: string,
+  action: CombatActionDef,
+  targetId: string
+): AttackPreview {
+  const actor = findCombatant(state, actorId);
+  const target = findCombatant(state, targetId);
+
+  const evasion = computeEvasion(target.abilityScores.dex) + target.evasionBonus + target.tempEvasionBonus;
+  const hitChance = target.unconscious
+    ? 100
+    : Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion));
+  const critChance = target.unconscious ? 100 : computeCritChance(actor.abilityScores.dex);
+
+  const isWeaponStrike =
+    action.id === BASIC_ATTACK.id && actor.weaponDamageMin !== undefined && actor.weaponDamageMax !== undefined;
+
+  let rawMin: number;
+  let rawMax: number;
+  if (isWeaponStrike) {
+    const attackPower = computeAttackPower(actor.abilityScores[action.ability]);
+    const bonus = computeAttackPowerBonusDamage(attackPower);
+    rawMin = actor.weaponDamageMin! + bonus;
+    rawMax = actor.weaponDamageMax! + bonus;
+  } else {
+    // Same 0.85-1.15 band as randomVariance's own range (stats.ts), expressed as fixed bounds instead of a roll.
+    const base = actor.abilityScores[action.ability] * (action.power ?? 1);
+    rawMin = Math.max(0, Math.round(base * 0.85));
+    rawMax = Math.max(0, Math.round(base * 1.15));
+  }
+
+  const damageType = action.damageType ?? "bludgeoning";
+  const minDamage = applyDamageModifiers(rawMin, damageType, target);
+  const maxDamage = applyDamageModifiers(rawMax, damageType, target);
+  const hitsCount = resolveTargetsForShape(state, target, action).length;
+
+  return {
+    hitChance,
+    critChance,
+    minDamage,
+    maxDamage,
+    isLethal: minDamage >= target.hp,
+    canKill: maxDamage >= target.hp,
+    killsOnCrit: maxDamage < target.hp && Math.round(maxDamage * CRIT_MULTIPLIER) >= target.hp,
+    hitsCount,
+    statusName: action.applyStatus ? STATUS_EFFECT_DEFS[action.applyStatus.defId].name : undefined,
+    statusTurns: action.applyStatus?.turns,
+  };
 }
 
 /** AP cost from the actor's per-turn budget; omitted defaults to 1 for a party actor. Monsters never spend AP. */
@@ -532,6 +611,21 @@ function resolveFlee(state: CombatState, actor: Combatant, rng: RNG): void {
   } else {
     log(state, `${actor.name} tries to flee but can't get away!`, { kind: "flee-fail", actorId: actor.id });
   }
+}
+
+/**
+ * Analytic (not simulated) percent chance `resolveFlee` would succeed for
+ * this actor right now: the same d20 + Dexterity modifier (+ proficiency
+ * bonus if proficient, + Advantage if `dodging`) vs. DC 10 it actually
+ * rolls, expressed as odds instead of rolled.
+ */
+export function fleeChancePercent(actor: Combatant): number {
+  const proficient = actor.savingThrowProficiencies.includes("dex");
+  const mod = abilityMod(actor, "dex") + (proficient ? (actor.proficiencyBonus ?? 0) : 0);
+  const needed = Math.max(1, Math.min(21, FLEE_DC - mod));
+  const singleRollChance = (21 - needed) / 20;
+  const chance = actor.dodging ? 1 - (1 - singleRollChance) ** 2 : singleRollChance;
+  return Math.round(Math.max(0, Math.min(100, chance * 100)));
 }
 
 export interface ActionRequest {

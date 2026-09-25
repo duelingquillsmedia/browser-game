@@ -39,6 +39,9 @@
   --aow-violet: #b287e6;
   --aow-frost: #8fc6e6;
 
+  /** A generic enemy's turn-order chip / nameplate accent, distinct from the party member's ember. */
+  --aow-enemy-tag: #c9887a;
+
   --aow-rarity-common: #a8a29c;
   --aow-rarity-uncommon: #86c46f;
   --aow-rarity-rare: #6aa7e6;

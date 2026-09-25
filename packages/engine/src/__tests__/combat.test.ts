@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { currentCombatant, startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
+import {
+  currentCombatant,
+  fleeChancePercent,
+  previewAttack,
+  startCombat,
+  submitPlayerAction,
+  toCombatant,
+  type Combatant,
+} from "../combat.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "../actions.js";
 import { createCharacter } from "../character.js";
 import {
@@ -725,5 +733,106 @@ describe("multi-enemy ranks", () => {
     expect(after.combatants.find((x) => x.id === "b")!.hp).toBeLessThan(b.hp);
     expect(after.combatants.find((x) => x.id === "c")!.hp).toBeLessThan(c.hp);
     expect(after.combatants.find((x) => x.id === "d")!.hp).toBe(d.hp);
+  });
+});
+
+describe("previewAttack", () => {
+  it("computes hit/crit chance and a damage range matching resolveAttack's own formulas", () => {
+    // Hero STR 16 (mod +3) x BASIC_ATTACK power 1 -> ability-scaled range round(16*0.85)-round(16*1.15) = 14-18.
+    // Foe DEX 10 -> evasion 15, so hit chance is 90-15=75; hero DEX 14 -> crit chance 5+14*1.2=21.8.
+    const hero = makeHero();
+    const foe = makeFoe({ maxHp: 7, hp: 7 });
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
+    expect(preview.hitChance).toBe(75);
+    expect(preview.critChance).toBeCloseTo(21.8);
+    expect(preview.minDamage).toBe(14);
+    expect(preview.maxDamage).toBe(18);
+    expect(preview.hitsCount).toBe(1);
+    expect(preview.statusName).toBeUndefined();
+  });
+
+  it("flags isLethal when even the minimum roll would drop the target to 0", () => {
+    const hero = makeHero();
+    const foe = makeFoe({ maxHp: 7, hp: 7 }); // minDamage 14 >= 7
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
+    expect(preview.isLethal).toBe(true);
+    expect(preview.canKill).toBe(true);
+    expect(preview.killsOnCrit).toBe(false);
+  });
+
+  it("flags canKill (not killsOnCrit) when only the maximum non-crit roll would drop the target to 0", () => {
+    const hero = makeHero();
+    const foe = makeFoe({ maxHp: 16, hp: 16 }); // minDamage 14 < 16 <= maxDamage 18
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
+    expect(preview.isLethal).toBe(false);
+    expect(preview.canKill).toBe(true);
+    expect(preview.killsOnCrit).toBe(false);
+  });
+
+  it("flags killsOnCrit when only a critical hit on the maximum roll would drop the target to 0", () => {
+    const hero = makeHero();
+    const foe = makeFoe({ maxHp: 20, hp: 20 }); // maxDamage 18 < 20 <= round(18*1.5)=27
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
+    expect(preview.isLethal).toBe(false);
+    expect(preview.canKill).toBe(false);
+    expect(preview.killsOnCrit).toBe(true);
+  });
+
+  it("reports the exact hitsCount a line-shape action would actually hit", () => {
+    const front1 = makeFoe({ id: "front1", name: "Front1", rank: "front" });
+    const front2 = makeFoe({ id: "front2", name: "Front2", rank: "front" });
+    const back = makeFoe({ id: "back", name: "Back", rank: "back" });
+    const lineAction: CombatActionDef = { ...BASIC_ATTACK, id: "line-attack", targetShape: "line" };
+    const hero = makeHero({ actions: [lineAction, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const state = startCombat(
+      [hero],
+      [front1, front2, back],
+      sequenceRng([forD20(20), forD20(1), forD20(1), forD20(1)])
+    );
+    const preview = previewAttack(state, "hero", lineAction, "front1");
+    expect(preview.hitsCount).toBe(2);
+  });
+
+  it("gives a guaranteed 100% hit and crit chance against an Unconscious target", () => {
+    const hero = makeHero();
+    const foe = makeFoe({ maxHp: 7, hp: 7, unconscious: true });
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
+    expect(preview.hitChance).toBe(100);
+    expect(preview.critChance).toBe(100);
+  });
+
+  it("surfaces the status effect and duration an action would apply", () => {
+    const hero = makeHero();
+    const foe = makeFoe({ maxHp: 7, hp: 7 });
+    const rootAction: CombatActionDef = { ...BASIC_ATTACK, id: "root", applyStatus: { defId: "rooted", turns: 2 } };
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", rootAction, "foe");
+    expect(preview.statusName).toBe("Rooted");
+    expect(preview.statusTurns).toBe(2);
+  });
+});
+
+describe("fleeChancePercent", () => {
+  it("matches the plain d20-vs-DC10 odds for a non-proficient, non-dodging actor", () => {
+    // DEX 14 -> mod +2, needed = 10-2 = 8, chance = (21-8)/20 = 65%.
+    const hero = makeHero();
+    expect(fleeChancePercent(hero)).toBe(65);
+  });
+
+  it("adds the proficiency bonus when the actor is proficient in Dexterity saves", () => {
+    // mod = 2 (DEX) + 2 (proficiency) = 4, needed = 6, chance = (21-6)/20 = 75%.
+    const hero = makeHero({ savingThrowProficiencies: ["dex"] });
+    expect(fleeChancePercent(hero)).toBe(75);
+  });
+
+  it("raises the odds with Advantage while dodging", () => {
+    // Single-roll chance is 65% (needed 8); with advantage, 1-(1-0.65)^2 = 87.75% -> rounds to 88%.
+    const hero = makeHero({ dodging: true });
+    expect(fleeChancePercent(hero)).toBe(88);
   });
 });

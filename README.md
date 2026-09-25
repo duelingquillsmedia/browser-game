@@ -628,6 +628,77 @@ here (the prototype defaults it off, since it exists for design review).
 Discovering the map hex by hex fits a shipped game better than seeing the
 whole continent from the first login.
 
+## Combat UI Rebuild
+
+Rebuilds the Combat screen's entire visual layer to match the **Combat UI
+handoff** (`Fantasy Combat Game - Combat UI/design_handoff_aetherwyn_combat/`)
+pixel-for-pixel, on top of the AP-economy mechanics already built earlier
+this project (Action Points, multi-enemy ranks, status effects, skill
+schools — all untouched by this pass). The handoff's own README turned out
+to be unusually precise (exact grid formulas, exact pixel values for every
+element), and a full verbatim read of its prototype source confirmed every
+exact color, gradient, keyframe, and layout formula used below — and a
+genuinely convenient fact: **the Combat handoff reuses the exact same
+design tokens already ported into `theme/aow-theme.css`** for the World
+Map/Skills/Character/Inventory pass, so Combat is now finally on the same
+design system as the rest of the app instead of the older `App.css`
+palette it used before.
+
+- **Fixed 1600×900 canvas**, scaled to fit the window (`scale =
+  min(innerWidth/1600, innerHeight/900)`) via a CSS `transform`, centered
+  and letterboxed on `#050407` — verified by resizing the window and
+  confirming both the scale and the enemy-layout algorithm below respond.
+- **Turn-order strip** in the header, built from `state.turnOrder` — which
+  turned out to be a better fit than the prototype's own logic: our
+  initiative order is rolled once in `startCombat` and stays fixed for the
+  whole fight, so "next round's order" is exact, not approximated, and
+  there's no need to special-case the player always going first the way
+  the prototype does.
+- **Enemy layout** (`computeStageLayout` in `apps/client/src/game/combatDisplay.ts`)
+  ports the handoff's exact "Columns vs. Rows, whichever yields the larger
+  unit" measurement formula verbatim, driven by a `ResizeObserver` on the
+  stage element exactly like the prototype's own `layout()`.
+  Enlarging whichever art is on screen (real sprite or the existing
+  initial-letter/portrait-frame fallback — only the Elf Mage and Goblin
+  have real sprite sheets today) is a direct, intended consequence of
+  adopting these sizing formulas.
+- **Targeting preview tooltip** (SKILL → TARGET, damage range, HIT%/CRIT%,
+  LETHAL/CAN KILL/KILLS ON CRIT/HITS n ENEMIES/status-applied notes) is
+  powered by two new pure, non-mutating exports added to
+  `packages/engine/src/combat.ts`: `previewAttack` (mirrors
+  `resolveAttack`'s own hit/crit/damage-range math without rolling dice)
+  and `fleeChancePercent` (the analytic odds behind the header's actual d20
+  flee roll, not a re-invented formula). Both are covered by new tests in
+  `combat.test.ts`.
+- **Backgrounds**: `Encounter.backgroundImage` — already wired per
+  encounter (Tameless Shore / Tiuv Forest / Collmhor Wood jpgs) — is
+  exactly the same data as before; it just moved from a page-wide
+  `<LocationBackdrop>` into the new stage's full-bleed arena art slot with
+  the handoff's 4-stop scrim gradient. Setting a battle scene per encounter
+  still works exactly as it always has.
+- **Keyboard shortcuts** (1-9 arm/cancel a skill, Esc cancels, Space/Enter
+  ends turn) are new, added to match the handoff's own interaction spec.
+
+**Deliberate deviations**, all called out in code comments where they
+land: Faith diamonds are omitted (Faith was a Cleric-only second resource
+specific to the prototype's single showcased hero; every one of our four
+classes already has exactly one resource pool, shown as the Mana-equivalent
+bar); the two item slots (Heal/Mana potions) render per spec but disabled
+with a "Coming soon" tooltip, since no in-combat consumable-item mechanic
+exists yet — the same treatment already used for Talents nav and 13 of the
+World Map's POIs; the result overlay's button stays "Continue" rather than
+"Restart Encounter," since this game moves on to a rewards screen instead
+of restarting the fight; and the "EXECUTE ×2" preview note is omitted, since
+no execute-threshold mechanic exists in this engine.
+
+`ActionMenu.tsx`, `CombatantCard.tsx`, `CombatLog.tsx`, `LocationBackdrop.tsx`,
+`HealthBar.tsx`, and `ResourceBar.tsx` are deleted — fully superseded by the
+new `components/combat/` (`CombatHeader`, `CombatStage`, `CombatHud`,
+`CombatResultOverlay`) and the plain gradient bars built directly into them,
+which needed sizes, shield/ghost overlays, and label formats too different
+between contexts (a 6px stage nameplate bar vs. a 9px HUD bar vs. a 5px
+enemy nameplate bar) for one shared component to serve cleanly.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
