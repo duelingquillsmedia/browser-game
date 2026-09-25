@@ -429,6 +429,75 @@ describe("toCombatant", () => {
   });
 });
 
+describe("weapon damage", () => {
+  function makeArmedWarrior() {
+    return createCharacter({
+      id: "pc-armed",
+      name: "Bram",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+    });
+  }
+
+  it("rolls Strike within the weapon's own min-max range, plus a flat Attack Power bonus", () => {
+    const warrior = toCombatant(makeArmedWarrior(), "party");
+    // Hunter's Longsword: 14-20 damage.
+    expect(warrior.weaponDamageMin).toBe(14);
+    expect(warrior.weaponDamageMax).toBe(20);
+
+    const foe = makeFoe({ maxHp: 1000, hp: 1000 });
+    let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    // str 16 -> Attack Power 32 -> +round(32*0.15) = +5 flat bonus.
+    // Force the weapon roll to its minimum (14 of 14-20).
+    state = submitPlayerAction(
+      state,
+      { actorId: warrior.id, actionId: "strike", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
+    );
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19); // 14 + 5
+
+    // Force the weapon roll to its maximum (20).
+    state = submitPlayerAction(
+      state,
+      { actorId: warrior.id, actionId: "strike", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_FAILURE])
+    );
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19 - 25); // 20 + 5
+  });
+
+  it("rerolls the weapon's damage twice and keeps the higher result for Savage Attacker, on a non-crit hit", () => {
+    const warrior = toCombatant({ ...makeArmedWarrior(), originFeatId: "savageAttacker" }, "party");
+    const foe = makeFoe({ maxHp: 1000, hp: 1000 });
+    let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    // First roll lands on the minimum (14), second on the maximum (20) -> keeps 20, +5 bonus.
+    state = submitPlayerAction(
+      state,
+      { actorId: warrior.id, actionId: "strike", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS, GUARANTEED_FAILURE])
+    );
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 25); // 20 + 5
+  });
+
+  it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {
+    // Rage starts empty; top it up so Slash (6 Rage) can actually be cast.
+    const warrior = toCombatant({ ...makeArmedWarrior(), resource: 10 }, "party");
+    const foe = makeFoe({ maxHp: 1000, hp: 1000 });
+    let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    // Slash: str 16 * power 1.8 * exact variance 1.0 = round(28.8) = 29 -- no weapon range or Attack Power involved.
+    state = submitPlayerAction(
+      state,
+      { actorId: warrior.id, actionId: "slash", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
+    );
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 29);
+  });
+});
+
 describe("multi-member party", () => {
   it("skips straight past a downed party member who wins initiative, instead of stalling on their turn", () => {
     const up = makeHero({ id: "up", name: "Up" });

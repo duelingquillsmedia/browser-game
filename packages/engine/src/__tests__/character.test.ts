@@ -94,8 +94,9 @@ describe("createCharacter", () => {
     expect(character.equipment.accessory).toBeUndefined();
     expect(ownsItem(character, "luckyCharm")).toBe(true);
 
-    // The equipped weapon contributes a flat damage bonus to the shared Strike action.
-    expect(character.weaponDamageBonus).toBe(8);
+    // The equipped weapon contributes its own min-max damage range to the shared Strike action.
+    expect(character.weaponDamageMin).toBe(14);
+    expect(character.weaponDamageMax).toBe(20);
   });
 
   it("equips the chosen startingEquipmentOptions package instead of the default", () => {
@@ -228,13 +229,15 @@ describe("equipItem / unequipItem", () => {
     // Rogue starts with a Hunter's Shortbow (dex-based) equipped.
     const equippedStrike = rogue.actions.find((a) => a.id === "strike");
     expect(equippedStrike?.ability).toBe("dex");
-    expect(rogue.weaponDamageBonus).toBe(5);
+    expect(rogue.weaponDamageMin).toBe(7);
+    expect(rogue.weaponDamageMax).toBe(10);
 
     // Unequipping the weapon falls back to the default fists-and-steel Strike.
     const disarmed = unequipItem(rogue, "weapon");
     const disarmedStrike = disarmed.actions.find((a) => a.id === "strike");
     expect(disarmedStrike?.ability).toBe("str");
-    expect(disarmed.weaponDamageBonus).toBe(0);
+    expect(disarmed.weaponDamageMin).toBeUndefined();
+    expect(disarmed.weaponDamageMax).toBeUndefined();
   });
 
   it("throws when equipping an item the character doesn't own", () => {

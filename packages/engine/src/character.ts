@@ -28,8 +28,9 @@ export interface Character {
   hp: number;
   /** Flat evasion-percentage bonus from equipped armor/accessories (see stats.ts's computeEvasion for the Dexterity-based base). */
   gearEvasionBonus: number;
-  /** Flat damage bonus from the equipped weapon, added on top of the basic Strike's ability-scaled damage. */
-  weaponDamageBonus: number;
+  /** The equipped weapon's own min-max damage range for Strike (see items.ts); undefined when unarmed, which falls back to Strike's ability-scaled default. */
+  weaponDamageMin?: number;
+  weaponDamageMax?: number;
   /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; no longer feeds attack rolls (see stats.ts). */
   proficiencyBonus: number;
   actions: CombatActionDef[];
@@ -117,7 +118,8 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
           damageType: weapon.damageType ?? BASIC_ATTACK.damageType,
         }
       : BASIC_ATTACK;
-  const weaponDamageBonus = weapon?.damageBonus ?? 0;
+  const weaponDamageMin = weapon?.damageMin;
+  const weaponDamageMax = weapon?.damageMax;
 
   const withStrike = cls.actions.some((a) => a.id === BASIC_ATTACK.id)
     ? cls.actions.map((a) => (a.id === BASIC_ATTACK.id ? strike : a))
@@ -138,7 +140,8 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     ...character,
     gearEvasionBonus,
     actions,
-    weaponDamageBonus,
+    weaponDamageMin,
+    weaponDamageMax,
     damageResistances: race.damageResistances ?? [],
   };
 }
@@ -272,7 +275,6 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     maxHp,
     hp: maxHp,
     gearEvasionBonus: 0,
-    weaponDamageBonus: 0,
     proficiencyBonus: 2 + Math.floor((level - 1) / 4),
     actions: [],
     actionUses: {},

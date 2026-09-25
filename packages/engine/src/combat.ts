@@ -12,6 +12,8 @@ import {
   CRIT_MULTIPLIER,
   MAX_HIT_CHANCE,
   MIN_HIT_CHANCE,
+  computeAttackPower,
+  computeAttackPowerBonusDamage,
   computeCritChance,
   computeEvasion,
   computeResourceMax,
@@ -56,8 +58,9 @@ export interface Combatant {
   hp: number;
   /** Flat evasion-percentage bonus from gear (party) or natural armor (monsters), on top of the Dexterity-based base (see stats.ts). */
   evasionBonus: number;
-  /** Flat damage bonus from an equipped weapon, added to the basic Strike only; monsters have none. */
-  weaponDamageBonus?: number;
+  /** The equipped weapon's own min-max damage range, rolled for the basic Strike only; monsters and an unarmed party member have none, falling back to Strike's ability-scaled default. */
+  weaponDamageMin?: number;
+  weaponDamageMax?: number;
   /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; monsters have none. */
   proficiencyBonus?: number;
   actions: CombatActionDef[];
@@ -105,7 +108,8 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     maxHp: source.maxHp,
     hp: source.hp,
     evasionBonus: "gearEvasionBonus" in source ? source.gearEvasionBonus : source.evasionBonus,
-    weaponDamageBonus: "weaponDamageBonus" in source ? source.weaponDamageBonus : undefined,
+    weaponDamageMin: "weaponDamageMin" in source ? source.weaponDamageMin : undefined,
+    weaponDamageMax: "weaponDamageMax" in source ? source.weaponDamageMax : undefined,
     proficiencyBonus: "classId" in source ? source.proficiencyBonus : undefined,
     actions: source.actions,
     actionUses: { ...source.actionUses },
@@ -196,6 +200,11 @@ export function isTargetable(c: Combatant): boolean {
 
 function abilityMod(c: Combatant, key: AbilityKey): number {
   return abilityModifier(c.abilityScores[key]);
+}
+
+/** A uniform integer roll in [min, max], inclusive -- a weapon's own advertised damage range. */
+function rollUniform(min: number, max: number, rng: RNG): number {
+  return min + Math.floor(rng() * (max - min + 1));
 }
 
 /**
@@ -358,13 +367,33 @@ function resolveAttack(
     isCrit = rng() * 100 < critChance;
   }
 
-  let variance = randomVariance(rng);
-  if (!isCrit && actor.originFeatId === "savageAttacker") {
-    // Savage Attacker: roll damage variance twice and keep the higher result, once per turn.
-    variance = Math.max(variance, randomVariance(rng));
+  // The basic Strike, with a weapon equipped, rolls that weapon's own advertised
+  // min-max damage range directly (MMO-tooltip style) plus a flat Attack Power
+  // bonus from the scaling ability score -- everything else (class abilities
+  // like Slash/Firebolt, or an unarmed Strike) keeps scaling off the ability
+  // score directly via its own `power` coefficient and the variance band.
+  const isWeaponStrike =
+    action.id === BASIC_ATTACK.id && actor.weaponDamageMin !== undefined && actor.weaponDamageMax !== undefined;
+
+  let damage: number;
+  if (isWeaponStrike) {
+    const min = actor.weaponDamageMin!;
+    const max = actor.weaponDamageMax!;
+    let roll = rollUniform(min, max, rng);
+    if (!isCrit && actor.originFeatId === "savageAttacker") {
+      // Savage Attacker: roll the weapon's damage twice and keep the higher result, once per turn.
+      roll = Math.max(roll, rollUniform(min, max, rng));
+    }
+    const attackPower = computeAttackPower(actor.abilityScores[action.ability]);
+    damage = roll + computeAttackPowerBonusDamage(attackPower);
+  } else {
+    let variance = randomVariance(rng);
+    if (!isCrit && actor.originFeatId === "savageAttacker") {
+      // Savage Attacker: roll damage variance twice and keep the higher result, once per turn.
+      variance = Math.max(variance, randomVariance(rng));
+    }
+    damage = Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance));
   }
-  const weaponBonus = action.id === BASIC_ATTACK.id ? (actor.weaponDamageBonus ?? 0) : 0;
-  let damage = Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance)) + weaponBonus;
   if (isCrit) damage = Math.round(damage * CRIT_MULTIPLIER);
   const damageType = action.damageType ?? "bludgeoning";
   damage = applyDamageModifiers(damage, damageType, target);

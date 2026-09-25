@@ -528,6 +528,48 @@ through the existing `onUpdateCharacter` → `updateCharacterInRoster` flow
 (`apps/client/src/App.tsx`) — no Supabase migration needed, since the whole
 `Character` already rides in one `data jsonb` column.
 
+## MMO-Style Weapon Itemization
+
+Replaces the last SRD-flavored item stat still in the engine: a weapon's
+damage no longer comes from a flat bonus tacked onto the wielder's
+ability-scaled Strike. Instead every weapon carries its own intrinsic
+min-max damage range and type, WoW-tooltip style — `packages/engine/src/items.ts`'s
+`ItemTemplate.damageMin`/`damageMax` replace the old flat `damageBonus`.
+All starter weapons were renamed to a shared "Hunter's ___" line (Hunter's
+Longsword, Shortbow, Staff, Mace, Knuckles, Dagger, Shortsword) marking them
+as the plain baseline tier — future items are expected to add or modify
+abilities on top of this, per design direction, rather than reworking this
+baseline further.
+
+- **Strike now rolls the equipped weapon's own range directly** (e.g. a
+  Hunter's Shortbow's 7-10), uniformly, instead of `ability score × power ×
+  variance`. A new **Attack Power** stat (`computeAttackPower` in
+  `stats.ts`, `= ability score × 2`, shown on the Character sheet) converts
+  the weapon's scaling ability into a flat bonus added on top of that roll
+  (`computeAttackPowerBonusDamage`, `round(Attack Power × 0.15)`) — closer
+  to WoW's real Attack Power model than a pure flat item bonus, without
+  needing a weapon-speed/DPS system this turn-based engine has no use for.
+  An unarmed Strike (no weapon equipped) falls back to the old ability-scaled
+  formula unchanged, since there's no item range to roll.
+- **Class abilities are untouched.** Slash, Firebolt, Smite, and every other
+  signature ability still scale purely off `ability score × their own power
+  coefficient × variance`, exactly as the earlier Attribute-Driven Stats
+  pass left them — only the humble basic-attack Strike changed. This mirrors
+  a real MMO's split between weapon-driven auto-attacks and stat-scaled
+  special abilities/spells.
+- **`Character`/`Combatant` gained `weaponDamageMin`/`weaponDamageMax`**
+  (optional, undefined when unarmed), replacing the old single
+  `weaponDamageBonus` field. Savage Attacker's "reroll and keep the higher
+  result" now rerolls the weapon's own range instead of the old variance
+  roll, for the same one-per-turn effect.
+- Item tooltips (`InventoryScreen.tsx`, `CharacterScreen.tsx`) show the
+  weapon's own advertised range verbatim (e.g. "14-20 Damage · Slashing
+  (Strength)") — deliberately *not* including the Attack Power bonus, so
+  the item card always reads the same regardless of who's looking at it,
+  matching a real item tooltip. The Skills page shows the character's
+  actual total (range + bonus) for their own Strike, since that's the
+  number that matters mid-fight.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -7,6 +7,7 @@ import {
   ORIGIN_FEATS,
   RACES,
   abilityMod,
+  computeAttackPower,
   computeEvasion,
   computeResourceMax,
   equipItem,
@@ -65,10 +66,10 @@ function capitalize(value: string): string {
 
 function formatItemStats(item: ReturnType<typeof getItem>): string | null {
   const parts: string[] = [];
-  if (item.damageBonus) {
+  if (item.damageMin !== undefined && item.damageMax !== undefined) {
     const ability = item.ability ?? "str";
     const damageType = item.damageType ?? "slashing";
-    parts.push(`+${item.damageBonus} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
+    parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
   }
   if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
   return parts.length > 0 ? parts.join(" · ") : null;
@@ -153,6 +154,7 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
 
   const weaponId = character.equipment.weapon;
   const weapon = weaponId ? getItem(weaponId) : undefined;
+  const attackPower = computeAttackPower(character.abilityScores[weapon?.ability ?? "str"]);
 
   type NotableDamageType = { type: DamageType; kind: "resistant" | "vulnerable" | "immune" };
   const notableDamageTypes: NotableDamageType[] = DAMAGE_TYPES.flatMap((type): NotableDamageType[] => {
@@ -259,6 +261,10 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
           <div className="aow-panel">
             <div className="aow-panel-header">COMBAT</div>
             <div className="aow-card-body aow-stat-list">
+              <div className="aow-stat-row">
+                <span>Attack Power</span>
+                <span>{attackPower}</span>
+              </div>
               <div className="aow-stat-row">
                 <span>Evasion</span>
                 <span>{totalEvasion}%</span>

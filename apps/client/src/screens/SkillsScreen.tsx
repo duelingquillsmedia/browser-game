@@ -4,6 +4,8 @@ import {
   ACTION_BAR_SLOT_COUNT,
   assignActionBarSlot,
   clearActionBarSlot,
+  computeAttackPower,
+  computeAttackPowerBonusDamage,
   getClassResource,
   type ActionKind,
   type Character,
@@ -57,14 +59,25 @@ function capitalize(value: string): string {
 }
 
 /**
- * The actual min-max range this action will roll for this character, from
- * its power coefficient and ability score -- plus the equipped weapon's
- * flat damage bonus, which combat.ts only ever applies to the basic Strike.
+ * The actual min-max range this action will roll for this character. For the
+ * basic Strike with a weapon equipped, that's the weapon's own advertised
+ * damage range plus a flat Attack Power bonus from the scaling ability score
+ * (see stats.ts) -- combat.ts only ever resolves Strike this way. Every
+ * other action (and an unarmed Strike) scales off the ability score directly
+ * via its own power coefficient and the 85%-115% variance band.
  */
-function powerRange(action: CombatActionDef, abilityScore: number, weaponDamageBonus: number): [number, number] {
+function powerRange(
+  action: CombatActionDef,
+  abilityScore: number,
+  weaponDamageMin: number | undefined,
+  weaponDamageMax: number | undefined
+): [number, number] {
+  if (action.id === "strike" && weaponDamageMin !== undefined && weaponDamageMax !== undefined) {
+    const bonus = computeAttackPowerBonusDamage(computeAttackPower(abilityScore));
+    return [weaponDamageMin + bonus, weaponDamageMax + bonus];
+  }
   const power = action.power ?? 1;
-  const bonus = action.id === "strike" ? weaponDamageBonus : 0;
-  return [Math.round(abilityScore * power * 0.85) + bonus, Math.round(abilityScore * power * 1.15) + bonus];
+  return [Math.round(abilityScore * power * 0.85), Math.round(abilityScore * power * 1.15)];
 }
 
 export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps) {
@@ -233,9 +246,12 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                     <div className="aow-skill-stat">
                       <span className="aow-skill-stat-label">{selected.kind === "heal" ? "HEALING" : "DAMAGE"}</span>
                       <span>
-                        {powerRange(selected, character.abilityScores[selected.ability], character.weaponDamageBonus).join(
-                          "–"
-                        )}
+                        {powerRange(
+                          selected,
+                          character.abilityScores[selected.ability],
+                          character.weaponDamageMin,
+                          character.weaponDamageMax
+                        ).join("–")}
                       </span>
                     </div>
                   )}

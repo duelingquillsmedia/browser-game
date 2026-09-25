@@ -28,8 +28,8 @@ export const ORIGIN_FEATS: Record<OriginFeatId, OriginFeat> = {
     id: "savageAttacker",
     name: "Savage Attacker",
     description:
-      "Trained to hit hard: once per turn when you hit with a weapon, roll its damage dice twice and use " +
-      "either result.",
+      "Trained to hit hard: once per turn when you hit with a weapon, roll its damage twice and keep " +
+      "the higher result.",
   },
   skilled: {
     id: "skilled",

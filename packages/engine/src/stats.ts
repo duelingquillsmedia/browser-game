@@ -93,3 +93,23 @@ export function randomVariance(rng: () => number): number {
 export function computeSaveChance(targetScore: number, casterScore: number): number {
   return clampPercent(50 + (targetScore - casterScore) * 2);
 }
+
+/**
+ * Attack Power: a WoW-style headline combat stat converted from whichever
+ * ability score governs the equipped weapon, shown on the character sheet.
+ * It only ever feeds a flat bonus onto that weapon's own damage roll (see
+ * `computeAttackPowerBonusDamage`) -- class abilities (Slash, Firebolt...)
+ * scale off the raw ability score directly via their own `power`
+ * coefficient and are untouched by this.
+ */
+export function computeAttackPower(abilityScore: number): number {
+  return abilityScore * 2;
+}
+
+/** How much of a point of Attack Power becomes a point of flat bonus damage per hit. */
+const ATTACK_POWER_DAMAGE_COEFFICIENT = 0.15;
+
+/** Converts Attack Power into the flat bonus damage added on top of a weapon's own min-max roll. */
+export function computeAttackPowerBonusDamage(attackPower: number): number {
+  return Math.round(attackPower * ATTACK_POWER_DAMAGE_COEFFICIENT);
+}

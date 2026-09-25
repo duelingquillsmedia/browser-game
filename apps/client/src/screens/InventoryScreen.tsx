@@ -34,10 +34,10 @@ function capitalize(value: string): string {
 
 function formatItemStats(item: ItemTemplate): string | null {
   const parts: string[] = [];
-  if (item.damageBonus) {
+  if (item.damageMin !== undefined && item.damageMax !== undefined) {
     const ability = item.ability ?? "str";
     const damageType = item.damageType ?? "slashing";
-    parts.push(`+${item.damageBonus} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
+    parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
   }
   if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
   return parts.length > 0 ? parts.join(" · ") : null;
