@@ -81,9 +81,16 @@ client-server milestone (combat is still resolved in the browser for now).
   screens — coastline for the Tameless Shore, a wooded river valley for
   Tiuv Forest, jungle ruins for Collmhor Wood — plus a castle-towers
   skyline on the Ridgeton town hub.
-- A character roster and a home-base hub: sign in, pick or create a
-  character, land in Ridgeton (a logging town on the Tameless Shore),
-  venture out to fight, and rest to heal between trips.
+- A home-base hub: sign in and land straight in Ridgeton (a logging town on
+  the Tameless Shore) with your character already loaded, venture out to
+  fight, and rest to heal between trips. There's no character-select step —
+  Continue on the Title screen jumps directly to whichever character was
+  played most recently (by `updated_at`, bumped on every save), or straight
+  to Character Creation for an account that hasn't made one yet. An account
+  can still hold more than one character (creating another via "New Game"
+  doesn't delete the rest), there's just no roster-browsing UI to switch
+  between them or delete one anymore; Sign Out moved from that removed
+  screen onto the Home screen's Character card.
 - A character sheet: full ability scores, race traits, Background and
   Origin feat, and current abilities, plus inventory and equipment slots
   (weapon/armor/accessory).

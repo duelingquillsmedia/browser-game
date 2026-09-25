@@ -12,13 +12,21 @@ function rowToCharacter(row: CharacterRow): Character {
   return withStartingGearIfMissing({ ...row.data, id: row.id });
 }
 
-export async function loadRoster(): Promise<Character[]> {
+/**
+ * The character the player most recently played, by `updated_at` (bumped on
+ * every save -- rest, equip, combat results, action bar changes, ...). Used
+ * to jump straight into a returning player's hero with no selection step;
+ * `null` for an account that hasn't created one yet.
+ */
+export async function loadMostRecentCharacter(): Promise<Character | null> {
   const { data, error } = await supabase
     .from("characters")
     .select("id, data")
-    .order("created_at", { ascending: true });
+    .order("updated_at", { ascending: false })
+    .limit(1);
   if (error) throw error;
-  return (data as CharacterRow[]).map(rowToCharacter);
+  const rows = data as CharacterRow[];
+  return rows.length > 0 ? rowToCharacter(rows[0]) : null;
 }
 
 export async function addCharacterToRoster(character: Character): Promise<Character> {
@@ -43,7 +51,3 @@ export async function updateCharacterInRoster(character: Character): Promise<voi
   if (error) throw error;
 }
 
-export async function removeCharacterFromRoster(id: string): Promise<void> {
-  const { error } = await supabase.from("characters").delete().eq("id", id);
-  if (error) throw error;
-}

@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ActionRequest, Character, CombatState } from "@eridan/engine";
 import { submitPlayerAction } from "@eridan/engine";
 import { AuthScreen } from "./screens/AuthScreen";
-import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
 import { TitleScreen } from "./screens/TitleScreen";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -15,14 +14,13 @@ import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { GAME_NAME, WORLD_NAME, type Encounter } from "./game/lore";
 import { applyCombatResults, beginEncounter, restCharacter } from "./game/setup";
-import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
+import { addCharacterToRoster, loadMostRecentCharacter, updateCharacterInRoster } from "./game/roster";
 import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
 import "./App.css";
 
 type Screen =
   | { kind: "intro" }
   | { kind: "auth" }
-  | { kind: "characterSelect" }
   | { kind: "creation" }
   | { kind: "home"; character: Character }
   | { kind: "character"; character: Character }
@@ -33,6 +31,23 @@ type Screen =
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
+  const screenRef = useRef(screen);
+  useEffect(() => {
+    screenRef.current = screen;
+  }, [screen]);
+
+  // Jumps straight to the player's most recently played character (or
+  // creation, for an account with none yet) -- there's no character-select
+  // step to land on in between.
+  async function goToCharacterOrCreation() {
+    try {
+      const character = await loadMostRecentCharacter();
+      setScreen(character ? { kind: "home", character } : { kind: "creation" });
+    } catch (err) {
+      console.error("Failed to load your character:", err);
+      setScreen({ kind: "creation" });
+    }
+  }
 
   // Picks up sign-ins that complete via a full-page redirect (Google OAuth,
   // email confirmation links) — those land back here with no in-memory
@@ -42,8 +57,8 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") {
-        setScreen((prev) => (prev.kind === "intro" || prev.kind === "auth" ? { kind: "characterSelect" } : prev));
+      if (event === "SIGNED_IN" && (screenRef.current.kind === "intro" || screenRef.current.kind === "auth")) {
+        goToCharacterOrCreation();
       }
       if (event === "SIGNED_OUT") {
         setScreen({ kind: "intro" });
@@ -79,7 +94,11 @@ function App() {
 
   async function handleBegin() {
     const { data } = await supabase.auth.getSession();
-    setScreen({ kind: data.session ? "characterSelect" : "auth" });
+    if (!data.session) {
+      setScreen({ kind: "auth" });
+      return;
+    }
+    await goToCharacterOrCreation();
   }
 
   async function handleNewGame() {
@@ -99,23 +118,7 @@ function App() {
   }
 
   if (screen.kind === "auth") {
-    return (
-      <AuthScreen
-        onAuthenticated={() => setScreen({ kind: "characterSelect" })}
-        onBack={() => setScreen({ kind: "intro" })}
-      />
-    );
-  }
-
-  if (screen.kind === "characterSelect") {
-    return (
-      <CharacterSelectScreen
-        onSelect={(character) => setScreen({ kind: "home", character })}
-        onCreateNew={() => setScreen({ kind: "creation" })}
-        onSignedOut={() => setScreen({ kind: "intro" })}
-        onBack={() => setScreen({ kind: "intro" })}
-      />
-    );
+    return <AuthScreen onAuthenticated={goToCharacterOrCreation} onBack={() => setScreen({ kind: "intro" })} />;
   }
 
   if (screen.kind === "creation") {
@@ -125,7 +128,7 @@ function App() {
           const saved = await addCharacterToRoster(character);
           setScreen({ kind: "home", character: saved });
         }}
-        onBack={() => setScreen({ kind: "characterSelect" })}
+        onBack={() => setScreen({ kind: "intro" })}
       />
     );
   }
@@ -161,7 +164,10 @@ function App() {
           onOpenCharacterSheet={() => setScreen({ kind: "character", character: screen.character })}
           onOpenInventory={() => setScreen({ kind: "inventory", character: screen.character })}
           onOpenSkills={() => setScreen({ kind: "skills", character: screen.character })}
-          onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
+          onSignOut={async () => {
+            await supabase.auth.signOut();
+            setScreen({ kind: "intro" });
+          }}
         />
       </GameShell>
     );
