@@ -699,6 +699,65 @@ which needed sizes, shield/ghost overlays, and label formats too different
 between contexts (a 6px stage nameplate bar vs. a 9px HUD bar vs. a 5px
 enemy nameplate bar) for one shared component to serve cleanly.
 
+## Character Screen Rebuild
+
+Rebuilds the Character screen to match the **out-of-combat UI handoff**'s
+"Paper Doll" Character page layout (`Fantasy Combat Game UI/design_handoff_aetherwyn_ui/`,
+`Aetherwyn Prototype.dc.html` lines 195-287) verbatim: identity panel,
+attributes list, a 14-slot paper-doll equipment layout, Tempo/Offense/Defense
+combat stat groups, and per-type resistance bars — all reusing
+`theme/aow-theme.css`'s existing tokens, same as every other page.
+
+- **Identity panel**: 40px glowing level diamond, 10px HP/resource bars
+  (gradient fill + glow, exact colors from the handoff), attribute rows
+  (`34px abbr | name+hint | total+modifier` grid) always showing their hint
+  text rather than on hover — a correction found while extracting the
+  prototype's actual source, since its own hint text turned out to render
+  unconditionally despite the handoff README calling it "hover" text.
+- **Equipment paper-doll**: 14 slots (6 unavailable-but-shown per side, plus
+  Chest/Trinket/Main Hand as the three slot types this engine actually has)
+  rendered as 44px (52px for the weapon row) tiles with a diagonal-stripe
+  fill + border + glow colored by item rarity, ported verbatim from the
+  handoff's `eqMap`/`stripe`/`hexA` helpers (now `equipmentTileStyle` in
+  `apps/client/src/game/characterDisplay.ts`). Slot names hide below 1100px
+  width, matching the handoff's own `window.innerWidth >= 1100` check
+  (expressed here as a real `@media` query instead of a resize listener).
+  Equip/unequip/swap controls — which the static handoff mockup doesn't
+  need but this playable app does — are restyled to fit, not omitted.
+- **Combat stat groups** (Tempo / Offense / Defense) and **Resistances**
+  are computed by `combatStatGroups`/`resistanceRows` in the same
+  `characterDisplay.ts`, each mapped onto whichever of the engine's real
+  derived stats is the closest fit — see "Deliberate deviations" below for
+  what didn't have one.
+
+**Deliberate deviations**, since this engine's data model doesn't match the
+handoff's showcased Cleric 1:1:
+- **No XP bar.** This engine has no leveling/experience system at all
+  (`Character.level` is fixed at creation) — an experience bar with no
+  underlying value would be pure decoration, so it's omitted rather than
+  faked.
+- **No Faith diamonds**, for the same reason as the Combat rebuild: Faith
+  was the showcased Cleric's second resource pool; every class here has
+  exactly one, already shown as the HP-adjacent resource bar.
+- **No item rarity.** Items have no rarity field, only a flavor `value` in
+  gold — `rarityForItem` buckets that value into the handoff's five rarity
+  tiers purely for tile coloring. It's a display-only, non-mechanical
+  interpretation, not a fabricated game system.
+- **Combat stat substitutions**: "Movement" → race `speed` in feet (this
+  engine has no tile-based movement); the single "per-turn resource regen"
+  → the class's own resource name (no separate Faith regen to show
+  alongside it); "Armor" (a flat mitigation stat) → `gearEvasionBonus` (the
+  actual flat evasion armor grants here); no separate "Healing Power" is
+  shown since abilities scale off ability score + their own `power`
+  coefficient rather than one dedicated healing stat.
+- **Resistance bars from categorical flags, not a 0-100 scale.** The
+  engine's resistances are per-damage-type resistant/vulnerable/immune
+  flags (halve/double/zero incoming damage), not a hand-picked percentage
+  per element — so bars show only a character's actual notable types:
+  resistant → 50%, immune → a full gold bar, vulnerable → a full ember-red
+  bar labeled "×2" (there's no vulnerability precedent in the source to
+  copy, so this reversed-color treatment is designed, not ported).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -39,7 +39,7 @@ export type Rank = "front" | "back";
 const DEFEND_EVASION_BONUS = 25;
 
 /** Every party member's Action Points refill to this at the start of each of their own turns. Monsters never use the AP economy — they act via a single free action each turn, as before. */
-const PLAYER_AP_PER_TURN = 4;
+export const PLAYER_AP_PER_TURN = 4;
 
 export interface Combatant {
   id: string;
