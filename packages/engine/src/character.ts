@@ -58,6 +58,20 @@ export interface Character {
    * action the character knows, regardless of what's on this bar.
    */
   actionBarIds?: (string | null)[];
+  /**
+   * Progress on the hex-grid World Map: the in-world day count, the party's
+   * current hex, and every hex fog-of-war has revealed so far. The starting
+   * value (Ridgeton, day 1, a radius-5 reveal) is computed client-side (see
+   * `apps/client/src/game/setup.ts`), since the hex geometry it depends on
+   * lives in the client's map module, not the engine.
+   */
+  worldMapState?: WorldMapState;
+}
+
+export interface WorldMapState {
+  day: number;
+  partyHexKey: string;
+  exploredHexKeys: string[];
 }
 
 export interface CharacterAppearance {

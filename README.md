@@ -570,6 +570,64 @@ baseline further.
   actual total (range + bonus) for their own Strike, since that's the
   number that matters mid-fight.
 
+## Hex-Grid World Map
+
+Replaces the World Map's flat background-image-with-pins placeholder with
+the full pointy-top hex-grid exploration system from the Out-of-Combat UI
+handoff's World Map page — not just a cosmetic hex overlay, but the whole
+mechanical system: live terrain sampling, zoom/pan, a minimap, danger
+tiers, day-based travel, and fog of war.
+
+The handoff's own hex math, terrain classifier, and region/sea/POI data
+were ported **verbatim** (same constants, same thresholds) from its
+prototype (`Fantasy Combat Game UI/design_handoff_aetherwyn_ui/Aetherwyn
+Prototype.dc.html`), which is calibrated pixel-for-pixel against
+`apps/client/src/assets/world/eridan-map.jpg` (confirmed byte-identical to
+the handoff's own `assets/eridan.jpg` via checksum). The named places
+aren't placeholder content either — all 28 regions, 11 seas, and 14 points
+of interest were cross-checked against the project's real **Encyclopedia
+of Eridan** and match genuine Eridan geography (Ridgeton, Eldrin City,
+Bretten, Adania, the Winter Court, and every sea name check out).
+
+- **`apps/client/src/game/eridanMap.ts`** — the hex geometry (axial
+  coordinates, pixel↔hex conversion via cube rounding, hex distance) plus
+  the region/sea/POI/terrain-color tables and the danger-tier/encounter-
+  chance formulas, all pure data and math with no rendering concerns.
+- **`apps/client/src/game/terrainSampler.ts`** — `sampleTerrain()` reads
+  the map image's own pixels once (via an off-screen canvas) and classifies
+  each of the grid's 1,794 hexes into plains/forest/highlands/peaks/snow/
+  desert/water from an 11×11 sample around its center — entirely
+  client-side, no hand-authored per-hex terrain data, no server round trip.
+- **`Character` gained `worldMapState?: { day, partyHexKey,
+  exploredHexKeys }`**, following the same optional-field-plus-backfill
+  pattern as `actionBarIds`. Its starting value (Ridgeton, Day 1, a
+  radius-5 fog reveal) is built client-side in
+  `apps/client/src/game/setup.ts` and backfilled in `game/roster.ts`,
+  rather than in the engine itself, since the hex geometry it depends on
+  lives in the client's map module — no Supabase migration needed, same as
+  every other character field riding in the `data jsonb` column.
+- **`WorldMapScreen.tsx`** is a full rewrite: drag-to-pan (with a 5px
+  threshold so a click still registers as a click), hover/select
+  highlighting, zoom 2×–6× that keeps the view centered on the same point,
+  a click-to-recenter minimap with a live viewport-rect indicator, a
+  detail panel (region, terrain, danger tier, encounter chance, distance
+  in days), a places list sorted by distance, and a terrain-color legend.
+
+**Deliberate scope boundary**, to avoid destabilizing the existing game
+loop: Home → Venture Out → fight → Result is untouched. Only the 3 hexes
+matching today's real `ENCOUNTERS` (Tameless Shore, Tiuv Forest, Collmhor
+Wood) show a working "Venture Out" button, reachable from anywhere on the
+map with no forced travel first, exactly as before this pass. The other 13
+handoff POIs (Ashvale, Eldrin City, Bretten, etc.) show real flavor text
+and a working "Travel · N Days" button that advances the day counter and
+reveals fog — but no fight yet, the same "not built yet" treatment already
+used for Talents elsewhere in this app.
+
+**Deliberate deviation from the prototype**: fog of war defaults **on**
+here (the prototype defaults it off, since it exists for design review).
+Discovering the map hex by hex fits a shipped game better than seeing the
+whole continent from the first login.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -249,6 +249,15 @@ function App() {
   }
 
   if (screen.kind === "encounterSelect") {
+    async function persist(next: Character) {
+      setScreen({ kind: "encounterSelect", character: next });
+      try {
+        await updateCharacterInRoster(next);
+      } catch (err) {
+        console.error("Failed to save world map progress:", err);
+      }
+    }
+
     function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
       if (screen.kind !== "encounterSelect") return;
       if (id === "home") setScreen({ kind: "home", character: screen.character });
@@ -261,6 +270,7 @@ function App() {
       <GameShell gameName={GAME_NAME} character={screen.character} active="map" onNavigate={handleNavigate}>
         <WorldMapScreen
           character={screen.character}
+          onUpdateCharacter={persist}
           onChooseEncounter={(encounter) =>
             setScreen({
               kind: "combat",

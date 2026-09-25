@@ -1,5 +1,6 @@
 import { withStartingGearIfMissing, type Character } from "@eridan/engine";
 import { supabase } from "../lib/supabaseClient";
+import { withWorldMapStateIfMissing } from "./setup";
 
 interface CharacterRow {
   id: string;
@@ -7,9 +8,10 @@ interface CharacterRow {
 }
 
 function rowToCharacter(row: CharacterRow): Character {
-  // Characters saved before inventory/equipment existed won't have them in
-  // their stored jsonb — backfill so older rows don't crash the UI.
-  return withStartingGearIfMissing({ ...row.data, id: row.id });
+  // Characters saved before inventory/equipment (or the World Map) existed
+  // won't have them in their stored jsonb — backfill so older rows don't
+  // crash the UI.
+  return withWorldMapStateIfMissing(withStartingGearIfMissing({ ...row.data, id: row.id }));
 }
 
 /**

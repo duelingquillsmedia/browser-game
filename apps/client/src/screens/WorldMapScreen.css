@@ -9,87 +9,146 @@
   gap: 14px;
 }
 
-.aow-map-panel {
-  flex: 2 1 560px;
-}
-
-.aow-map-detail-panel {
-  flex: 1 1 300px;
-  min-height: 200px;
-}
-
-.aow-map-canvas {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 2048 / 1536;
-  background-size: cover;
-  background-position: center;
+.aow-hexmap-panel {
+  flex: 2 1 620px;
   overflow: hidden;
 }
 
-.aow-map-pin {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  z-index: 1;
-}
-
-.aow-map-pin:hover,
-.aow-map-pin:focus-visible,
-.aow-map-pin.active {
-  z-index: 2;
-}
-
-.aow-map-pin-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid var(--aow-ink);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
-}
-
-.aow-map-pin-home .aow-map-pin-dot {
-  background: var(--aow-gold);
-}
-
-.aow-map-pin-encounter .aow-map-pin-dot {
-  background: var(--aow-hp);
-}
-
-.aow-map-pin-encounter.active .aow-map-pin-dot {
-  box-shadow: 0 0 0 3px rgba(208, 96, 74, 0.4), 0 0 10px rgba(208, 96, 74, 0.6);
-}
-
-.aow-map-pin-label {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-top: 3px;
-  transform: translateX(-50%);
-  font-family: var(--aow-font-mono);
+.aow-hexmap-status {
   font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--aow-ink);
-  background: rgba(11, 9, 14, 0.75);
-  padding: 2px 6px;
-  border-radius: 2px;
-  white-space: nowrap;
+}
+
+.aow-hexmap-frame {
+  position: relative;
+}
+
+.aow-hexmap-viewport {
+  width: 100%;
+  height: min(74vh, 780px);
+  overflow: auto;
+  background: var(--aow-inset-deep);
+  cursor: grab;
+  touch-action: none;
+}
+
+.aow-hexmap-viewport:active {
+  cursor: grabbing;
+}
+
+.aow-hexmap-content {
+  position: relative;
+}
+
+.aow-hexmap-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.aow-hexmap-svg {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
 }
 
-.aow-map-pin-home .aow-map-pin-label {
-  top: auto;
-  bottom: 100%;
-  margin-top: 0;
-  margin-bottom: 3px;
+.aow-hexmap-zoom-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(11, 9, 14, 0.82);
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  padding: 6px;
+  z-index: 2;
+}
+
+.aow-hexmap-zoom-readout {
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  color: var(--aow-muted);
+  min-width: 28px;
+  text-align: center;
+}
+
+.aow-minimap {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.aow-minimap-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.aow-minimap-viewport-rect {
+  position: absolute;
+  border: 1.5px solid var(--aow-ember);
+  background: rgba(224, 138, 114, 0.08);
+  pointer-events: none;
+}
+
+.aow-minimap-party-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aow-gold);
+  box-shadow: 0 0 6px rgba(217, 184, 101, 0.9);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.aow-hexmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--aow-divider);
+}
+
+.aow-hexmap-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--aow-muted);
+}
+
+.aow-hexmap-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.aow-map-side-column {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.aow-map-detail-panel {
+  min-height: 200px;
 }
 
 .aow-map-foes-stat {
@@ -99,4 +158,66 @@
 .aow-map-venture-button {
   width: 100%;
   margin-top: 12px;
+}
+
+.aow-map-places-panel {
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.aow-map-places-list {
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aow-map-place-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--aow-secondary);
+  font-family: var(--aow-font-body);
+  font-size: 12px;
+}
+
+.aow-map-place-row:hover {
+  background: var(--aow-inset);
+}
+
+.aow-map-place-row.active {
+  background: rgba(184, 92, 74, 0.14);
+  border-color: var(--aow-ember);
+}
+
+.aow-map-place-glyph {
+  font-family: var(--aow-font-runic);
+  flex: none;
+  width: 14px;
+  text-align: center;
+}
+
+.aow-map-place-name {
+  flex: 1;
+}
+
+.aow-map-place-distance {
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  color: var(--aow-faint);
+}
+
+@media (max-width: 900px) {
+  .aow-hexmap-viewport {
+    height: 62vh;
+  }
 }

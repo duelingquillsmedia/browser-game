@@ -310,6 +310,24 @@ describe("withStartingGearIfMissing", () => {
     const migrated = withStartingGearIfMissing(withoutBar as Character);
     expect(migrated.actionBarIds).toEqual(Array(ACTION_BAR_SLOT_COUNT).fill(null));
   });
+
+  it("leaves worldMapState untouched, whether present or absent (its default is built client-side)", () => {
+    const legacy = createCharacter({
+      id: "pc-worldmap",
+      name: "Pre-Map",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    });
+    expect(withStartingGearIfMissing(legacy).worldMapState).toBeUndefined();
+
+    const withState: Character = {
+      ...legacy,
+      worldMapState: { day: 7, partyHexKey: "16,25", exploredHexKeys: ["16,25"] },
+    };
+    expect(withStartingGearIfMissing(withState).worldMapState).toEqual(withState.worldMapState);
+  });
 });
 
 describe("action bar", () => {
