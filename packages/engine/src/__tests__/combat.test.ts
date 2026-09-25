@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
 import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION } from "../actions.js";
 import { createCharacter } from "../character.js";
-import { forD20, forDie, sequenceRng } from "./testUtils.js";
+import {
+  GUARANTEED_FAILURE,
+  GUARANTEED_SUCCESS,
+  forD20,
+  forPercentRoll,
+  forVariance,
+  sequenceRng,
+} from "./testUtils.js";
 
 function makeHero(overrides: Partial<Combatant> = {}): Combatant {
   return {
@@ -12,7 +19,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     abilityScores: { str: 16, dex: 14, vit: 14, int: 10, wis: 10, spi: 10 },
     maxHp: 20,
     hp: 20,
-    armorClass: 12,
+    evasionBonus: 0,
     proficiencyBonus: 2,
     actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION],
     actionUses: {},
@@ -21,7 +28,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     damageResistances: [],
     damageVulnerabilities: [],
     damageImmunities: [],
-    tempArmorClassBonus: 0,
+    tempEvasionBonus: 0,
     dodging: false,
     initiative: 0,
     fled: false,
@@ -40,8 +47,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
     maxHp: 7,
     hp: 7,
-    armorClass: 10,
-    proficiencyBonus: 2,
+    evasionBonus: 0,
     actions: [
       {
         id: "claw",
@@ -50,7 +56,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
         kind: "attack",
         target: "enemy",
         ability: "str",
-        dice: "1d4",
+        power: 1,
         damageType: "slashing",
       },
     ],
@@ -60,7 +66,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     damageResistances: [],
     damageVulnerabilities: [],
     damageImmunities: [],
-    tempArmorClassBonus: 0,
+    tempEvasionBonus: 0,
     dodging: false,
     initiative: 0,
     fled: false,
@@ -75,17 +81,17 @@ describe("combat engine", () => {
   it("orders turns by initiative and ends combat when the last enemy falls", () => {
     // hero rolls 15+2=17, foe rolls 5+0=5 -> hero acts first.
     const rng = sequenceRng([forD20(15), forD20(5)]);
-    const state = startCombat([makeHero()], [makeFoe()], rng);
+    const state = startCombat([makeHero()], [makeFoe({ maxHp: 16, hp: 16 })], rng);
 
     expect(state.turnOrder).toEqual(["hero", "foe"]);
     expect(state.turnIndex).toBe(0);
     expect(state.status).toBe("active");
 
-    // hero attacks: d20=15 (hit), damage d6=4 -> 4+3(str mod)=7, exactly lethal.
+    // hero attacks: guaranteed non-crit hit, damage = str(16) * power(1) * variance(1.0) = 16, exactly lethal.
     const afterAttack = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(15), forDie(6, 4)])
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
 
     const foe = afterAttack.combatants.find((c) => c.id === "foe")!;
@@ -94,34 +100,33 @@ describe("combat engine", () => {
     expect(afterAttack.log.some((entry) => entry.message.includes("falls"))).toBe(true);
   });
 
-  it("auto-resolves enemy turns and Defend imposes Disadvantage on the next attack against the defender", () => {
+  it("auto-resolves enemy turns and Defend raises evasion against the next attack", () => {
     // foe rolls 15+0=15, hero rolls 5+2=7 -> foe acts first, auto-resolved inside startCombat
-    // (attack roll 15 hits, damage roll 3 -> 3 dmg since foe's str mod is 0).
-    // (the 0 is the enemy AI's target-pick roll, irrelevant with a single target)
+    // with a guaranteed non-crit hit for a clean 10 damage (str 10 * power 1 * variance 1.0).
     let state = startCombat(
       [makeHero()],
       [makeFoe()],
-      sequenceRng([forD20(5), forD20(15), 0, forD20(15), forDie(4, 3)])
+      sequenceRng([forD20(5), forD20(15), 0, GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
     expect(state.turnOrder).toEqual(["foe", "hero"]);
     expect(state.turnIndex).toBe(1); // back to hero after foe's auto turn
     const heroAfterHit = state.combatants.find((c) => c.id === "hero")!;
-    expect(heroAfterHit.hp).toBe(17);
+    expect(heroAfterHit.hp).toBe(10);
 
-    // Hero defends (Dodge). Foe's follow-up attack rolls with Disadvantage: (13, 5) keeps
-    // the lower 5, for a total of 5+0+2=7 against AC 12 -- a miss, though the 13 alone
-    // (13+2=15) would have hit, proving Disadvantage is what causes it to whiff.
-    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forD20(13), forD20(5)]));
+    // Hero defends, gaining +25 evasion until their next turn. Foe's hit chance against
+    // hero is normally 90 - 21 (dex-based evasion) = 69%, so a roll of 50 would connect --
+    // but Defend drops it to 90 - 46 = 44%, so that same roll of 50 now misses.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forPercentRoll(50)]));
     const heroAfterDefend = state.combatants.find((c) => c.id === "hero")!;
-    expect(heroAfterDefend.hp).toBe(17); // unchanged: the follow-up attack missed
+    expect(heroAfterDefend.hp).toBe(10); // unchanged: the follow-up attack missed
     expect(state.round).toBe(2);
     expect(state.turnIndex).toBe(1); // hero's turn again
 
-    // Hero finishes the foe off.
+    // Hero finishes the foe off (foe's 7 HP is well within a guaranteed hit's 16 damage).
     state = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(15), forDie(6, 4)])
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
     expect(state.status).toBe("party_won");
   });
@@ -162,12 +167,13 @@ describe("combat engine", () => {
   });
 
   it("falls unconscious at 0 HP, which alone ends the fight in defeat", () => {
-    // foe (init 15) acts before hero (init 7) and its attack (roll 12 -> hits AC 12) deals
-    // exactly 4 damage to hero's 4 HP -- 0 overkill, so hero falls unconscious rather than dying.
+    // foe (init 15) acts before hero (init 7) and lands a guaranteed non-crit hit for exactly
+    // 10 damage (str 10 * power 1 * variance 1.0) against hero's 10 HP -- 0 overkill, so hero
+    // falls unconscious rather than dying.
     const state = startCombat(
-      [makeHero({ maxHp: 4, hp: 4 })],
+      [makeHero({ maxHp: 10, hp: 10 })],
       [makeFoe()],
-      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forDie(4, 4)])
+      sequenceRng([forD20(5), forD20(15), 0, GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
 
     const hero = state.combatants.find((c) => c.id === "hero")!;
@@ -185,17 +191,17 @@ describe("combat engine", () => {
       kind: "attack" as const,
       target: "enemy" as const,
       ability: "str" as const,
-      dice: "1d20",
+      power: 5,
       damageType: "bludgeoning" as const,
     };
     const state = startCombat(
-      [makeHero({ maxHp: 4, hp: 4 })],
+      [makeHero({ maxHp: 10, hp: 10 })],
       [makeFoe({ actions: [massiveHit] })],
-      sequenceRng([forD20(5), forD20(15), 0, forD20(12), forD20(20)])
+      sequenceRng([forD20(5), forD20(15), 0, GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
 
     const hero = state.combatants.find((c) => c.id === "hero")!;
-    // 20 damage (str mod 0) against 4 HP -- overkill (16) >= maxHp (4) -> instant death.
+    // 50 damage (str 10 * power 5 * variance 1.0) against 10 HP -- overkill (40) >= maxHp (10) -> instant death.
     expect(hero.dead).toBe(true);
     expect(hero.unconscious).toBe(false);
     expect(state.status).toBe("enemies_won");
@@ -211,7 +217,7 @@ describe("combat engine", () => {
       target: "enemies" as const,
       ability: "int" as const,
       saveAbility: "dex" as const,
-      dice: "3d6",
+      power: 1,
       damageType: "fire" as const,
       usesPerCombat: 1,
     };
@@ -220,9 +226,9 @@ describe("combat engine", () => {
       actions: [fireball],
       actionUses: { fireball: 1 },
     });
-    // DC = 8 + proficiency(2) + int mod(3) = 13.
-    const failer = makeFoe({ id: "foe1", name: "Foe1", maxHp: 10, hp: 10 });
-    const succeeder = makeFoe({ id: "foe2", name: "Foe2", maxHp: 6, hp: 6 });
+    // Save chance = 50 + (target dex 10 - caster int 16) * 2 = 38% for both foes.
+    const failer = makeFoe({ id: "foe1", name: "Foe1", maxHp: 16, hp: 16 });
+    const succeeder = makeFoe({ id: "foe2", name: "Foe2", maxHp: 8, hp: 8 });
 
     const state = startCombat([caster], [failer, succeeder], sequenceRng([forD20(20), forD20(5), forD20(6)]));
     expect(state.turnOrder[0]).toBe("hero"); // highest initiative, acts first
@@ -230,11 +236,12 @@ describe("combat engine", () => {
     const after = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "fireball" },
-      sequenceRng([forDie(6, 4), forDie(6, 4), forDie(6, 4), forD20(5), forD20(15)])
+      sequenceRng([forVariance(1), forPercentRoll(50), forPercentRoll(20)])
     );
 
-    // Base damage 4+4+4=12, rolled once. Foe1 (roll 5, DC 13) fails -> takes 12, dies (10 HP).
-    // Foe2 (roll 15, DC 13) succeeds -> takes half, 6 -> also dies (6 HP), ending the fight.
+    // Base damage = int(16) * power(1) * variance(1.0) = 16, rolled once.
+    // Foe1 (roll 50, needs < 38% to succeed) fails its save -> takes 16, dies (16 HP).
+    // Foe2 (roll 20 < 38%) succeeds -> takes half, 8 -> also dies (8 HP), ending the fight.
     expect(after.status).toBe("party_won");
     expect(after.combatants.find((c) => c.id === "foe1")!.hp).toBe(0);
     expect(after.combatants.find((c) => c.id === "foe2")!.hp).toBe(0);
@@ -259,7 +266,7 @@ describe("combat engine", () => {
       kind: "attack" as const,
       target: "enemy" as const,
       ability: "int" as const,
-      dice: "1d10",
+      power: 1,
       damageType: "fire" as const,
       resourceCost: 4,
     };
@@ -272,7 +279,7 @@ describe("combat engine", () => {
     const after = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "firebolt", targetId: "foe" },
-      sequenceRng([forD20(1)]) // guaranteed miss -- only the resource spend matters here
+      sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss -- only the resource spend matters here
     );
 
     expect(after.log.some((entry) => entry.message.includes("Silverleaf Step"))).toBe(true);
@@ -280,7 +287,7 @@ describe("combat engine", () => {
     expect(after.combatants.find((c) => c.id === "hero")!.resource).toBe(1);
   });
 
-  it("rolls damage dice twice and keeps the higher for Savage Attacker, on a non-crit hit", () => {
+  it("rolls damage twice and keeps the higher variance for Savage Attacker, on a non-crit hit", () => {
     const state = startCombat(
       [makeHero({ originFeatId: "savageAttacker" })],
       [makeFoe({ maxHp: 20, hp: 20 })],
@@ -290,11 +297,11 @@ describe("combat engine", () => {
     const after = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(15), forDie(6, 2), forDie(6, 5)])
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(0.9), forVariance(1.1)])
     );
 
-    // Higher of the two damage rolls (5) + str mod (3) = 8.
-    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(20 - 8);
+    // Keeps the higher of the two variance rolls: str(16) * power(1) * 1.1 = 17.6 -> 18.
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(20 - 18);
   });
 
   it("blocks a cooldown action from reuse until enough rounds have passed, then allows it again", () => {
@@ -305,7 +312,7 @@ describe("combat engine", () => {
       kind: "attack" as const,
       target: "enemy" as const,
       ability: "str" as const,
-      dice: "1d4",
+      power: 1.5,
       damageType: "slashing" as const,
       cooldown: 2,
     };
@@ -316,11 +323,11 @@ describe("combat engine", () => {
     let state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
     expect(state.turnOrder).toEqual(["hero", "foe"]);
 
-    // Hero uses Big Swing: attack roll 15 hits, damage roll 3. Foe's follow-up attack (roll 5) misses.
+    // Hero uses Big Swing: guaranteed hit. Foe's follow-up attack misses.
     state = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "big-swing", targetId: "foe" },
-      sequenceRng([forD20(15), forDie(4, 3), 0, forD20(5)])
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1), 0, GUARANTEED_FAILURE])
     );
     expect(state.round).toBe(2);
     expect(state.combatants.find((c) => c.id === "hero")!.actionCooldowns["big-swing"]).toBe(3);
@@ -330,11 +337,11 @@ describe("combat engine", () => {
       submitPlayerAction(state, { actorId: "hero", actionId: "big-swing", targetId: "foe" }, sequenceRng([0]))
     ).toThrow();
 
-    // Hero falls back to Strike instead, advancing to round 3 (attack roll 15 hits, damage 3; foe misses back).
+    // Hero falls back to Strike instead, advancing to round 3 (guaranteed hit; foe misses back).
     state = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(15), forDie(6, 3), 0, forD20(5)])
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1), 0, GUARANTEED_FAILURE])
     );
     expect(state.round).toBe(3);
 
@@ -342,7 +349,7 @@ describe("combat engine", () => {
     state = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "big-swing", targetId: "foe" },
-      sequenceRng([forD20(15), forDie(4, 2), 0, forD20(5)])
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1), 0, GUARANTEED_FAILURE])
     );
     expect(state.log.some((entry) => entry.message.includes("Big Swing"))).toBe(true);
     expect(state.combatants.find((c) => c.id === "hero")!.actionCooldowns["big-swing"]).toBe(5);
@@ -356,7 +363,7 @@ describe("combat engine", () => {
       kind: "attack" as const,
       target: "enemy" as const,
       ability: "str" as const,
-      dice: "1d4",
+      power: 1,
       damageType: "piercing" as const,
     };
     const stab = {
@@ -366,7 +373,7 @@ describe("combat engine", () => {
       kind: "attack" as const,
       target: "enemy" as const,
       ability: "str" as const,
-      dice: "1d4",
+      power: 1,
       damageType: "piercing" as const,
     };
     const foe = makeFoe({ actions: [jab, stab] });
@@ -417,11 +424,11 @@ describe("multi-member party", () => {
     const up = makeHero({ id: "up", name: "Up" });
     const down = makeHero({ id: "down", name: "Down", hp: 0, unconscious: true });
     // down (init 17) would go first, but can't act; foe (init 10) auto-resolves
-    // (targets up, rolls a 2, misses); up (init 7) is left waiting for input.
+    // (targets up, and misses); up (init 7) is left waiting for input.
     const state = startCombat(
       [up, down],
       [makeFoe()],
-      sequenceRng([forD20(5), forD20(15), forD20(10), 0, forD20(2)])
+      sequenceRng([forD20(5), forD20(15), forD20(10), 0, GUARANTEED_FAILURE])
     );
     expect(state.turnOrder).toEqual(["down", "foe", "up"]);
     expect(state.turnIndex).toBe(2);
@@ -446,10 +453,7 @@ describe("multi-member party", () => {
         forD20(5), // down init
         forD20(15), // foe init -> foe goes first
         0.75, // enemy AI target pick -> index 1 of [up, down] = down
-        forD20(15), // advantage roll a (unconscious grants the attacker advantage)
-        forD20(15), // advantage roll b
-        forDie(4, 4), // damage die
-        forDie(4, 4), // crit bonus die
+        forVariance(1), // any hit against an Unconscious target auto-crits, skipping the hit/crit rolls
       ])
     );
     const hit = state.log.find((entry) => entry.targetId === "down" && entry.kind === "hit");

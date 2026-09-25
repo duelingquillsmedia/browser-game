@@ -4,7 +4,8 @@ import {
   BACKGROUNDS,
   CLASSES,
   RACES,
-  abilityModifier,
+  computeMaxHealth,
+  computeResourceMax,
   createCharacter,
   getClassResource,
   type AbilityKey,
@@ -176,8 +177,8 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
     setName(candidate);
   }
 
-  const vitMod = totals ? abilityModifier(totals.vit) : 0;
-  const health = cls ? cls.hitDie + vitMod : 0; // Matches createCharacter's level-1 maxHp formula exactly.
+  const health = cls && totals ? computeMaxHealth(totals, cls.id) : 0; // Matches createCharacter's maxHp formula exactly.
+  const resourceMax = cls && totals ? computeResourceMax(totals, cls.id) : undefined;
   const primaryScore = cls && totals ? totals[cls.primaryAbility] : 0;
 
   const canAdvance = valid(step);
@@ -346,7 +347,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                 </div>
                 <div className="aow-skill-stat">
                   <span className="aow-skill-stat-label">{(resourceConfig?.name ?? "RESOURCE").toUpperCase()}</span>
-                  <span>{resourceConfig?.max ?? "—"}</span>
+                  <span>{resourceMax ?? "—"}</span>
                 </div>
                 <div className="aow-skill-stat">
                   <span className="aow-skill-stat-label">PRIMARY</span>
@@ -452,7 +453,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
               </div>
               <div className="aow-skill-stat">
                 <span className="aow-skill-stat-label">{(resourceConfig?.name ?? "RESOURCE").toUpperCase()}</span>
-                <span>{resourceConfig?.max ?? "—"}</span>
+                <span>{resourceMax ?? "—"}</span>
               </div>
               <div className="aow-skill-stat">
                 <span className="aow-skill-stat-label">{cls.primaryAbility.toUpperCase()}</span>

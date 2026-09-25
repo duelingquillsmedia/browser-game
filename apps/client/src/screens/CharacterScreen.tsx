@@ -2,12 +2,13 @@ import {
   ABILITY_KEYS,
   ABILITY_NAMES,
   BACKGROUNDS,
-  BASIC_ATTACK,
   CLASSES,
   DAMAGE_TYPES,
   ORIGIN_FEATS,
   RACES,
   abilityMod,
+  computeEvasion,
+  computeResourceMax,
   equipItem,
   getClassResource,
   getItem,
@@ -28,7 +29,7 @@ export interface CharacterScreenProps {
 
 const ABILITY_HINTS: Record<AbilityKey, string> = {
   str: "Warrior attack rolls and melee damage.",
-  dex: "Armor Class, initiative, and Rogue attacks.",
+  dex: "Evasion, crit chance, initiative, and Rogue attacks.",
   vit: "Maximum HP and Second Wind-style healing.",
   int: "Mage spellcasting and Intellect saves.",
   wis: "Cleric and Druid spellcasting; Wisdom saves.",
@@ -64,12 +65,12 @@ function capitalize(value: string): string {
 
 function formatItemStats(item: ReturnType<typeof getItem>): string | null {
   const parts: string[] = [];
-  if (item.damageDice) {
-    const ability = item.ability ?? BASIC_ATTACK.ability;
-    const damageType = item.damageType ?? BASIC_ATTACK.damageType ?? "slashing";
-    parts.push(`${item.damageDice} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
+  if (item.damageBonus) {
+    const ability = item.ability ?? "str";
+    const damageType = item.damageType ?? "slashing";
+    parts.push(`+${item.damageBonus} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
   }
-  if (item.armorClassBonus) parts.push(`+${item.armorClassBonus} AC`);
+  if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
@@ -143,11 +144,12 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
   const background = BACKGROUNDS[character.backgroundId];
   const originFeat = ORIGIN_FEATS[character.originFeatId];
   const resourceConfig = getClassResource(character.classId);
+  const resourceMax = computeResourceMax(character.abilityScores, character.classId);
 
   const hpPct = Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100));
-  const resourcePct = resourceConfig
-    ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceConfig.max) * 100))
-    : 0;
+  const resourcePct =
+    resourceConfig && resourceMax ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceMax) * 100)) : 0;
+  const totalEvasion = Math.round(computeEvasion(character.abilityScores.dex) + character.gearEvasionBonus);
 
   const weaponId = character.equipment.weapon;
   const weapon = weaponId ? getItem(weaponId) : undefined;
@@ -197,7 +199,7 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
               <div className="aow-bar-label" style={{ marginTop: 8 }}>
                 <span>{resourceConfig.name.toUpperCase()}</span>
                 <span>
-                  {character.resource ?? 0} / {resourceConfig.max}
+                  {character.resource ?? 0} / {resourceMax}
                 </span>
               </div>
               <div className="aow-bar-track">
@@ -258,8 +260,8 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
             <div className="aow-panel-header">COMBAT</div>
             <div className="aow-card-body aow-stat-list">
               <div className="aow-stat-row">
-                <span>Armor Class</span>
-                <span>{character.armorClass}</span>
+                <span>Evasion</span>
+                <span>{totalEvasion}%</span>
               </div>
               <div className="aow-stat-row">
                 <span>Max HP</span>

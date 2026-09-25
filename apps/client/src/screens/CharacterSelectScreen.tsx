@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from "react";
-import { CLASSES, RACES, type Character } from "@eridan/engine";
+import { CLASSES, RACES, computeEvasion, type Character } from "@eridan/engine";
 import { loadRoster, removeCharacterFromRoster } from "../game/roster";
 import { supabase } from "../lib/supabaseClient";
 import { BackButton } from "../components/BackButton";
@@ -93,7 +93,8 @@ export function CharacterSelectScreen({ onSelect, onCreateNew, onSignedOut, onBa
                 {CLASSES[character.classId]?.name ?? character.classId}
               </p>
               <p className="flavor">
-                HP {character.hp} / {character.maxHp} · AC {character.armorClass}
+                HP {character.hp} / {character.maxHp} · Evasion{" "}
+                {Math.round(computeEvasion(character.abilityScores.dex) + character.gearEvasionBonus)}%
               </p>
             </div>
           ))}

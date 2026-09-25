@@ -24,12 +24,12 @@ describe("createCharacter", () => {
     expect(character.abilityScores.wis).toBe(12); // 10 +2 = 12
     expect(character.originFeatId).toBe("alert");
 
-    // Rogue hit die 8, vit mod = 1 (vit 12) -> maxHp = 8 + 1 = 9
-    expect(character.maxHp).toBe(9);
+    // Rogue: 100 + vit*10 + class health bonus (20) = 100 + 120 + 20 = 240
+    expect(character.maxHp).toBe(240);
     expect(character.hp).toBe(character.maxHp);
 
-    // AC = 10 + dex mod (20 -> +5) + starting Leather Armor (+1)
-    expect(character.armorClass).toBe(16);
+    // Starting gear: Hunter's Shortbow (no evasion bonus) + Leather Armor (+3)
+    expect(character.gearEvasionBonus).toBe(3);
 
     expect(character.proficiencyBonus).toBe(2);
     expect(character.actions.some((a) => a.id === "sneak-strike")).toBe(true);
@@ -85,9 +85,8 @@ describe("createCharacter", () => {
     expect(character.equipment.accessory).toBeUndefined();
     expect(ownsItem(character, "luckyCharm")).toBe(true);
 
-    // The shared Strike action reflects the equipped weapon's damage die.
-    const strike = character.actions.find((a) => a.id === "strike");
-    expect(strike?.dice).toBe("1d8");
+    // The equipped weapon contributes a flat damage bonus to the shared Strike action.
+    expect(character.weaponDamageBonus).toBe(8);
   });
 
   it("equips the chosen startingEquipmentOptions package instead of the default", () => {
@@ -169,7 +168,7 @@ describe("createCharacter", () => {
             baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
           });
           expect(character.maxHp).toBeGreaterThan(0);
-          expect(character.armorClass).toBeGreaterThan(0);
+          expect(character.gearEvasionBonus).toBeGreaterThan(0);
           expect(character.actions.length).toBeGreaterThan(0);
         }
       }
@@ -189,22 +188,22 @@ describe("equipItem / unequipItem", () => {
     });
   }
 
-  it("equips an owned accessory and applies its AC bonus", () => {
+  it("equips an owned accessory and applies its evasion bonus", () => {
     const before = warrior();
     const after = equipItem(before, "luckyCharm");
 
     expect(after.equipment.accessory).toBe("luckyCharm");
-    expect(after.armorClass).toBe(before.armorClass + 1);
+    expect(after.gearEvasionBonus).toBe(before.gearEvasionBonus + 3);
     // Equipping doesn't consume the item from inventory.
     expect(ownsItem(after, "luckyCharm")).toBe(true);
   });
 
-  it("unequips a slot and removes its AC bonus", () => {
+  it("unequips a slot and removes its evasion bonus", () => {
     const equipped = equipItem(warrior(), "luckyCharm");
     const unequipped = unequipItem(equipped, "accessory");
 
     expect(unequipped.equipment.accessory).toBeUndefined();
-    expect(unequipped.armorClass).toBe(equipped.armorClass - 1);
+    expect(unequipped.gearEvasionBonus).toBe(equipped.gearEvasionBonus - 3);
   });
 
   it("reflects the equipped weapon's ability on Strike, and reverts when unequipped", () => {
@@ -220,13 +219,13 @@ describe("equipItem / unequipItem", () => {
     // Rogue starts with a Hunter's Shortbow (dex-based) equipped.
     const equippedStrike = rogue.actions.find((a) => a.id === "strike");
     expect(equippedStrike?.ability).toBe("dex");
-    expect(equippedStrike?.dice).toBe("1d6");
+    expect(rogue.weaponDamageBonus).toBe(5);
 
     // Unequipping the weapon falls back to the default fists-and-steel Strike.
     const disarmed = unequipItem(rogue, "weapon");
     const disarmedStrike = disarmed.actions.find((a) => a.id === "strike");
     expect(disarmedStrike?.ability).toBe("str");
-    expect(disarmedStrike?.dice).toBe("1d6");
+    expect(disarmed.weaponDamageBonus).toBe(0);
   });
 
   it("throws when equipping an item the character doesn't own", () => {
@@ -253,7 +252,7 @@ describe("withStartingGearIfMissing", () => {
     expect(migrated.equipment.weapon).toBe("ironLongsword");
     expect(migrated.equipment.armor).toBe("chainShirt");
     expect(migrated.inventory.length).toBeGreaterThan(0);
-    expect(migrated.armorClass).toBe(legacy.armorClass);
+    expect(migrated.gearEvasionBonus).toBe(legacy.gearEvasionBonus);
   });
 
   it("backfills background and origin feat on a character saved before those fields existed", () => {

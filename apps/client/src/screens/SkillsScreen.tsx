@@ -46,6 +46,17 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/**
+ * The actual min-max range this action will roll for this character, from
+ * its power coefficient and ability score -- plus the equipped weapon's
+ * flat damage bonus, which combat.ts only ever applies to the basic Strike.
+ */
+function powerRange(action: CombatActionDef, abilityScore: number, weaponDamageBonus: number): [number, number] {
+  const power = action.power ?? 1;
+  const bonus = action.id === "strike" ? weaponDamageBonus : 0;
+  return [Math.round(abilityScore * power * 0.85) + bonus, Math.round(abilityScore * power * 1.15) + bonus];
+}
+
 export function SkillsScreen({ character }: SkillsScreenProps) {
   const [filter, setFilter] = useState<FilterId>("all");
   const [selectedId, setSelectedId] = useState<string | null>(character.actions[0]?.id ?? null);
@@ -146,10 +157,14 @@ export function SkillsScreen({ character }: SkillsScreenProps) {
                     <span className="aow-skill-stat-label">TARGET</span>
                     <span>{TARGET_LABELS[selected.target] ?? capitalize(selected.target)}</span>
                   </div>
-                  {selected.dice && (
+                  {selected.power !== undefined && (selected.kind === "attack" || selected.kind === "heal" || selected.kind === "save") && (
                     <div className="aow-skill-stat">
-                      <span className="aow-skill-stat-label">DICE</span>
-                      <span>{selected.dice}</span>
+                      <span className="aow-skill-stat-label">{selected.kind === "heal" ? "HEALING" : "DAMAGE"}</span>
+                      <span>
+                        {powerRange(selected, character.abilityScores[selected.ability], character.weaponDamageBonus).join(
+                          "–"
+                        )}
+                      </span>
                     </div>
                   )}
                   {selected.damageType && (
@@ -161,7 +176,7 @@ export function SkillsScreen({ character }: SkillsScreenProps) {
                   {selected.effectValue !== undefined && (
                     <div className="aow-skill-stat">
                       <span className="aow-skill-stat-label">EFFECT</span>
-                      <span>+{selected.effectValue}</span>
+                      <span>+{selected.effectValue} Evasion</span>
                     </div>
                   )}
                   {selected.resourceCost !== undefined && resourceConfig && (

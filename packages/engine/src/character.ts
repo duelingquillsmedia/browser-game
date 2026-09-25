@@ -7,7 +7,7 @@ import type { OriginFeatId } from "./feats.js";
 import { BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
-import { getClassResource } from "./resources.js";
+import { computeMaxHealth, computeResourceStart } from "./stats.js";
 
 export interface InventoryStack {
   itemId: string;
@@ -26,7 +26,11 @@ export interface Character {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  armorClass: number;
+  /** Flat evasion-percentage bonus from equipped armor/accessories (see stats.ts's computeEvasion for the Dexterity-based base). */
+  gearEvasionBonus: number;
+  /** Flat damage bonus from the equipped weapon, added on top of the basic Strike's ability-scaled damage. */
+  weaponDamageBonus: number;
+  /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; no longer feeds attack rolls (see stats.ts). */
   proficiencyBonus: number;
   actions: CombatActionDef[];
   /** Tracks remaining uses for actions with `usesPerCombat`; reset at combat start. */
@@ -83,31 +87,30 @@ function buildMagicInitiateAction(character: Pick<Character, "abilityScores">): 
     kind: "attack",
     target: "enemy",
     ability: bestMagicInitiateAbility(character.abilityScores),
-    dice: "1d6",
+    power: 1,
     damageType: "force",
   };
 }
 
-/** Recomputes armorClass, resistances, and actions from base stats plus race/feat traits and whatever's equipped. */
+/** Recomputes evasion, resistances, and actions from base stats plus race/feat traits and whatever's equipped. */
 function applyEquipmentEffects(character: Character, cls: CharacterClass, race: Race): Character {
-  const dexMod = abilityModifier(character.abilityScores.dex);
   const armor = character.equipment.armor ? getItem(character.equipment.armor) : undefined;
   const accessory = character.equipment.accessory ? getItem(character.equipment.accessory) : undefined;
   const weapon = character.equipment.weapon ? getItem(character.equipment.weapon) : undefined;
 
-  const armorClass = 10 + dexMod + (armor?.armorClassBonus ?? 0) + (accessory?.armorClassBonus ?? 0);
+  const gearEvasionBonus = (armor?.evasionBonus ?? 0) + (accessory?.evasionBonus ?? 0);
 
   const strike: CombatActionDef =
-    weapon?.damageDice !== undefined
+    weapon !== undefined
       ? {
           ...BASIC_ATTACK,
           name: weapon.name,
           description: `A basic attack with your equipped ${weapon.name}.`,
           ability: weapon.ability ?? BASIC_ATTACK.ability,
-          dice: weapon.damageDice,
           damageType: weapon.damageType ?? BASIC_ATTACK.damageType,
         }
       : BASIC_ATTACK;
+  const weaponDamageBonus = weapon?.damageBonus ?? 0;
 
   const withStrike = cls.actions.some((a) => a.id === BASIC_ATTACK.id)
     ? cls.actions.map((a) => (a.id === BASIC_ATTACK.id ? strike : a))
@@ -124,7 +127,13 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
   );
 
-  return { ...character, armorClass, actions, damageResistances: race.damageResistances ?? [] };
+  return {
+    ...character,
+    gearEvasionBonus,
+    actions,
+    weaponDamageBonus,
+    damageResistances: race.damageResistances ?? [],
+  };
 }
 
 export function equipItem(character: Character, itemId: string): Character {
@@ -194,7 +203,7 @@ export function withStartingGearIfMissing(character: Character): Character {
     originFeatId: character.originFeatId ?? getBackground(backgroundId).originFeatId,
     inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
     equipment: character.equipment ?? { ...defaultEquipment },
-    resource: character.resource ?? getClassResource(cls.id)?.start,
+    resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id),
   };
   return applyEquipmentEffects(withGear, cls, race);
 }
@@ -216,8 +225,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     abilityScores[key] = Math.min(20, abilityScores[key] + bonus);
   }
 
-  const vitMod = abilityModifier(abilityScores.vit);
-  const maxHp = cls.hitDie + vitMod + (level - 1) * (Math.ceil(cls.hitDie / 2) + 1 + vitMod);
+  const maxHp = computeMaxHealth(abilityScores, cls.id);
   const equipment = resolveStartingEquipment(cls, options.equipmentOptionId);
 
   const base: Character = {
@@ -231,11 +239,12 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     abilityScores,
     maxHp,
     hp: maxHp,
-    armorClass: 10,
+    gearEvasionBonus: 0,
+    weaponDamageBonus: 0,
     proficiencyBonus: 2 + Math.floor((level - 1) / 4),
     actions: [],
     actionUses: {},
-    resource: getClassResource(cls.id)?.start,
+    resource: computeResourceStart(abilityScores, cls.id),
     inventory: buildStartingInventory(cls, equipment),
     equipment: { ...equipment },
     appearance: options.appearance,

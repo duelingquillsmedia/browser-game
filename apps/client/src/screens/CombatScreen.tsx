@@ -80,7 +80,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
       dead: false,
       fled: false,
       dodging: false,
-      tempArmorClassBonus: 0,
+      tempEvasionBonus: 0,
     })),
     log: [],
   }));

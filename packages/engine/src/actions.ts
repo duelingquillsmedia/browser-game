@@ -11,25 +11,24 @@ export interface CombatActionDef {
   kind: ActionKind;
   target: ActionTarget;
   /**
-   * Ability score used for the to-hit roll and damage/healing modifier on
-   * "attack"/"heal" actions. On a "save" action, this is the *caster's*
-   * spellcasting ability, used to compute the save DC (8 + proficiency +
-   * this ability's modifier), per the SRD's spell save DC formula.
+   * Ability score this action scales off of. On "attack"/"heal", damage or
+   * healing is `round(abilityScore * power * variance)` (see stats.ts). On
+   * a "save" action, this is the *caster's* casting ability, weighed
+   * against the target's `saveAbility` score to find the save's percent
+   * chance of succeeding (see `computeSaveChance`).
    */
   ability: AbilityKey;
-  /** For a "save" action, the ability the target rolls to resist it. */
+  /** For a "save" action, the ability the target's resistance is based on. */
   saveAbility?: AbilityKey;
   /**
-   * Dice notation for damage or healing, e.g. "1d8". For attack/heal, the
-   * relevant ability modifier is added on top by the combat engine,
-   * matching SRD-style attack/damage rolls. For a save-based effect, the
-   * dice are rolled once (even against multiple targets) with no ability
-   * modifier added, matching SRD spell damage. Omitted for defend/flee.
+   * Coefficient the scaling ability score is multiplied by to get this
+   * action's damage or healing, before the random variance band is
+   * applied. Omitted for defend/flee/buff.
    */
-  dice?: string;
+  power?: number;
   /** The kind of damage an attack/save deals, for Resistance/Vulnerability/Immunity. */
   damageType?: DamageType;
-  /** Flat magnitude for buff effects (e.g. +2 AC). */
+  /** Percentage-point magnitude for buff effects (e.g. +20 evasion). */
   effectValue?: number;
   /** A hard cap on total uses for the whole fight (e.g. Second Wind, Fireball). */
   usesPerCombat?: number;
@@ -52,16 +51,14 @@ export const BASIC_ATTACK: CombatActionDef = {
   kind: "attack",
   target: "enemy",
   ability: "str",
-  dice: "1d6",
+  power: 1,
   damageType: "slashing",
 };
 
 export const DEFEND_ACTION: CombatActionDef = {
   id: "defend",
   name: "Defend",
-  description:
-    "Focus on defense: until your next turn, attacks against you have Disadvantage, and you have " +
-    "Advantage on attempts to flee.",
+  description: "Focus on defense: until your next turn, you're much harder to hit, and easier to flee with.",
   kind: "defend",
   target: "self",
   ability: "str",

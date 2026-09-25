@@ -8,6 +8,7 @@ export * from "./classes.js";
 export * from "./resources.js";
 export * from "./items.js";
 export * from "./damage.js";
+export * from "./stats.js";
 export * from "./character.js";
 export * from "./companions.js";
 export * from "./monsters.js";

@@ -13,7 +13,6 @@ export interface CharacterClass {
   id: string;
   name: string;
   description: string;
-  hitDie: number; // e.g. 10 for a d10 hit die
   primaryAbility: AbilityKey;
   savingThrowProficiencies: AbilityKey[];
   /** Flat ability score bonuses granted just for picking this class (design handoff's "10 + race bonus + class bonus" model). */
@@ -31,18 +30,17 @@ export interface CharacterClass {
 /**
  * The five playable classes carried over from the Aetherwyn character
  * creation handoff. The class flavor, ability bonuses, and resource pool
- * assignment (see resources.ts) all follow that handoff; each class's
- * actual combat moves stay within what the current (still D&D-derived)
- * combat engine can resolve today -- multi-target cleaves, damage-over-time
- * poison, evasion buffs, and stuns described in the handoff's skill list
- * are the AP-based combat system's job, not this pass's.
+ * assignment (see resources.ts) all follow that handoff; each action's
+ * `power` coefficient (see stats.ts) is homebrew, sized to feel right
+ * against the new Vitality-scaled HP pools. Multi-target cleaves,
+ * damage-over-time poison, and stuns described in the handoff's own skill
+ * list are the future AP-based combat system's job, not this pass's.
  */
 export const CLASSES: Record<string, CharacterClass> = {
   warrior: {
     id: "warrior",
     name: "Warrior",
     description: "Steel and stubbornness. Warriors build Rage by dealing and taking blows, then spend it on crushing strikes.",
-    hitDie: 10,
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "vit"],
     abilityScoreBonuses: { str: 4, vit: 3, dex: 1 },
@@ -54,7 +52,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "attack",
         target: "enemy",
         ability: "str",
-        dice: "1d8",
+        power: 1.8,
         damageType: "slashing",
         resourceCost: 6,
       },
@@ -65,7 +63,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "heal",
         target: "self",
         ability: "vit",
-        dice: "1d10",
+        power: 3,
         resourceCost: 8,
       },
       BASIC_ATTACK,
@@ -80,7 +78,6 @@ export const CLASSES: Record<string, CharacterClass> = {
     id: "rogue",
     name: "Rogue",
     description: "Quick blades from the shadows. Rogues win by striking first and striking smart.",
-    hitDie: 8,
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "int"],
     abilityScoreBonuses: { dex: 5, int: 2, str: 1 },
@@ -92,7 +89,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "attack",
         target: "enemy",
         ability: "dex",
-        dice: "1d6",
+        power: 1.4,
         damageType: "piercing",
       },
       {
@@ -102,7 +99,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "attack",
         target: "enemy",
         ability: "dex",
-        dice: "1d4",
+        power: 0.9,
         damageType: "piercing",
       },
     ],
@@ -116,7 +113,6 @@ export const CLASSES: Record<string, CharacterClass> = {
     id: "mage",
     name: "Mage",
     description: "Scholars of the arcane, channeling raw magic through years of study.",
-    hitDie: 6,
     primaryAbility: "int",
     savingThrowProficiencies: ["int", "wis"],
     abilityScoreBonuses: { int: 5, spi: 3 },
@@ -128,7 +124,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "attack",
         target: "enemy",
         ability: "int",
-        dice: "1d10",
+        power: 1.8,
         damageType: "fire",
         resourceCost: 4,
       },
@@ -142,18 +138,18 @@ export const CLASSES: Record<string, CharacterClass> = {
         target: "enemies",
         ability: "int",
         saveAbility: "dex",
-        dice: "3d6",
+        power: 1.3,
         damageType: "fire",
         resourceCost: 10,
       },
       {
         id: "arcane-shield",
         name: "Arcane Shield",
-        description: "A shimmering barrier of force, granting +3 AC until your next turn. Costs Arcane.",
+        description: "A shimmering barrier of force, granting +20 evasion until your next turn. Costs Arcane.",
         kind: "buff",
         target: "self",
         ability: "int",
-        effectValue: 3,
+        effectValue: 20,
         resourceCost: 5,
       },
     ],
@@ -167,7 +163,6 @@ export const CLASSES: Record<string, CharacterClass> = {
     id: "cleric",
     name: "Cleric",
     description: "A vessel of the dawn. Clerics mend wounds and lash out with radiant judgment.",
-    hitDie: 8,
     primaryAbility: "wis",
     savingThrowProficiencies: ["wis", "spi"],
     abilityScoreBonuses: { wis: 4, spi: 3, vit: 1 },
@@ -179,7 +174,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "attack",
         target: "enemy",
         ability: "wis",
-        dice: "1d8",
+        power: 1.8,
         damageType: "radiant",
         resourceCost: 4,
       },
@@ -190,7 +185,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "heal",
         target: "ally",
         ability: "wis",
-        dice: "1d8",
+        power: 3.2,
         resourceCost: 6,
       },
     ],
@@ -204,7 +199,6 @@ export const CLASSES: Record<string, CharacterClass> = {
     id: "druid",
     name: "Druid",
     description: "Wardens of root and bloom, drawing on nature's own magic in battle.",
-    hitDie: 8,
     primaryAbility: "wis",
     savingThrowProficiencies: ["int", "wis"],
     abilityScoreBonuses: { wis: 3, spi: 2, vit: 2, dex: 1 },
@@ -216,7 +210,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "attack",
         target: "enemy",
         ability: "wis",
-        dice: "1d8",
+        power: 1.6,
         damageType: "piercing",
         resourceCost: 4,
       },
@@ -227,7 +221,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         kind: "heal",
         target: "ally",
         ability: "wis",
-        dice: "1d8",
+        power: 3,
         resourceCost: 6,
       },
     ],

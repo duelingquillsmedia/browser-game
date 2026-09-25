@@ -1,4 +1,4 @@
-import { getClassResource, type Combatant } from "@eridan/engine";
+import { computeEvasion, computeResourceMax, getClassResource, type Combatant } from "@eridan/engine";
 import { HealthBar } from "./HealthBar";
 import { ResourceBar } from "./ResourceBar";
 import { CharacterSprite, type SpriteState } from "./CharacterSprite";
@@ -116,7 +116,7 @@ export interface CombatantInfoPanelProps {
   isHovered?: boolean;
 }
 
-/** The combatant's name, HP bar, AC and status, shown in the side rail off the battlefield. */
+/** The combatant's name, HP bar, evasion and status, shown in the side rail off the battlefield. */
 export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: CombatantInfoPanelProps) {
   const isDown = combatant.hp <= 0 || combatant.fled;
   const rowClassNames = [
@@ -131,6 +131,10 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: Comb
 
   const bloodied = combatant.hp > 0 && combatant.hp <= combatant.maxHp / 2;
   const resourceConfig = getClassResource(combatant.classId);
+  const resourceMax = computeResourceMax(combatant.abilityScores, combatant.classId ?? "");
+  const totalEvasion = Math.round(
+    computeEvasion(combatant.abilityScores.dex) + combatant.evasionBonus + combatant.tempEvasionBonus
+  );
 
   let statusTag: string | null = null;
   if (combatant.fled) statusTag = "Fled";
@@ -142,20 +146,20 @@ export function CombatantInfoPanel({ combatant, isCurrentTurn, isHovered }: Comb
     <div className={rowClassNames}>
       <div className="combatant-name">
         {combatant.name}
-        {combatant.tempArmorClassBonus > 0 && <span className="badge">+{combatant.tempArmorClassBonus} AC</span>}
+        {combatant.tempEvasionBonus > 0 && <span className="badge">+{combatant.tempEvasionBonus} Evasion</span>}
         {combatant.dodging && <span className="badge">Dodging</span>}
         {bloodied && <span className="badge badge-bloodied">Bloodied</span>}
       </div>
       <HealthBar hp={Math.max(0, combatant.hp)} maxHp={combatant.maxHp} />
-      {resourceConfig && (
+      {resourceConfig && resourceMax !== undefined && (
         <ResourceBar
           resourceKey={resourceConfig.key}
           name={resourceConfig.name}
           value={combatant.resource ?? 0}
-          max={resourceConfig.max}
+          max={resourceMax}
         />
       )}
-      <div className="combatant-meta">AC {combatant.armorClass + combatant.tempArmorClassBonus}</div>
+      <div className="combatant-meta">Evasion {totalEvasion}%</div>
       {statusTag && <div className="status-tag">{statusTag}</div>}
     </div>
   );

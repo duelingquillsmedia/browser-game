@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   ABILITY_NAMES,
-  BASIC_ATTACK,
   equipItem,
   getItem,
   unequipItem,
@@ -35,12 +34,12 @@ function capitalize(value: string): string {
 
 function formatItemStats(item: ItemTemplate): string | null {
   const parts: string[] = [];
-  if (item.damageDice) {
-    const ability = item.ability ?? BASIC_ATTACK.ability;
-    const damageType = item.damageType ?? BASIC_ATTACK.damageType ?? "slashing";
-    parts.push(`${item.damageDice} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
+  if (item.damageBonus) {
+    const ability = item.ability ?? "str";
+    const damageType = item.damageType ?? "slashing";
+    parts.push(`+${item.damageBonus} ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
   }
-  if (item.armorClassBonus) parts.push(`+${item.armorClassBonus} AC`);
+  if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
@@ -52,8 +51,8 @@ function compareToEquipped(character: Character, candidate: ItemTemplate) {
   if (candidate.slot === "weapon") {
     return { kind: "weapon" as const, from: formatItemStats(equipped), to: formatItemStats(candidate) };
   }
-  const delta = (candidate.armorClassBonus ?? 0) - (equipped.armorClassBonus ?? 0);
-  return { kind: "ac" as const, delta };
+  const delta = (candidate.evasionBonus ?? 0) - (equipped.evasionBonus ?? 0);
+  return { kind: "evasion" as const, delta };
 }
 
 export function InventoryScreen({ character, onUpdateCharacter }: InventoryScreenProps) {
@@ -150,10 +149,10 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                 {formatItemStats(selectedItem) && <p className="aow-item-stats">{formatItemStats(selectedItem)}</p>}
                 <p className="aow-item-flavor">{selectedItem.description}</p>
 
-                {comparison && comparison.kind === "ac" && comparison.delta !== 0 && (
+                {comparison && comparison.kind === "evasion" && comparison.delta !== 0 && (
                   <div className={`aow-item-compare ${comparison.delta > 0 ? "aow-resist-good" : "aow-resist-bad"}`}>
                     vs. equipped: {comparison.delta > 0 ? "+" : ""}
-                    {comparison.delta} AC
+                    {comparison.delta} Evasion
                   </div>
                 )}
                 {comparison && comparison.kind === "weapon" && (

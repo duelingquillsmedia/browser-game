@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getClassResource, type Character } from "@eridan/engine";
+import { computeResourceMax, getClassResource, type Character } from "@eridan/engine";
 import "../theme/aow-theme.css";
 import "./GameShell.css";
 
@@ -46,8 +46,10 @@ export function GameShell({ gameName, character, active, onNavigate, children }:
   }, [onNavigate]);
 
   const resourceConfig = getClassResource(character.classId);
+  const resourceMax = computeResourceMax(character.abilityScores, character.classId);
   const hpPct = Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100));
-  const resourcePct = resourceConfig ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceConfig.max) * 100)) : 0;
+  const resourcePct =
+    resourceConfig && resourceMax ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceMax) * 100)) : 0;
   const initial = character.name.trim().charAt(0).toUpperCase();
 
   return (

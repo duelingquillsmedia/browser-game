@@ -1,5 +1,5 @@
 import type { AbilityKey, AbilityScores } from "./abilities.js";
-import { abilityModifier, rollD20, rollD20WithEdge, rollDice, type RNG } from "./dice.js";
+import { abilityModifier, rollD20, rollD20WithEdge, type RNG } from "./dice.js";
 import { BASIC_ATTACK, DEFEND_ACTION, type CombatActionDef } from "./actions.js";
 import type { Character } from "./character.js";
 import { getClass } from "./classes.js";
@@ -7,8 +7,24 @@ import type { Monster } from "./monsters.js";
 import { applyDamageModifiers, type DamageType } from "./damage.js";
 import type { OriginFeatId } from "./feats.js";
 import { getClassResource } from "./resources.js";
+import {
+  BASE_HIT_CHANCE,
+  CRIT_MULTIPLIER,
+  MAX_HIT_CHANCE,
+  MIN_HIT_CHANCE,
+  computeCritChance,
+  computeEvasion,
+  computeResourceMax,
+  computeResourceRegenPerTurn,
+  computeResourceStart,
+  computeSaveChance,
+  randomVariance,
+} from "./stats.js";
 
 export type Side = "party" | "enemy";
+
+/** Flat evasion-percentage bonus from using Defend, on top of the target's own Dexterity-based evasion. */
+const DEFEND_EVASION_BONUS = 25;
 
 export interface Combatant {
   id: string;
@@ -25,8 +41,12 @@ export interface Combatant {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  armorClass: number;
-  proficiencyBonus: number;
+  /** Flat evasion-percentage bonus from gear (party) or natural armor (monsters), on top of the Dexterity-based base (see stats.ts). */
+  evasionBonus: number;
+  /** Flat damage bonus from an equipped weapon, added to the basic Strike only; monsters have none. */
+  weaponDamageBonus?: number;
+  /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; monsters have none. */
+  proficiencyBonus?: number;
   actions: CombatActionDef[];
   actionUses: Record<string, number>;
   /** For actions with a `cooldown`: the round each one next becomes available again. */
@@ -38,9 +58,9 @@ export interface Combatant {
   damageImmunities: DamageType[];
   /** Current value in this combatant's class resource pool (Arcane/Divinity/Wylde/Rage); undefined if their class has none. */
   resource?: number;
-  /** From buff actions (e.g. Arcane Shield); cleared at the start of this combatant's own next turn. */
-  tempArmorClassBonus: number;
-  /** From Defend (SRD's Dodge): attacks against this combatant have Disadvantage until their next turn. */
+  /** From buff actions (e.g. Arcane Shield) and Defend; cleared at the start of this combatant's own next turn. */
+  tempEvasionBonus: number;
+  /** From Defend: gives Advantage on this combatant's own Flee attempts until their next turn. */
   dodging: boolean;
   initiative: number;
   fled: boolean;
@@ -64,17 +84,19 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,
     hp: source.hp,
-    armorClass: source.armorClass,
-    proficiencyBonus: source.proficiencyBonus,
+    evasionBonus: "gearEvasionBonus" in source ? source.gearEvasionBonus : source.evasionBonus,
+    weaponDamageBonus: "weaponDamageBonus" in source ? source.weaponDamageBonus : undefined,
+    proficiencyBonus: "classId" in source ? source.proficiencyBonus : undefined,
     actions: source.actions,
     actionUses: { ...source.actionUses },
     actionCooldowns: {},
-    resource: "classId" in source ? source.resource ?? getClassResource(source.classId)?.start : undefined,
+    resource:
+      "classId" in source ? (source.resource ?? computeResourceStart(source.abilityScores, source.classId)) : undefined,
     savingThrowProficiencies: "classId" in source ? getClass(source.classId).savingThrowProficiencies : [],
     damageResistances: source.damageResistances ?? [],
     damageVulnerabilities: source.damageVulnerabilities ?? [],
     damageImmunities: source.damageImmunities ?? [],
-    tempArmorClassBonus: 0,
+    tempEvasionBonus: 0,
     dodging: false,
     initiative: 0,
     fled: false,
@@ -160,12 +182,12 @@ export function isActionReady(actor: Combatant, action: CombatActionDef, round: 
   return true;
 }
 
-/** Applies a resource pool gain, clamped to that resource's max. A no-op if `combatant`'s class has no such pool. */
+/** Applies a resource pool gain, clamped to that resource's Spirit/Intellect-derived max. A no-op if `combatant`'s class has no such pool. */
 function gainResource(combatant: Combatant, amount: number | undefined): void {
   if (!amount) return;
-  const config = getClassResource(combatant.classId);
-  if (!config) return;
-  combatant.resource = Math.min(config.max, (combatant.resource ?? 0) + amount);
+  const max = computeResourceMax(combatant.abilityScores, combatant.classId ?? "");
+  if (max === undefined) return;
+  combatant.resource = Math.min(max, (combatant.resource ?? 0) + amount);
 }
 
 function findCombatant(state: CombatState, id: string): Combatant {
@@ -200,7 +222,7 @@ export function startCombat(
   const combatants = [...partySource, ...enemySource].map((c) => ({ ...c }));
 
   for (const c of combatants) {
-    const alertBonus = c.originFeatId === "alert" ? c.proficiencyBonus : 0;
+    const alertBonus = c.originFeatId === "alert" ? (c.proficiencyBonus ?? 0) : 0;
     c.initiative = rollD20(rng) + abilityMod(c, "dex") + alertBonus;
   }
 
@@ -246,7 +268,7 @@ function handlePartyDamageOutcome(state: CombatState, target: Combatant, damage:
   log(state, `${target.name} drops to 0 HP and falls unconscious!`, { kind: "down", targetId: target.id });
 }
 
-/** Rolls to see if `actor`'s attack/spell against `target` connects. */
+/** Rolls to see if `actor`'s attack/spell against `target` connects, then how hard it hits. */
 function resolveAttack(
   state: CombatState,
   actor: Combatant,
@@ -254,37 +276,35 @@ function resolveAttack(
   action: CombatActionDef,
   rng: RNG
 ): void {
-  const disadvantaged = target.dodging;
-  const advantaged = target.unconscious;
-  const edge = advantaged && disadvantaged ? "none" : advantaged ? "advantage" : disadvantaged ? "disadvantage" : "none";
-  const attackRoll = rollD20WithEdge(edge, rng);
-  const mod = abilityMod(actor, action.ability) + actor.proficiencyBonus;
-  const total = attackRoll + mod;
-  const targetAc = target.armorClass + target.tempArmorClassBonus;
-
-  const isFumble = attackRoll === 1;
-  const hits = attackRoll === 20 || (!isFumble && total >= targetAc);
-
-  if (!hits) {
-    log(state, `${actor.name} attacks ${target.name} with ${action.name} (${total} vs AC ${targetAc}) — misses!`, {
-      kind: "miss",
-      actorId: actor.id,
-      targetId: target.id,
-    });
-    return;
-  }
+  let isCrit: boolean;
 
   // Any hit against an Unconscious target is an automatic Critical Hit.
-  const isCrit = attackRoll === 20 || target.unconscious;
-
-  let diceTotal = rollDice(action.dice!, rng).total;
-  if (!isCrit && actor.originFeatId === "savageAttacker") {
-    // Savage Attacker: roll the damage dice twice and keep the higher single result, once per turn.
-    const reroll = rollDice(action.dice!, rng).total;
-    diceTotal = Math.max(diceTotal, reroll);
+  if (target.unconscious) {
+    isCrit = true;
+  } else {
+    const evasion = computeEvasion(target.abilityScores.dex) + target.evasionBonus + target.tempEvasionBonus;
+    const hitChance = Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion));
+    const hits = rng() * 100 < hitChance;
+    if (!hits) {
+      log(state, `${actor.name} attacks ${target.name} with ${action.name} — misses!`, {
+        kind: "miss",
+        actorId: actor.id,
+        targetId: target.id,
+      });
+      return;
+    }
+    const critChance = computeCritChance(actor.abilityScores.dex);
+    isCrit = rng() * 100 < critChance;
   }
-  let damage = Math.max(0, diceTotal + abilityMod(actor, action.ability));
-  if (isCrit) damage += rollDice(action.dice!, rng).total;
+
+  let variance = randomVariance(rng);
+  if (!isCrit && actor.originFeatId === "savageAttacker") {
+    // Savage Attacker: roll damage variance twice and keep the higher result, once per turn.
+    variance = Math.max(variance, randomVariance(rng));
+  }
+  const weaponBonus = action.id === BASIC_ATTACK.id ? (actor.weaponDamageBonus ?? 0) : 0;
+  let damage = Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance)) + weaponBonus;
+  if (isCrit) damage = Math.round(damage * CRIT_MULTIPLIER);
   const damageType = action.damageType ?? "bludgeoning";
   damage = applyDamageModifiers(damage, damageType, target);
 
@@ -310,17 +330,17 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
   const targets = state.combatants.filter((c) => c.side !== actor.side && isTargetable(c));
   if (targets.length === 0) return;
 
-  const dc = 8 + actor.proficiencyBonus + abilityMod(actor, action.ability);
   const damageType = action.damageType ?? "force";
   const saveAbility = action.saveAbility ?? action.ability;
-  const baseDamage = rollDice(action.dice!, rng).total;
+  const casterScore = actor.abilityScores[action.ability];
+  const baseDamage = Math.max(0, Math.round(casterScore * (action.power ?? 1) * randomVariance(rng)));
 
   for (const target of targets) {
-    const edge = target.dodging && saveAbility === "dex" ? "advantage" : "none";
-    const saveRoll = rollD20WithEdge(edge, rng);
-    const proficient = target.savingThrowProficiencies.includes(saveAbility);
-    const saveTotal = saveRoll + abilityMod(target, saveAbility) + (proficient ? target.proficiencyBonus : 0);
-    const succeeded = saveTotal >= dc;
+    let saveChance = computeSaveChance(target.abilityScores[saveAbility], casterScore);
+    if (target.savingThrowProficiencies.includes(saveAbility)) saveChance += 10;
+    if (target.dodging && saveAbility === "dex") saveChance += 15;
+    saveChance = Math.max(0, Math.min(100, saveChance));
+    const succeeded = rng() * 100 < saveChance;
 
     let damage = succeeded ? Math.floor(baseDamage / 2) : baseDamage;
     damage = applyDamageModifiers(damage, damageType, target);
@@ -331,7 +351,7 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
     log(
       state,
       `${target.name} ${succeeded ? "partially resists" : "fails to resist"} ${actor.name}'s ${action.name} ` +
-        `(${saveTotal} vs DC ${dc}) and takes ${damage} ${damageType} damage.`,
+        `(${saveChance}% chance) and takes ${damage} ${damageType} damage.`,
       {
         kind: succeeded ? "save-succeed" : "save-fail",
         actorId: actor.id,
@@ -344,7 +364,7 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
 }
 
 function resolveHeal(state: CombatState, actor: Combatant, target: Combatant, action: CombatActionDef, rng: RNG): void {
-  const amount = Math.max(1, rollDice(action.dice!, rng).total + abilityMod(actor, action.ability));
+  const amount = Math.max(1, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * randomVariance(rng)));
   const before = target.hp;
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const healed = target.hp - before;
@@ -361,8 +381,8 @@ function resolveHeal(state: CombatState, actor: Combatant, target: Combatant, ac
 }
 
 function resolveBuff(state: CombatState, actor: Combatant, action: CombatActionDef): void {
-  actor.tempArmorClassBonus += action.effectValue ?? 0;
-  log(state, `${actor.name} uses ${action.name}, gaining +${action.effectValue ?? 0} AC until their next turn.`, {
+  actor.tempEvasionBonus += action.effectValue ?? 0;
+  log(state, `${actor.name} uses ${action.name}, gaining +${action.effectValue ?? 0} evasion until their next turn.`, {
     kind: "buff",
     actorId: actor.id,
   });
@@ -370,9 +390,10 @@ function resolveBuff(state: CombatState, actor: Combatant, action: CombatActionD
 
 function resolveDefend(state: CombatState, actor: Combatant): void {
   actor.dodging = true;
+  actor.tempEvasionBonus += DEFEND_EVASION_BONUS;
   log(
     state,
-    `${actor.name} uses ${DEFEND_ACTION.name}: attacks against them have Disadvantage until their next turn.`,
+    `${actor.name} uses ${DEFEND_ACTION.name}: much harder to hit until their next turn.`,
     { kind: "defend", actorId: actor.id }
   );
 }
@@ -381,7 +402,7 @@ function resolveFlee(state: CombatState, actor: Combatant, rng: RNG): void {
   const edge = actor.dodging ? "advantage" : "none";
   const roll = rollD20WithEdge(edge, rng);
   const proficient = actor.savingThrowProficiencies.includes("dex");
-  const total = roll + abilityMod(actor, "dex") + (proficient ? actor.proficiencyBonus : 0);
+  const total = roll + abilityMod(actor, "dex") + (proficient ? (actor.proficiencyBonus ?? 0) : 0);
   if (total >= FLEE_DC) {
     actor.fled = true;
     log(state, `${actor.name} flees the battle!`, { kind: "flee-success", actorId: actor.id });
@@ -478,9 +499,9 @@ function advanceTurn(state: CombatState): void {
     }
     const next = findCombatant(state, state.turnOrder[state.turnIndex]);
     if (isUp(next)) {
-      next.tempArmorClassBonus = 0;
+      next.tempEvasionBonus = 0;
       next.dodging = false;
-      gainResource(next, getClassResource(next.classId)?.regenPerTurn);
+      gainResource(next, computeResourceRegenPerTurn(next.abilityScores, next.classId ?? ""));
       return;
     }
   }

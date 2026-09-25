@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { isActionReady, startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
 import { createCharacter } from "../character.js";
-import { forD20, forDie, sequenceRng } from "./testUtils.js";
+import { GUARANTEED_FAILURE, GUARANTEED_SUCCESS, forD20, forVariance, sequenceRng } from "./testUtils.js";
 
-/** A level-1 character with flat (mod +0) ability scores, so attack/damage math is easy to hand-trace. */
+/**
+ * A level-1 character built from flat 10s, so its final ability scores are
+ * just "10 + Soldier background (+1 str/dex/vit) + Human race (+1 all) +
+ * this class's own bonuses" -- easy to hand-trace for each class.
+ */
 function makeCharacter(classId: string, raceId = "human") {
   return createCharacter({
     id: classId,
@@ -23,10 +27,9 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
     maxHp: 20,
     hp: 20,
-    armorClass: 10,
-    proficiencyBonus: 2,
+    evasionBonus: 0,
     actions: [
-      { id: "claw", name: "Claw", description: "", kind: "attack", target: "enemy", ability: "str", dice: "1d4", damageType: "slashing" },
+      { id: "claw", name: "Claw", description: "", kind: "attack", target: "enemy", ability: "str", power: 1, damageType: "slashing" },
     ],
     actionUses: {},
     actionCooldowns: {},
@@ -34,7 +37,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     damageResistances: [],
     damageVulnerabilities: [],
     damageImmunities: [],
-    tempArmorClassBonus: 0,
+    tempEvasionBonus: 0,
     dodging: false,
     initiative: 0,
     fled: false,
@@ -47,16 +50,20 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
 
 describe("class resource pools", () => {
   it("gives each class the starting value of its resource pool, or none for a class without one", () => {
+    // Warrior's Rage is a flat 100-point builder pool that starts empty.
     expect(makeCharacter("warrior").resource).toBe(0);
-    expect(makeCharacter("mage").resource).toBe(20);
-    expect(makeCharacter("cleric").resource).toBe(20);
-    expect(makeCharacter("druid").resource).toBe(20);
+    // Mage: int16,spi14 -> 80 + 14*8 + 16*4 = 256, full at creation.
+    expect(makeCharacter("mage").resource).toBe(256);
+    // Cleric: int11,spi14 -> 80 + 14*8 + 11*4 = 236.
+    expect(makeCharacter("cleric").resource).toBe(236);
+    // Druid: int11,spi13 -> 80 + 13*8 + 11*4 = 228.
+    expect(makeCharacter("druid").resource).toBe(228);
     expect(makeCharacter("rogue").resource).toBeUndefined();
   });
 
   it("carries a character's resource value into their Combatant", () => {
     const combatant = toCombatant(makeCharacter("mage"), "party");
-    expect(combatant.resource).toBe(20);
+    expect(combatant.resource).toBe(256);
   });
 
   it("marks an action not-ready when the actor can't pay its resource cost", () => {
@@ -82,9 +89,9 @@ describe("class resource pools", () => {
     const after = submitPlayerAction(
       state,
       { actorId: mage.id, actionId: "firebolt", targetId: "foe" },
-      sequenceRng([forD20(1)]) // a natural 1 -- guaranteed miss
+      sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss
     );
-    expect(after.combatants.find((c) => c.id === mage.id)!.resource).toBe(16); // 20 - 4, spent even on a miss
+    expect(after.combatants.find((c) => c.id === mage.id)!.resource).toBe(252); // 256 - 4, spent even on a miss
   });
 
   it("builds Rage when a Warrior uses their basic Strike, hit or miss", () => {
@@ -93,44 +100,46 @@ describe("class resource pools", () => {
     const after = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(1)]) // guaranteed miss
+      sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss
     );
-    expect(after.combatants.find((c) => c.id === warrior.id)!.resource).toBe(3); // 0 start + 3 gain
+    expect(after.combatants.find((c) => c.id === warrior.id)!.resource).toBe(15); // 0 start + 15 gain
   });
 
   it("caps a builder resource at its max instead of overflowing", () => {
-    const warrior = { ...toCombatant(makeCharacter("warrior"), "party"), resource: 19 };
+    const warrior = { ...toCombatant(makeCharacter("warrior"), "party"), resource: 90 };
     const state = startCombat([warrior], [makeFoe()], sequenceRng([forD20(15), forD20(5)]));
     const after = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "strike", targetId: "foe" },
-      sequenceRng([forD20(1)]) // guaranteed miss; Strike still grants +3 (would be 22 uncapped)
+      sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss; Strike still grants +15 (would be 105 uncapped)
     );
-    expect(after.combatants.find((c) => c.id === warrior.id)!.resource).toBe(20);
+    expect(after.combatants.find((c) => c.id === warrior.id)!.resource).toBe(100);
   });
 
   it("builds Rage when a Warrior is struck by an enemy attack", () => {
     const warrior = toCombatant(makeCharacter("warrior"), "party");
-    // foe (init 15) goes first and rolls a natural 20 -- an automatic hit and crit,
-    // regardless of the warrior's armor class.
+    // foe (init 15) goes first and lands a guaranteed hit on the warrior.
     const state = startCombat(
       [warrior],
       [makeFoe()],
-      sequenceRng([forD20(5), forD20(15), 0, forD20(20), forDie(4, 3), forDie(4, 3)])
+      sequenceRng([forD20(5), forD20(15), 0, GUARANTEED_SUCCESS, 0, forVariance(1)])
     );
-    expect(state.combatants.find((c) => c.id === warrior.id)!.resource).toBe(3);
+    expect(state.combatants.find((c) => c.id === warrior.id)!.resource).toBe(15);
   });
 
   it("regenerates a mana-type resource at the start of the caster's own next turn", () => {
-    const mage = toCombatant(makeCharacter("mage"), "party");
+    // Started well below full so the regen tick is visible instead of just
+    // topping the pool back off.
+    const mage = { ...toCombatant(makeCharacter("mage"), "party"), resource: 100 };
     const state = startCombat([mage], [makeFoe()], sequenceRng([forD20(15), forD20(5)]));
     // Mage casts Firebolt (misses, -4 Arcane); foe's turn auto-resolves (targets
-    // mage, rolls a 2, misses); back on the mage, their turn start regens +2 Arcane.
+    // mage and also misses); back on the mage, their turn start regens mana.
     const after = submitPlayerAction(
       state,
       { actorId: mage.id, actionId: "firebolt", targetId: "foe" },
-      sequenceRng([forD20(1), 0, forD20(2)])
+      sequenceRng([GUARANTEED_FAILURE, 0, GUARANTEED_FAILURE])
     );
-    expect(after.combatants.find((c) => c.id === mage.id)!.resource).toBe(18); // 20 - 4 + 2
+    // 100 - 4 spent, then + round(256 * 0.08) = 20 regen = 116.
+    expect(after.combatants.find((c) => c.id === mage.id)!.resource).toBe(116);
   });
 });

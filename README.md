@@ -308,11 +308,18 @@ available at https://www.dndbeyond.com/srd, licensed under the Creative
 Commons Attribution 4.0 International License
 (https://creativecommons.org/licenses/by/4.0/legalcode).
 
-- **Advantage/Disadvantage**: rolled as two d20s, keeping the higher/lower.
-  Currently triggered by the Defend action (Disadvantage on attackers, per
-  the SRD's actual Dodge action — not the flat AC bonus homebrew rule this
-  used to be) and by attacking an Unconscious target (Advantage). The two
-  cancel out rather than stacking, exactly per SRD.
+**Superseded:** the d20-vs-AC attack roll and Advantage/Disadvantage
+mechanic described in this section were replaced by the percentage-based
+hit/crit/save system in "Attribute-Driven Stats & Combat Math" below. The
+rest of this section (damage types, saving throw proficiency, Fireball's
+save-for-half shape, action cooldowns, the Unconscious condition) still
+applies — only the underlying roll mechanic changed.
+
+- **~~Advantage/Disadvantage~~ (superseded)**: previously rolled as two
+  d20s, keeping the higher/lower, on the Defend action and against
+  Unconscious targets. Defend now grants a flat evasion bonus instead of
+  attacker Disadvantage; attacking an Unconscious target is still an
+  automatic Critical Hit, just via a flag rather than a rigged roll.
 - **Unconscious (homebrew, not SRD)**: a party member dropped to 0 HP falls
   Unconscious, which alone ends the fight in defeat — no Death Saving
   Throws, no chance to stabilize or claw back up mid-fight. Massive damage
@@ -339,8 +346,10 @@ Commons Attribution 4.0 International License
   area rule — one damage roll, applied to every enemy, each rolling its
   own Dexterity save for half damage on a success.
 - **Race and Origin feat hooks**: Alert adds its proficiency bonus to
-  initiative; Savage Attacker rerolls a weapon hit's damage dice and keeps
-  the higher result. (Superseded by Character Creation, below: the SRD-era
+  initiative (unchanged, still a d20 roll); Savage Attacker rolls the
+  attack's damage variance twice and keeps the higher result (updated from
+  "rerolls damage dice" now that damage has no dice to reroll — see below).
+  (Superseded by Character Creation, below: the SRD-era
   Halfling's Lucky reroll, Orc's Relentless Endurance, and Dragonborn's
   Breath Weapon were removed along with those species; an Elf's Silverleaf
   Step is the new roster's equivalent race-trait hook, discounting the
@@ -361,6 +370,63 @@ combat. Also out of scope for this pass: the SRD's full condition list
 since none of Eridan's current abilities can inflict them yet; bonus
 actions/reactions as a separate action-economy slot, since no current
 ability needs one; and temporary hit points, since nothing grants them.
+
+## Attribute-Driven Stats & Combat Math (homebrew)
+
+Design's Character Creation and Combat handoffs included stat formulas
+(Health, resource pools, crit multiplier) explicitly marked as
+placeholders, meant to be swapped for "the game's data definitions." This
+pass (`packages/engine/src/stats.ts`) replaces the SRD's d20-vs-AC combat
+roll and dice-based damage with attribute-scaled, percentage-based math
+targeting the design's MMO-style numbers (health in the hundreds, hits in
+the tens), while deliberately **not** building the separate Combat
+handoff's full AP-economy/ranks/schools/status-effect system — that
+remains a future, bigger rebuild.
+
+Adopted directly from the design handoffs:
+- **Health** = `100 + VIT×10 + class bonus` (class bonus: Warrior 60,
+  Cleric/Druid 30, Rogue 20, Mage 0).
+- **Caster resource max** (Mage/Cleric/Druid) = `80 + SPI×8 + INT×4`.
+  Warrior's Rage is a flat 100-point pool instead (per the handoff's own
+  flat placeholder), starting empty and filling from combat actions rather
+  than regenerating each turn.
+- **Critical hits deal ×1.5 damage**, per the Combat handoff.
+
+Everything else numeric was invented for this pass, since the handoffs'
+own values were placeholder and the engine has no grid/AP economy to hang
+the originals on:
+- **Evasion%** = `DEX × 1.5` (+ any gear evasion bonus), clamped 0–100.
+- **Crit%** = `5 + DEX × 1.2`, clamped 0–100.
+- **Hit%** = `90 − target's total evasion`, clamped to 10–99 so nothing is
+  ever a guaranteed hit or an unhittable wall.
+- **Save%** = `50 + (target's relevant score − caster's casting score) × 2`,
+  +10 if the target is proficient in that save, +15 if also Dodging on a
+  Dex save, clamped 0–100.
+- **Damage/healing** = `ability score × the action's power coefficient ×
+  an 85%–115% random variance`, rounded, +1.5× on a crit. Every action's
+  old dice string (`"2d6"`) became a hand-tuned `power` number instead
+  (e.g. Warrior Slash 1.8, Cleric Heal 3.2, basic Strike 1). Monster stat
+  blocks became curated flat numbers the same way (Goblin Raider 75 HP,
+  Dire Wolf 120, Orc Marauder 160), rebalanced and sanity-checked against
+  the new player HP/damage range via simulated fights rather than a
+  formula, since monsters were never attribute-derived to begin with.
+- **Resource regen** (casters only) = `round(max × 8%)` per turn; Rage has
+  no passive regen and instead fills from `gainOnBasicAttack`/
+  `gainOnBeingStruck`, both raised from 3 to 15 to keep roughly the same
+  "hits to fill" pacing against the new 100-point ceiling (was 20).
+
+Field renames that came with this (engine + UI): `armorClass` →
+`gearEvasionBonus` (Character) / `evasionBonus` (Monster, Combatant);
+`tempArmorClassBonus` → `tempEvasionBonus`; `damageDice` → `damageBonus`
+(a flat number on weapons, applied only to the basic Strike action, never
+to class signature abilities); `CombatActionDef.dice` → `power`; classes'
+`hitDie` was removed outright (Health no longer derives from it).
+`proficiencyBonus` survives only for the Alert feat's initiative bonus and
+the Flee saving throw — both still plain d20 rolls, untouched by this pass.
+
+Still deferred to the future Combat-handoff rebuild: Action Points as a
+resource separate from the class-specific pools above, front/back ranks,
+skill schools, and status effects (Rooted, Burning, Consecrated, etc.).
 
 ## Lore
 

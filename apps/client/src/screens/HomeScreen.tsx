@@ -3,6 +3,7 @@ import {
   ABILITY_NAMES,
   CLASSES,
   RACES,
+  computeResourceMax,
   getClassResource,
   type Character,
 } from "@eridan/engine";
@@ -33,13 +34,13 @@ export function HomeScreen({
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
   const resourceConfig = getClassResource(character.classId);
+  const resourceMax = computeResourceMax(character.abilityScores, character.classId);
   const canVenture = character.hp > 0;
   const canRest = character.hp < character.maxHp;
 
   const hpPct = Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100));
-  const resourcePct = resourceConfig
-    ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceConfig.max) * 100))
-    : 0;
+  const resourcePct =
+    resourceConfig && resourceMax ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceMax) * 100)) : 0;
 
   const equippedSlots = (["weapon", "armor", "accessory"] as const).filter((slot) => character.equipment[slot]);
 
@@ -87,7 +88,7 @@ export function HomeScreen({
                 <div className="aow-bar-label" style={{ marginTop: 8 }}>
                   <span>{resourceConfig.name.toUpperCase()}</span>
                   <span>
-                    {character.resource ?? 0} / {resourceConfig.max}
+                    {character.resource ?? 0} / {resourceMax}
                   </span>
                 </div>
                 <div className="aow-bar-track">
