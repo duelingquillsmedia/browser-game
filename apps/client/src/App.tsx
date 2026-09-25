@@ -218,6 +218,15 @@ function App() {
   }
 
   if (screen.kind === "skills") {
+    async function persist(next: Character) {
+      setScreen({ kind: "skills", character: next });
+      try {
+        await updateCharacterInRoster(next);
+      } catch (err) {
+        console.error("Failed to save action bar change:", err);
+      }
+    }
+
     function handleNavigate(id: "home" | "character" | "inventory" | "skills" | "talents" | "map") {
       if (screen.kind !== "skills") return;
       if (id === "home") setScreen({ kind: "home", character: screen.character });
@@ -228,7 +237,7 @@ function App() {
 
     return (
       <GameShell gameName={GAME_NAME} character={screen.character} active="skills" onNavigate={handleNavigate}>
-        <SkillsScreen character={screen.character} />
+        <SkillsScreen character={screen.character} onUpdateCharacter={persist} />
       </GameShell>
     );
   }

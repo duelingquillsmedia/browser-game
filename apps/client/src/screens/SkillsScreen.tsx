@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { ABILITY_NAMES, getClassResource, type ActionKind, type Character, type CombatActionDef } from "@eridan/engine";
+import {
+  ABILITY_NAMES,
+  ACTION_BAR_SLOT_COUNT,
+  assignActionBarSlot,
+  clearActionBarSlot,
+  getClassResource,
+  type ActionKind,
+  type Character,
+  type CombatActionDef,
+} from "@eridan/engine";
 import "./SkillsScreen.css";
 
 export interface SkillsScreenProps {
   character: Character;
+  onUpdateCharacter: (next: Character) => void;
 }
 
 type FilterId = "all" | "attack" | "heal" | "buff" | "utility";
@@ -57,21 +67,79 @@ function powerRange(action: CombatActionDef, abilityScore: number, weaponDamageB
   return [Math.round(abilityScore * power * 0.85) + bonus, Math.round(abilityScore * power * 1.15) + bonus];
 }
 
-export function SkillsScreen({ character }: SkillsScreenProps) {
+export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps) {
   const [filter, setFilter] = useState<FilterId>("all");
   const [selectedId, setSelectedId] = useState<string | null>(character.actions[0]?.id ?? null);
+  const [placingActionId, setPlacingActionId] = useState<string | null>(null);
 
   const resourceConfig = getClassResource(character.classId);
+  const actionBar = character.actionBarIds ?? Array(ACTION_BAR_SLOT_COUNT).fill(null);
+  const actionById = new Map(character.actions.map((a) => [a.id, a]));
 
   const counts: Record<FilterId, number> = { all: character.actions.length, attack: 0, heal: 0, buff: 0, utility: 0 };
   for (const action of character.actions) counts[bucketFor(action.kind)]++;
 
   const selected: CombatActionDef | undefined = character.actions.find((a) => a.id === selectedId);
+  const selectedSlotIndex = selected ? actionBar.indexOf(selected.id) : -1;
+  const placingAction = placingActionId ? actionById.get(placingActionId) : undefined;
+
+  function handleSlotClick(slotIndex: number) {
+    if (placingActionId) {
+      onUpdateCharacter(assignActionBarSlot(character, slotIndex, placingActionId));
+      setPlacingActionId(null);
+      return;
+    }
+    const actionId = actionBar[slotIndex];
+    if (actionId) setSelectedId(actionId);
+  }
 
   return (
     <div className="aow-skills">
       <p className="aow-eyebrow">ACTIVE ABILITIES FOR COMBAT</p>
       <h1 className="aow-h1">Skills</h1>
+
+      <div className="aow-panel aow-action-bar-panel">
+        <div className="aow-panel-header">ACTION BAR</div>
+        <div className="aow-card-body">
+          <p className={`aow-action-bar-hint${placingActionId ? "" : " aow-muted-text"}`}>
+            {placingAction ? (
+              <>
+                Placing {placingAction.name}. Click a slot.{" "}
+                <button type="button" className="aow-button-ghost aow-action-bar-cancel" onClick={() => setPlacingActionId(null)}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              "Select a skill below, then place it on a slot to organize your bar."
+            )}
+          </p>
+          <div className="aow-action-bar-slots">
+            {actionBar.map((actionId, i) => {
+              const action = actionId ? actionById.get(actionId) : undefined;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`aow-action-bar-slot${placingActionId ? " placing" : ""}${
+                    action && selectedId === action.id ? " active" : ""
+                  }`}
+                  onClick={() => handleSlotClick(i)}
+                  title={action ? action.name : "Empty slot"}
+                >
+                  <span className="aow-action-bar-key">{i + 1}</span>
+                  {action ? (
+                    <span className={`aow-skill-glyph aow-skill-glyph-${bucketFor(action.kind)}`}>
+                      {iconGlyph(action.name)}
+                    </span>
+                  ) : (
+                    <span className="aow-action-bar-empty">Empty</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       <div className="aow-skills-grid">
         <div className="aow-panel aow-skills-list-panel">
@@ -103,6 +171,7 @@ export function SkillsScreen({ character }: SkillsScreenProps) {
                     : action.usesPerCombat !== undefined
                       ? `${action.usesPerCombat}/fight`
                       : null;
+                  const slotIndex = actionBar.indexOf(action.id);
                   return (
                     <button
                       key={action.id}
@@ -114,7 +183,10 @@ export function SkillsScreen({ character }: SkillsScreenProps) {
                         {iconGlyph(action.name)}
                       </span>
                       <span className="aow-skill-row-body">
-                        <span className="aow-skill-row-name">{action.name}</span>
+                        <span className="aow-skill-row-name">
+                          {action.name}
+                          {slotIndex !== -1 && <span className="aow-skill-slot-tag">Slot {slotIndex + 1}</span>}
+                        </span>
                         <span className="aow-skill-row-meta">
                           {cost}
                           {extra ? ` · ${extra}` : ""}
@@ -200,6 +272,20 @@ export function SkillsScreen({ character }: SkillsScreenProps) {
                     </div>
                   )}
                 </div>
+
+                {selectedSlotIndex !== -1 ? (
+                  <button
+                    type="button"
+                    className="aow-button-ghost"
+                    onClick={() => onUpdateCharacter(clearActionBarSlot(character, selectedSlotIndex))}
+                  >
+                    Remove from Action Bar
+                  </button>
+                ) : (
+                  <button type="button" className="aow-button-primary" onClick={() => setPlacingActionId(selected.id)}>
+                    Place on Action Bar
+                  </button>
+                )}
               </>
             )}
           </div>

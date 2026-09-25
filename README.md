@@ -494,6 +494,33 @@ also untouched, since `apps/client/src/game/setup.ts` still builds a
 single-character party on purpose (the Misfit Six companion system stays
 unwired, per its own long-standing "Solo play for now" comment).
 
+## Skills Page Action Bar
+
+Adds the 6-slot action bar from the Out-of-Combat UI handoff's Skills page
+(`Fantasy Combat Game UI/design_handoff_aetherwyn_ui/`), matching its own
+documented interaction exactly: select a skill, click "Place on Action Bar"
+to arm placement (slots switch to dashed ember borders with a "Placing X.
+Click a slot." hint), then click a slot to assign it — removing it from any
+other slot it already occupied, so a skill only ever lives in one place.
+Clicking a filled slot while nothing is armed selects that skill instead,
+mirroring the spellbook list; a slotted skill's row also gets a small
+"Slot N" tag. Removing is the same button, relabeled "Remove from Action
+Bar" whenever the selected skill is already slotted.
+
+This is a Skills-page organizational tool only, by design: it doesn't
+change what's available in combat (`ActionMenu.tsx` still shows every
+action the character knows, unchanged) — the handoff's own combat HUD skill
+bar is a separate, larger 9-slot concept, and with only 3-4 real skills per
+class today a 6-slot loadout wouldn't restrict anything meaningful yet
+anyway. `Character` gained an `actionBarIds: (string | null)[]` field
+(`ACTION_BAR_SLOT_COUNT = 6`, backfilled to all-`null` for characters saved
+before this feature) and two pure helpers, `assignActionBarSlot`/
+`clearActionBarSlot` in `packages/engine/src/character.ts`, following the
+same `equipItem`/`unequipItem` pattern already used for gear. Persists
+through the existing `onUpdateCharacter` → `updateCharacterInRoster` flow
+(`apps/client/src/App.tsx`) — no Supabase migration needed, since the whole
+`Character` already rides in one `data jsonb` column.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

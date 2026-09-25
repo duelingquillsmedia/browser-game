@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createCharacter, equipItem, ownsItem, unequipItem, withStartingGearIfMissing } from "../character.js";
+import {
+  ACTION_BAR_SLOT_COUNT,
+  assignActionBarSlot,
+  clearActionBarSlot,
+  createCharacter,
+  equipItem,
+  ownsItem,
+  unequipItem,
+  withStartingGearIfMissing,
+} from "../character.js";
 import type { Character } from "../character.js";
 import { RACES } from "../races.js";
 import { CLASSES } from "../classes.js";
@@ -283,5 +292,54 @@ describe("withStartingGearIfMissing", () => {
       baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
     expect(withStartingGearIfMissing(character)).toEqual(character);
+  });
+
+  it("backfills an empty action bar on a character saved before it existed", () => {
+    const legacy = createCharacter({
+      id: "pc-8",
+      name: "Pre-Bar",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    });
+    const { actionBarIds: _bar, ...withoutBar } = legacy;
+    const migrated = withStartingGearIfMissing(withoutBar as Character);
+    expect(migrated.actionBarIds).toEqual(Array(ACTION_BAR_SLOT_COUNT).fill(null));
+  });
+});
+
+describe("action bar", () => {
+  const character = createCharacter({
+    id: "pc-9",
+    name: "Slotter",
+    raceId: "human",
+    classId: "warrior",
+    backgroundId: "soldier",
+    baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+  });
+
+  it("starts empty on a freshly created character", () => {
+    expect(character.actionBarIds).toEqual(Array(ACTION_BAR_SLOT_COUNT).fill(null));
+  });
+
+  it("assigns a skill to a slot", () => {
+    const next = assignActionBarSlot(character, 2, "slash");
+    expect(next.actionBarIds?.[2]).toBe("slash");
+    expect(next.actionBarIds?.filter((id) => id !== null)).toEqual(["slash"]);
+  });
+
+  it("moves a skill rather than duplicating it when re-assigned to a different slot", () => {
+    const placed = assignActionBarSlot(character, 0, "slash");
+    const moved = assignActionBarSlot(placed, 3, "slash");
+    expect(moved.actionBarIds?.[0]).toBeNull();
+    expect(moved.actionBarIds?.[3]).toBe("slash");
+    expect(moved.actionBarIds?.filter((id) => id !== null)).toEqual(["slash"]);
+  });
+
+  it("clears a slot", () => {
+    const placed = assignActionBarSlot(character, 1, "second-wind");
+    const cleared = clearActionBarSlot(placed, 1);
+    expect(cleared.actionBarIds).toEqual(Array(ACTION_BAR_SLOT_COUNT).fill(null));
   });
 });

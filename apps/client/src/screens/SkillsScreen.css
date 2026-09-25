@@ -2,6 +2,91 @@
   color: var(--aow-body);
 }
 
+.aow-action-bar-panel {
+  margin-bottom: 14px;
+}
+
+.aow-action-bar-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--aow-secondary);
+}
+
+.aow-action-bar-hint.aow-muted-text {
+  color: var(--aow-muted);
+}
+
+.aow-action-bar-cancel {
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+.aow-action-bar-slots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aow-action-bar-slot {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-control-border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.aow-action-bar-slot:hover {
+  border-color: var(--aow-ember);
+}
+
+.aow-action-bar-slot.active {
+  border-color: var(--aow-ember);
+  box-shadow: 0 0 0 1px var(--aow-ember);
+}
+
+.aow-action-bar-slot.placing {
+  border-style: dashed;
+  border-color: var(--aow-ember);
+}
+
+.aow-action-bar-key {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-family: var(--aow-font-mono);
+  font-size: 9px;
+  color: var(--aow-faint);
+}
+
+.aow-action-bar-empty {
+  font-family: var(--aow-font-mono);
+  font-size: 9px;
+  color: var(--aow-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aow-skill-slot-tag {
+  margin-left: 6px;
+  padding: 0 4px;
+  font-family: var(--aow-font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--aow-ember);
+  border: 1px solid rgba(224, 138, 114, 0.4);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
 .aow-skills-grid {
   display: flex;
   flex-wrap: wrap;
@@ -101,5 +186,10 @@
   font-family: var(--aow-font-mono);
   font-size: 10px;
   color: var(--aow-faint);
+}
+
+.aow-skill-detail-panel .aow-button-primary,
+.aow-skill-detail-panel .aow-button-ghost {
+  margin-top: 14px;
 }
 

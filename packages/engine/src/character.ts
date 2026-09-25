@@ -50,6 +50,13 @@ export interface Character {
   activePartyIds?: string[];
   /** Cosmetic-only appearance preset chosen at creation; the engine doesn't act on this beyond storing it. */
   appearance?: CharacterAppearance;
+  /**
+   * The Skills page's action bar: fixed-length slots (see `ACTION_BAR_SLOT_COUNT`),
+   * each either a known action's id or `null` for an empty slot. Purely a
+   * player-facing organizational tool — combat's action menu still shows every
+   * action the character knows, regardless of what's on this bar.
+   */
+  actionBarIds?: (string | null)[];
 }
 
 export interface CharacterAppearance {
@@ -151,6 +158,30 @@ export function unequipItem(character: Character, slot: ItemSlot): Character {
   return applyEquipmentEffects({ ...character, equipment }, getClass(character.classId), getRace(character.raceId));
 }
 
+/** Number of slots on the Skills page's action bar. */
+export const ACTION_BAR_SLOT_COUNT = 6;
+
+function emptyActionBar(): (string | null)[] {
+  return Array(ACTION_BAR_SLOT_COUNT).fill(null);
+}
+
+/**
+ * Places `actionId` in `slotIndex`, removing it from any other slot it
+ * already occupied (a skill can only live in one slot at a time), matching
+ * the design's own "clicking a slot assigns the skill" behavior.
+ */
+export function assignActionBarSlot(character: Character, slotIndex: number, actionId: string): Character {
+  const bar = character.actionBarIds ?? emptyActionBar();
+  const next = bar.map((id, i) => (i === slotIndex ? actionId : id === actionId ? null : id));
+  return { ...character, actionBarIds: next };
+}
+
+export function clearActionBarSlot(character: Character, slotIndex: number): Character {
+  const bar = character.actionBarIds ?? emptyActionBar();
+  const next = bar.map((id, i) => (i === slotIndex ? null : id));
+  return { ...character, actionBarIds: next };
+}
+
 export interface CreateCharacterOptions {
   id: string;
   name: string;
@@ -204,6 +235,7 @@ export function withStartingGearIfMissing(character: Character): Character {
     inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
     equipment: character.equipment ?? { ...defaultEquipment },
     resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id),
+    actionBarIds: character.actionBarIds ?? emptyActionBar(),
   };
   return applyEquipmentEffects(withGear, cls, race);
 }
@@ -248,6 +280,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     inventory: buildStartingInventory(cls, equipment),
     equipment: { ...equipment },
     appearance: options.appearance,
+    actionBarIds: emptyActionBar(),
   };
 
   const character = applyEquipmentEffects(base, cls, race);
