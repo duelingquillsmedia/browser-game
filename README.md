@@ -96,21 +96,19 @@ client-server milestone (combat is still resolved in the browser for now).
 - Real accounts (email/password via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
-- The Misfit Six: every player character adventures alongside the six
-  Ridgeton Tales companions (Magnus, Magnar, Kel'dos, Dondalian, Telerek,
-  Valeriek), viewable and configurable from a new Party screen off the town
-  hub. Each companion can be rolled (classic 4d6-drop-lowest) or left at
-  their class's standard-array default, and up to three can be chosen to
-  join the player on a mission — four in the field at once, counting
-  yourself.
-- Real multi-character combat: your active party now fights together, not
-  just the player alone. Turn order interleaves every party member and every
-  enemy by initiative, the ability bar and "whose turn" label switch to
-  match whichever combatant is up, and a fight only ends in defeat once the
-  *whole* party is down — one companion dropping doesn't end the mission.
-  Each fighter's HP carries back to the town hub afterward (including
-  companions who didn't fight), and resting heals the whole roster, not
-  just the player.
+- **Cut from the interface (solo game for now)**: the Misfit Six companion
+  system -- six Ridgeton Tales companions (Magnus, Magnar, Kel'dos,
+  Dondalian, Telerek, Valeriek) a player could roll, configure, and bring
+  along (up to three at once) from a Party screen, plus the multi-character
+  combat that came with it (interleaved turn order, defeat only once the
+  whole party is down, etc.). The engine-side implementation
+  (`packages/engine/src/companions.ts`: `MISFIT_SIX`, `createCompanion`,
+  `ensureCompanionRoster`, `setActiveParty`, and the `companions`/
+  `activePartyIds` fields on `Character`) is untouched and still fully
+  functional -- only the client-side UI (the old Party screen, Home's
+  "Party" button, and `game/setup.ts`'s party-aware combat/rest helpers)
+  was removed, so any previously-saved companion data survives in Supabase
+  if this comes back later. `beginEncounter` now always fights solo.
 - Class resource pools: Mages draw on Arcane, Clerics on Divinity, and
   Druids on Wylde — all three work like a classic MMO mana bar (start full,
   spend it on spells, trickle a little back each of the caster's own

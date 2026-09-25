@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { MONSTER_TEMPLATES, type Character } from "@eridan/engine";
 import { ENCOUNTERS, HOME_TOWN_DESCRIPTION, HOME_TOWN_NAME, WORLD_NAME, type Encounter } from "../game/lore";
-import { activePartyMembers } from "../game/setup";
 import eridanMap from "../assets/world/eridan-map.jpg";
 import "./WorldMapScreen.css";
 
@@ -38,7 +37,6 @@ function describeFoes(monsterTemplateIds: string[]): string {
 
 export function WorldMapScreen({ character, onChooseEncounter }: WorldMapScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const party = activePartyMembers(character);
   const canVenture = character.hp > 0;
   const selected = ENCOUNTERS.find((e) => e.id === selectedId);
 
@@ -92,11 +90,6 @@ export function WorldMapScreen({ character, onChooseEncounter }: WorldMapScreenP
                   </div>
                 </div>
                 <p className="aow-item-flavor">{HOME_TOWN_DESCRIPTION}</p>
-                {party.length > 1 && (
-                  <p className="aow-muted-text">
-                    Riding with: {party.map((member) => `${member.name} (${member.hp}/${member.maxHp} HP)`).join(", ")}
-                  </p>
-                )}
                 <p className="aow-muted-text">Select a marked location to venture out.</p>
               </>
             ) : (

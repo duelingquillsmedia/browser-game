@@ -10,12 +10,11 @@ import { GameShell } from "./components/GameShell";
 import { CharacterScreen } from "./screens/CharacterScreen";
 import { InventoryScreen } from "./screens/InventoryScreen";
 import { SkillsScreen } from "./screens/SkillsScreen";
-import { PartyScreen } from "./screens/PartyScreen";
 import { WorldMapScreen } from "./screens/WorldMapScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { GAME_NAME, WORLD_NAME, type Encounter } from "./game/lore";
-import { applyCombatResults, beginEncounter, restParty } from "./game/setup";
+import { applyCombatResults, beginEncounter, restCharacter } from "./game/setup";
 import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
 import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
 import "./App.css";
@@ -29,7 +28,6 @@ type Screen =
   | { kind: "character"; character: Character }
   | { kind: "inventory"; character: Character }
   | { kind: "skills"; character: Character }
-  | { kind: "party"; character: Character }
   | { kind: "encounterSelect"; character: Character }
   | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
 
@@ -152,7 +150,7 @@ function App() {
           character={screen.character}
           onVentureOut={() => setScreen({ kind: "encounterSelect", character: screen.character })}
           onRest={async () => {
-            const rested = restParty(screen.character);
+            const rested = restCharacter(screen.character);
             setScreen({ kind: "home", character: rested });
             try {
               await updateCharacterInRoster(rested);
@@ -163,29 +161,9 @@ function App() {
           onOpenCharacterSheet={() => setScreen({ kind: "character", character: screen.character })}
           onOpenInventory={() => setScreen({ kind: "inventory", character: screen.character })}
           onOpenSkills={() => setScreen({ kind: "skills", character: screen.character })}
-          onOpenParty={() => setScreen({ kind: "party", character: screen.character })}
           onSwitchCharacter={() => setScreen({ kind: "characterSelect" })}
         />
       </GameShell>
-    );
-  }
-
-  if (screen.kind === "party") {
-    async function persist(next: Character) {
-      setScreen({ kind: "party", character: next });
-      try {
-        await updateCharacterInRoster(next);
-      } catch (err) {
-        console.error("Failed to save party:", err);
-      }
-    }
-
-    return (
-      <PartyScreen
-        character={screen.character}
-        onUpdateCharacter={persist}
-        onBack={() => setScreen({ kind: "home", character: screen.character })}
-      />
     );
   }
 

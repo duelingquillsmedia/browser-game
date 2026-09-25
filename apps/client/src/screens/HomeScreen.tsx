@@ -18,7 +18,6 @@ export interface HomeScreenProps {
   onOpenCharacterSheet: () => void;
   onOpenInventory: () => void;
   onOpenSkills: () => void;
-  onOpenParty: () => void;
   onSwitchCharacter: () => void;
 }
 
@@ -29,15 +28,13 @@ export function HomeScreen({
   onOpenCharacterSheet,
   onOpenInventory,
   onOpenSkills,
-  onOpenParty,
   onSwitchCharacter,
 }: HomeScreenProps) {
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
   const resourceConfig = getClassResource(character.classId);
-  const companions = Object.values(character.companions ?? {});
   const canVenture = character.hp > 0;
-  const canRest = character.hp < character.maxHp || companions.some((c) => c.hp < c.maxHp);
+  const canRest = character.hp < character.maxHp;
 
   const hpPct = Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100));
   const resourcePct = resourceConfig
@@ -113,9 +110,6 @@ export function HomeScreen({
               <button type="button" className="aow-button-ghost" disabled={!canRest} onClick={onRest}>
                 Rest
               </button>
-              <button type="button" className="aow-button-ghost" onClick={onOpenParty}>
-                Party
-              </button>
               <button type="button" className="aow-button-ghost" onClick={onSwitchCharacter}>
                 Switch Character
               </button>
@@ -131,7 +125,7 @@ export function HomeScreen({
           <div className="aow-map-art" style={{ backgroundImage: `url(${eridanMap})` }}>
             <div className="aow-map-vignette" />
             <div className="aow-map-caption">
-              <div className="aow-eyebrow">PARTY AT</div>
+              <div className="aow-eyebrow">CURRENTLY AT</div>
               <div className="aow-map-place">{HOME_TOWN_NAME}</div>
               <div className="aow-map-region">{WORLD_NAME}</div>
             </div>
