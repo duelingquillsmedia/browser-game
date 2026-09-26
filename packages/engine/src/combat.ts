@@ -5,7 +5,6 @@ import type { Character } from "./character.js";
 import { getClass } from "./classes.js";
 import type { Monster } from "./monsters.js";
 import { applyDamageModifiers, type DamageType } from "./damage.js";
-import type { OriginFeatId } from "./feats.js";
 import { getClassResource } from "./resources.js";
 import {
   BASE_HIT_CHANCE,
@@ -53,8 +52,6 @@ export interface Combatant {
   classId?: string;
   /** A monster's template (for UI purposes, e.g. picking a combat sprite); party members have none. */
   templateId?: string;
-  /** A party member's Origin feat (for feat-specific mechanics like Alert or Savage Attacker); monsters have none. */
-  originFeatId?: OriginFeatId;
   /** A party member's character level (for UI display, e.g. the Combat screen's "LV n"); monsters have no level concept. */
   level?: number;
   abilityScores: AbilityScores;
@@ -67,7 +64,7 @@ export interface Combatant {
   meleeWeaponDamageMax?: number;
   rangedWeaponDamageMin?: number;
   rangedWeaponDamageMax?: number;
-  /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; monsters have none. */
+  /** Used only for the Flee saving throw; monsters have none. */
   proficiencyBonus?: number;
   actions: CombatActionDef[];
   actionUses: Record<string, number>;
@@ -109,7 +106,6 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     raceId: "raceId" in source ? source.raceId : undefined,
     classId: "classId" in source ? source.classId : undefined,
     templateId: "templateId" in source ? source.templateId : undefined,
-    originFeatId: "originFeatId" in source ? source.originFeatId : undefined,
     level: "classId" in source ? source.level : undefined,
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,
@@ -283,21 +279,17 @@ function beingStruckResourceGain(target: Combatant, damageTaken: number): number
  */
 function computeBaseDamage(actor: Combatant, action: CombatActionDef, rng: RNG): number {
   const weaponRange = weaponDamageRange(actor, action.weaponDamageSource);
-  const canSavage = actor.originFeatId === "savageAttacker";
   const usesNewFormula = weaponRange !== undefined || action.flatBase !== undefined || action.percentOfAbility !== undefined;
 
   if (!usesNewFormula) {
-    let variance = randomVariance(rng);
-    if (canSavage) variance = Math.max(variance, randomVariance(rng));
+    const variance = randomVariance(rng);
     return Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance));
   }
 
   if (weaponRange) {
     // A weapon roll is its own source of randomness (MMO-tooltip style) -- no extra variance
     // band on top, same as the original Basic-Attack-only formula this generalizes.
-    let roll = rollUniform(weaponRange.min, weaponRange.max, rng);
-    // Savage Attacker: roll the weapon's damage twice and keep the higher result, once per turn.
-    if (canSavage) roll = Math.max(roll, rollUniform(weaponRange.min, weaponRange.max, rng));
+    const roll = rollUniform(weaponRange.min, weaponRange.max, rng);
     let base = roll + computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]));
     if (action.percentOfAbility !== undefined) {
       base += Math.round(actor.abilityScores[action.ability] * action.percentOfAbility);
@@ -483,8 +475,7 @@ export function startCombat(
   const combatants = [...partySource, ...enemySource].map((c) => ({ ...c }));
 
   for (const c of combatants) {
-    const alertBonus = c.originFeatId === "alert" ? (c.proficiencyBonus ?? 0) : 0;
-    c.initiative = rollD20(rng) + abilityMod(c, "dex") + alertBonus;
+    c.initiative = rollD20(rng) + abilityMod(c, "dex");
   }
 
   const turnOrder = [...combatants]

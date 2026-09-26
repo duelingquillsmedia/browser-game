@@ -265,17 +265,6 @@ describe("combat engine", () => {
     expect(after.combatants.find((c) => c.id === "foe2")!.hp).toBe(0);
   });
 
-  it("adds the Alert origin feat's proficiency bonus to initiative", () => {
-    const state = startCombat(
-      [makeHero({ originFeatId: "alert", proficiencyBonus: 3 })],
-      [makeFoe()],
-      sequenceRng([forD20(10), forD20(5)])
-    );
-    const hero = state.combatants.find((c) => c.id === "hero")!;
-    // roll 10 + dex mod (14 -> +2) + Alert's proficiency bonus (3) = 15
-    expect(hero.initiative).toBe(15);
-  });
-
   it("discounts an Elf's first resource-costing action each combat by 1 (Silverleaf Step)", () => {
     const firebolt = {
       id: "firebolt",
@@ -303,23 +292,6 @@ describe("combat engine", () => {
     expect(after.log.some((entry) => entry.message.includes("Silverleaf Step"))).toBe(true);
     // 4 resource, discounted to a cost of 3 -- 1 left over instead of running out.
     expect(after.combatants.find((c) => c.id === "hero")!.resource).toBe(1);
-  });
-
-  it("rolls damage twice and keeps the higher variance for Savage Attacker, on a non-crit hit", () => {
-    const state = startCombat(
-      [makeHero({ originFeatId: "savageAttacker" })],
-      [makeFoe({ maxHp: 20, hp: 20 })],
-      sequenceRng([forD20(15), forD20(5)])
-    );
-
-    const after = submitPlayerAction(
-      state,
-      { actorId: "hero", actionId: "strike", targetId: "foe" },
-      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(0.9), forVariance(1.1)])
-    );
-
-    // Keeps the higher of the two variance rolls: str(16) * power(1) * 1.1 = 17.6 -> 18.
-    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(20 - 18);
   });
 
   it("blocks a cooldown action from reuse until enough rounds have passed, then allows it again", () => {
@@ -476,25 +448,10 @@ describe("weapon damage", () => {
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19 - 25); // 20 + 5
   });
 
-  it("rerolls the weapon's damage twice and keeps the higher result for Savage Attacker, on a non-crit hit", () => {
-    const warrior = toCombatant({ ...makeArmedWarrior(), originFeatId: "savageAttacker" }, "party");
-    const foe = makeFoe({ maxHp: 1000, hp: 1000 });
-    let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
-
-    // First roll lands on the minimum (14), second on the maximum (20) -> keeps 20, +5 bonus.
-    state = submitPlayerAction(
-      state,
-      { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
-      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS, GUARANTEED_FAILURE])
-    );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 25); // 20 + 5
-  });
-
   it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {
     // A synthetic power-scaled action (no weaponDamageSource/flatBase/percentOfAbility), the same
-    // shape most class abilities used before the Class Style Sheet reforge (and a few, like the
-    // Magic Initiate cantrip, still do) -- added directly so this test doesn't depend on any one
-    // class's current kit still having a pure ability*power action in it.
+    // shape most class abilities used before the Class Style Sheet reforge -- added directly so
+    // this test doesn't depend on any one class's current kit still having a pure ability*power action.
     const character = makeArmedWarrior();
     const warrior = toCombatant(
       { ...character, actions: [...character.actions, { id: "test-power-attack", name: "Test Power Attack", description: "", kind: "attack", target: "enemy", ability: "str", power: 1.8, damageType: "slashing" }] },

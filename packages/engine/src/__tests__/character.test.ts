@@ -40,7 +40,6 @@ describe("createCharacter", () => {
     expect(character.abilityScores.vit).toBe(12); // 12 +1 -1 = 12
     expect(character.abilityScores.int).toBe(14); // 10 +1 +1 +2 = 14
     expect(character.abilityScores.wis).toBe(12); // 10 +2 = 12
-    expect(character.originFeatId).toBe("alert");
 
     // Rogue: 100 + vit*10 + class health bonus (20) = 100 + 120 + 20 = 240
     expect(character.maxHp).toBe(240);
@@ -54,22 +53,6 @@ describe("createCharacter", () => {
     expect(character.actions.some((a) => a.isBasicAttack)).toBe(true);
     expect(character.actions.some((a) => a.id === "defend")).toBe(true);
     expect(character.actions.some((a) => a.id === "flee")).toBe(true);
-  });
-
-  it("grants a Magic Initiate cantrip from the Acolyte background", () => {
-    const character = createCharacter({
-      id: "pc-1b",
-      name: "Rowan",
-      raceId: "human",
-      classId: "cleric",
-      backgroundId: "acolyte",
-      baseAbilityScores: { str: 10, dex: 10, vit: 12, int: 10, wis: 15, spi: 8 },
-    });
-
-    expect(character.originFeatId).toBe("magicInitiate");
-    const cantrip = character.actions.find((a) => a.id === "minor-cantrip");
-    expect(cantrip).toBeDefined();
-    expect(cantrip?.ability).toBe("wis");
   });
 
   it("grants a Dwarf's Stoneblood poison resistance and applies its ability bonuses", () => {
@@ -280,7 +263,7 @@ describe("withStartingGearIfMissing", () => {
     expect(migrated.gearEvasionBonus).toBe(legacy.gearEvasionBonus);
   });
 
-  it("backfills background and origin feat on a character saved before those fields existed", () => {
+  it("backfills background on a character saved before it existed", () => {
     const legacy = createCharacter({
       id: "pc-6b",
       name: "Ancient",
@@ -289,13 +272,12 @@ describe("withStartingGearIfMissing", () => {
       backgroundId: "soldier",
       baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
     });
-    const { backgroundId: _bg, originFeatId: _feat, ...withoutBackground } = legacy;
+    const { backgroundId: _bg, ...withoutBackground } = legacy;
     const stripped = withoutBackground as Character;
 
     const migrated = withStartingGearIfMissing(stripped);
 
     expect(migrated.backgroundId).toBe("acolyte");
-    expect(migrated.originFeatId).toBe("magicInitiate");
   });
 
   it("is a no-op for a character that already has inventory and equipment", () => {

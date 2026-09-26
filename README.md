@@ -31,14 +31,17 @@ client-server milestone (combat is still resolved in the browser for now).
   (the first resource-costing action each combat costs 1 less), Dwarf's
   Stoneblood (poison resistance), and Human's Many Roads (+10% experience
   from every source, rounded, applied in `gainExperience`) are all real.
-- A Background system, per the SRD 2024 rules: it's your Background, not
-  your species, that grants ability score increases and an Origin feat.
-  The 4 backgrounds detailed in the free SRD are implemented (Acolyte,
-  Criminal, Sage, Soldier), each granting +1 to three abilities and one of
-  the 4 free Origin feats (Alert's initiative bonus, Magic Initiate's bonus
-  cantrip, Savage Attacker's reroll-and-keep-higher damage dice, or
-  Skilled). The new Character Creation flow no longer asks for one --
-  each class auto-picks a thematically fitting Background internally.
+- A small Background system, loosely descended from the SRD 2024 rules'
+  Background ability-score-increase mechanic: 4 backgrounds (Acolyte,
+  Criminal, Sage, Soldier), each granting +1 to three named abilities. The
+  Character Creation flow doesn't ask for one -- each class auto-picks a
+  thematically fitting Background internally, purely for that stat bonus.
+  **Origin feats (Alert, Magic Initiate, Savage Attacker, Skilled) — leftover
+  SRD content layered on top of backgrounds — have been removed entirely**,
+  along with the Magic Initiate "Minor Cantrip" bonus attack it granted:
+  none of it was part of the Class Style Sheet reforge's own class kits, and
+  it duplicated mechanics (initiative, damage variance, at-will attacks)
+  those classes already have their own versions of.
 - **Superseded by Character Creation, below**: 5 classes (Warrior, Rogue,
   Mage, Cleric, Druid) carried over from the Character Creation handoff,
   each with distinct actions, a class resource pool (or none, for Rogue),
@@ -91,9 +94,9 @@ client-server milestone (combat is still resolved in the browser for now).
   doesn't delete the rest), there's just no roster-browsing UI to switch
   between them or delete one anymore; Sign Out moved from that removed
   screen onto the Home screen's Character card.
-- A character sheet: full ability scores, race traits, Background and
-  Origin feat, and current abilities, plus inventory and equipment slots
-  (weapon/armor/accessory).
+- A character sheet: full ability scores, race traits, Background, and
+  current abilities, plus inventory and equipment slots (weapon/armor/
+  accessory).
   Equipping gear is functional, not cosmetic — it changes AC and the
   damage die on your basic attack in combat. At creation, each class
   offers a choice of SRD-flavored starting loadouts (e.g. a Warrior picks
@@ -204,8 +207,9 @@ client-server milestone (combat is still resolved in the browser for now).
   this flow -- companions still get one via `createCompanion`), and the
   Background/Origin-feat/starting-equipment choices from the old form are
   gone too; each class now auto-picks a thematically fitting Background
-  internally (e.g. Mage → Sage) purely for its Origin feat and small stat
-  bonus, with no player-facing step for it. The Appearance step's presets
+  internally (e.g. Mage → Sage) purely for its small stat bonus, with no
+  player-facing step for it (Origin feats themselves were later removed
+  entirely, per this section's own top bullet). The Appearance step's presets
   (six per race, real names/colors from the handoff's own `LOOKS` data) are
   stored on the new `Character.appearance` field but don't render a real
   portrait yet -- there's no character art pipeline, so the preview panel
@@ -352,15 +356,15 @@ applies — only the underlying roll mechanic changed.
 - **Fireball**: a new Wizard spell demonstrating the SRD's save-for-half
   area rule — one damage roll, applied to every enemy, each rolling its
   own Dexterity save for half damage on a success.
-- **Race and Origin feat hooks**: Alert adds its proficiency bonus to
-  initiative (unchanged, still a d20 roll); Savage Attacker rolls the
-  attack's damage variance twice and keeps the higher result (updated from
-  "rerolls damage dice" now that damage has no dice to reroll — see below).
-  (Superseded by Character Creation, below: the SRD-era
+- **Race hooks**: (Superseded by Character Creation, below: the SRD-era
   Halfling's Lucky reroll, Orc's Relentless Endurance, and Dragonborn's
   Breath Weapon were removed along with those species; an Elf's Silverleaf
   Step is the new roster's equivalent race-trait hook, discounting the
-  first resource-costing action each combat by 1.)
+  first resource-costing action each combat by 1.) Origin feats (Alert's
+  initiative bonus, Savage Attacker's reroll-and-keep-higher damage
+  variance, Magic Initiate's bonus attack, Skilled) were also removed
+  entirely — leftover SRD content that never belonged to the Class Style
+  Sheet's own classes, layered awkwardly on top of them via Background.
 - **Action cooldowns (homebrew, not SRD)**: each class's signature attack
   (Firebolt, Slash, Eldritch Blast...) is at-will, usable every turn like a
   cantrip. Bigger one-off effects (Fireball, Second Wind, Arcane Shield...)

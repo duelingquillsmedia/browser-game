@@ -4,7 +4,6 @@ import {
   BACKGROUNDS,
   CLASSES,
   LEVEL_CAP,
-  ORIGIN_FEATS,
   RACES,
   abilityMod,
   computeResourceMax,
@@ -165,7 +164,6 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
   const background = BACKGROUNDS[character.backgroundId];
-  const originFeat = ORIGIN_FEATS[character.originFeatId];
   const resourceConfig = getClassResource(character.classId);
   const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
 
@@ -351,12 +349,6 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
             <div className="aow-trait-card">
               <h3>{background.name}</h3>
               <p>{background.description}</p>
-            </div>
-          )}
-          {originFeat && (
-            <div className="aow-trait-card">
-              <h3>{originFeat.name}</h3>
-              <p>{originFeat.description}</p>
             </div>
           )}
           {race?.traits.map((trait) => (

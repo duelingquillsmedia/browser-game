@@ -80,9 +80,9 @@ const ABILITY_KEY_LIST: AbilityKey[] = ["str", "dex", "vit", "int", "wis", "spi"
 /**
  * This flow doesn't ask for a Background (the design has no such step), but
  * `createCharacter` still auto-assigns one per class (see
- * DEFAULT_BACKGROUND_BY_CLASS) for its Origin feat and its own +1 bonus to
- * three abilities. Folding that +1 into the "class" column keeps this
- * preview numerically identical to the character that actually gets saved.
+ * DEFAULT_BACKGROUND_BY_CLASS) for its own +1 bonus to three abilities.
+ * Folding that +1 into the "class" column keeps this preview numerically
+ * identical to the character that actually gets saved.
  */
 function classBonusWithBackground(cls: CharacterClass): Partial<Record<AbilityKey, number>> {
   const backgroundId = DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier";

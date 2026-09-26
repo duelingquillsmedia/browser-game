@@ -3,7 +3,6 @@ export * from "./dice.js";
 export * from "./actions.js";
 export * from "./races.js";
 export * from "./backgrounds.js";
-export * from "./feats.js";
 export * from "./classes.js";
 export * from "./resources.js";
 export * from "./items.js";

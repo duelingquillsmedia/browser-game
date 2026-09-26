@@ -3,7 +3,6 @@ import { abilityModifier } from "./dice.js";
 import { getRace, type Race } from "./races.js";
 import { getClass, type CharacterClass } from "./classes.js";
 import { getBackground } from "./backgrounds.js";
-import type { OriginFeatId } from "./feats.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
@@ -19,9 +18,8 @@ export interface Character {
   name: string;
   raceId: string;
   classId: string;
-  /** The Background chosen at creation — grants ability score increases and an Origin feat (SRD 5.2.1). */
+  /** The Background chosen at creation — grants a small +1×3 ability score bonus (see backgrounds.ts). */
   backgroundId: string;
-  originFeatId: OriginFeatId;
   level: number;
   /** XP accumulated toward this character's next level; resets to (any overflow past the threshold) on level-up. See `xpToNextLevel`/`gainExperience`. */
   xp: number;
@@ -99,27 +97,6 @@ export function ownsItem(character: Character, itemId: string): boolean {
   return character.inventory.some((stack) => stack.itemId === itemId && stack.quantity > 0);
 }
 
-/** The best of Intellect, Wisdom, or Spirit — used by the Magic Initiate origin feat's bonus cantrip. */
-function bestMagicInitiateAbility(abilityScores: AbilityScores): AbilityKey {
-  const candidates: AbilityKey[] = ["int", "wis", "spi"];
-  return candidates.reduce((best, key) =>
-    abilityModifier(abilityScores[key]) > abilityModifier(abilityScores[best]) ? key : best
-  );
-}
-
-function buildMagicInitiateAction(character: Pick<Character, "abilityScores">): CombatActionDef {
-  return {
-    id: "minor-cantrip",
-    name: "Minor Cantrip",
-    description: "A flicker of borrowed magic from your background's Magic Initiate feat.",
-    kind: "attack",
-    target: "enemy",
-    ability: bestMagicInitiateAbility(character.abilityScores),
-    power: 1,
-    damageType: "force",
-  };
-}
-
 /**
  * Every class's Basic Attack is generated here, not listed in `CharacterClass.actions`
  * -- one variant per filled weapon slot, named from the class's own `basicAttackName`
@@ -166,7 +143,7 @@ function generateBasicAttacks(character: Character, cls: CharacterClass): Combat
   return attacks;
 }
 
-/** Recomputes evasion, resistances, and actions from base stats plus race/feat traits, class passives, level, and whatever's equipped. */
+/** Recomputes evasion, resistances, and actions from base stats plus race traits, class passives, level, and whatever's equipped. */
 function applyEquipmentEffects(character: Character, cls: CharacterClass, race: Race): Character {
   const armor = character.equipment.armor ? getItem(character.equipment.armor) : undefined;
   const accessory = character.equipment.accessory ? getItem(character.equipment.accessory) : undefined;
@@ -182,14 +159,7 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
   // down to their Basic Attack + lvl-1 ability, ready for when leveling ships).
   const leveledActions = cls.actions.filter((a) => (a.unlockLevel ?? 1) <= character.level);
 
-  const bonusActions = [...(race.actions ?? [])];
-  // Wizards already have an at-will cantrip attack of their own (Arcane Bolt) --
-  // a Magic Initiate cantrip on top of that would just be a redundant duplicate.
-  if (character.originFeatId === "magicInitiate" && character.classId !== "wizard") {
-    bonusActions.push(buildMagicInitiateAction(character));
-  }
-
-  const actions = [...basicAttacks, ...leveledActions, ...bonusActions, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
+  const actions = [...basicAttacks, ...leveledActions, ...(race.actions ?? []), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
   );
 
@@ -473,9 +443,9 @@ export function withClassMigrationIfMissing(character: Character): Character {
 
 /**
  * Backfills fields on a character persisted before this engine version:
- * inventory/equipment (added first), and background/origin feat (added
- * later — defaults to Acolyte since the original data has no equivalent).
- * A no-op once every field is already present.
+ * inventory/equipment (added first), and background (added later — defaults
+ * to Acolyte since the original data has no equivalent). A no-op once every
+ * field is already present.
  */
 export function withStartingGearIfMissing(character: Character): Character {
   const cls = getClass(character.classId);
@@ -485,7 +455,6 @@ export function withStartingGearIfMissing(character: Character): Character {
   const withGear: Character = {
     ...character,
     backgroundId,
-    originFeatId: character.originFeatId ?? getBackground(backgroundId).originFeatId,
     inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
     equipment: character.equipment ?? { ...defaultEquipment },
     resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id, character.level),
@@ -526,7 +495,6 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     raceId: race.id,
     classId: cls.id,
     backgroundId: background.id,
-    originFeatId: background.originFeatId,
     level,
     xp: 0,
     gold: STARTING_GOLD,

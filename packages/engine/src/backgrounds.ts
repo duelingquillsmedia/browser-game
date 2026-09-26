@@ -1,24 +1,23 @@
 import type { AbilityKey } from "./abilities.js";
-import type { OriginFeatId } from "./feats.js";
 
 export interface Background {
   id: string;
   name: string;
   description: string;
   /**
-   * The three abilities the SRD ties to this background. This engine grants
-   * +1 to all three (the SRD's "increase all three by 1" option), skipping
-   * the alternate "+2 to one, +1 to another" split to keep creation to a
-   * single choice.
+   * The three abilities this background grants +1 to. Loosely descended
+   * from the SRD 5.2.1's Background ability-score-increase rule (the
+   * "increase all three by 1" option), kept as a small flavor-tied stat
+   * bonus after the Origin feat system it came bundled with was removed.
    */
   abilityScores: [AbilityKey, AbilityKey, AbilityKey];
-  originFeatId: OriginFeatId;
 }
 
 /**
- * The SRD 5.2.1's four fully-detailed backgrounds. In the 2024 rules, a
- * background — not a character's species — is what grants ability score
- * increases and an Origin feat.
+ * A small set of backgrounds, each granting a flat +1 to three named
+ * abilities. Every class auto-picks a thematically fitting one at creation
+ * (see game/appearance.ts's DEFAULT_BACKGROUND_BY_CLASS) purely for that
+ * stat bonus; there's no player-facing choice or other mechanical effect.
  */
 export const BACKGROUNDS: Record<string, Background> = {
   acolyte: {
@@ -28,28 +27,24 @@ export const BACKGROUNDS: Record<string, Background> = {
       "Raised in temple service, more comfortable with scripture and ritual than with a blade — though " +
       "Eridan's frontier has a way of putting both to use.",
     abilityScores: ["int", "wis", "spi"],
-    originFeatId: "magicInitiate",
   },
   criminal: {
     id: "criminal",
     name: "Criminal",
     description: "A former thief, smuggler, or worse, who learned to read a room before reading anything else.",
     abilityScores: ["dex", "vit", "int"],
-    originFeatId: "alert",
   },
   sage: {
     id: "sage",
     name: "Sage",
     description: "Years spent among books and archives, chasing knowledge that Eridan's libraries rarely give up easily.",
     abilityScores: ["vit", "int", "wis"],
-    originFeatId: "magicInitiate",
   },
   soldier: {
     id: "soldier",
     name: "Soldier",
     description: "Drilled in formation and discipline, whether in a border garrison or a mercenary company.",
     abilityScores: ["str", "dex", "vit"],
-    originFeatId: "savageAttacker",
   },
 };
 
