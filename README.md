@@ -1317,6 +1317,21 @@ both the main hex map (an animated, pulsing SVG circle) and the minimap.
 `packages/engine/src/character.ts`, `apps/client/src/game/eridanMap.ts`,
 `apps/client/src/screens/WorldMapScreen.tsx` (+ `.css`).
 
+## World Map: Venture Out Requires Actually Arriving
+
+Selecting a hex with a quest/battle encounter used to show a "Venture Out"
+button that dropped straight into combat regardless of how far away the
+party actually was — travel was skipped entirely. The action button now
+checks `isPartyHere` in addition to `matchedEncounter`: an encounter hex
+selected from a distance still only offers "Travel · N Day(s)" (or shows
+the disabled state while a journey to it is in progress), and "Venture
+Out" appears only once the party has actually arrived at that hex. The
+"too wounded to venture out" warning got the same `isPartyHere` guard so it
+doesn't show up while merely previewing a distant encounter.
+
+### Critical files
+`apps/client/src/screens/WorldMapScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -596,13 +596,15 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                 </div>
               )}
 
-              {matchedEncounter && !canVenture && <p className="aow-warning">Too wounded to venture out — rest first.</p>}
+              {matchedEncounter && isPartyHere && !canVenture && (
+                <p className="aow-warning">Too wounded to venture out — rest first.</p>
+              )}
 
               {travel ? (
                 <button type="button" className="aow-button-primary aow-map-venture-button" disabled>
                   Traveling…
                 </button>
-              ) : matchedEncounter ? (
+              ) : matchedEncounter && isPartyHere ? (
                 <button
                   type="button"
                   className="aow-button-primary aow-map-venture-button"
