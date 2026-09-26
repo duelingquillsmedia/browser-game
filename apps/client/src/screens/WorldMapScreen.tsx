@@ -169,6 +169,21 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
     setZoom(next);
   }
 
+  // The wheel zooms the map (instead of scrolling it up/down); click-and-drag still pans. React
+  // attaches its own onWheel as a passive listener, so preventDefault() there can't actually stop
+  // the native scroll -- a real, non-passive DOM listener is required instead.
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      changeZoom(zoom + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+    };
+    vp.addEventListener("wheel", onWheel, { passive: false });
+    return () => vp.removeEventListener("wheel", onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom]);
+
   function imageCoordsFromEvent(e: { clientX: number; clientY: number }): { x: number; y: number } | null {
     const vp = viewportRef.current;
     if (!vp) return null;

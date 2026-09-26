@@ -1264,6 +1264,24 @@ way to look it up. It's now a real, structured field.
 `packages/engine/src/__tests__/character.test.ts`;
 `apps/client/src/screens/CharacterScreen.tsx`.
 
+## World Map: Mouse Wheel Zooms Instead of Scrolling
+
+The hex map's scrollable viewport (`overflow: auto`) used to treat the
+mouse wheel as an ordinary scroll, panning the map up/down instead of
+zooming it. The wheel now zooms in/out one `ZOOM_STEP` per tick (scrolling
+up zooms in, down zooms out), reusing the same `changeZoom` the existing
++/- buttons already call, so behavior and bounds (`ZOOM_MIN`-`ZOOM_MAX`)
+stay identical between the two. Click-and-drag panning is untouched.
+
+React attaches its own `onWheel` as a **passive** listener, so calling
+`preventDefault()` there can't actually stop the native scroll (the
+browser has already committed to allowing it before the handler runs).
+Worked around with a real `wheel` listener added directly to the viewport
+DOM node via `addEventListener(..., { passive: false })` in a `useEffect`.
+
+### Critical files
+`apps/client/src/screens/WorldMapScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
