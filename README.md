@@ -1379,6 +1379,40 @@ showing its discounted sell price instead of full value).
 `apps/client/src/screens/InventoryScreen.tsx`, `CharacterScreen.tsx`;
 `apps/client/src/components/TownHubPanel.tsx`.
 
+## Combat Stat Breakdown Tooltips (Character Screen)
+
+The Character screen's COMBAT panel (Attack Power, Critical Chance,
+Critical Effect, Health, Evasion, Armor Bonus, Action Points, and the
+class resource's per-hit gain) showed only a final number, so raising one
+meant guessing which attribute drove it. Hovering any of these stats now
+shows the same tooltip popup as items, but with a calculation breakdown
+instead: the formula, each contributing term and its value (e.g. "Vitality
+(11): +110"), a totaled sum, and — the actual point of this pass — a hint
+naming exactly which attribute (or gear) to raise to increase it. A stat
+with no real inputs (Action Points, Critical Effect, a class's fixed
+resource-per-hit) still gets a tooltip, honestly labeled "Fixed for every
+character" / "Fixed per class" so it's clear no attribute affects it.
+
+`combatStatGroups` (`game/characterDisplay.ts`) now attaches a
+`StatBreakdown` (`formula`/`factors`/`total`/`hint`) to every `CombatStatRow`,
+computed from the same engine functions (`computeAttackPower`,
+`computeCritChance`, `computeEvasion`, `CLASS_HEALTH_BONUS`) the plain
+values already used — no new engine code, this only exposes the existing
+math. Health's per-level growth term is backed out by subtraction
+(`maxHp - 100 - vit*10 - classBonus`) rather than duplicating the engine's
+private per-level constant. Armor Bonus's breakdown lists each actual
+contributor (the equipped armor piece, accessory, and/or a class passive
+like Soldier's) rather than just repeating the summed total. A new
+`StatBreakdownTooltipContent` component renders it, reusing the same
+`Tooltip` and `.aow-item-*`/`.aow-stat-row` classes the item tooltips and
+plain stat rows already used, and each hoverable stat row gets a subtle
+highlight + `cursor: help` on hover as a "there's more here" affordance.
+
+### Critical files
+`apps/client/src/game/characterDisplay.ts`;
+`apps/client/src/components/StatBreakdownTooltipContent.tsx`;
+`apps/client/src/screens/CharacterScreen.tsx` (+ `.css`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

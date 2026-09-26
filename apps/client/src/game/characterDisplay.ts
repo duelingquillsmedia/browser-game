@@ -1,4 +1,7 @@
 import {
+  ABILITY_NAMES,
+  CLASS_HEALTH_BONUS,
+  CLASSES,
   CRIT_MULTIPLIER,
   DAMAGE_TYPES,
   computeAttackPower,
@@ -7,6 +10,7 @@ import {
   getClassResource,
   getItem,
   PLAYER_AP_PER_TURN,
+  type AbilityKey,
   type Character,
   type DamageType,
   type ItemTemplate,
@@ -65,9 +69,26 @@ export function equipmentTileStyle(item: ItemTemplate | undefined): { borderColo
   };
 }
 
+export interface StatBreakdownFactor {
+  label: string;
+  value: string;
+}
+
+export interface StatBreakdown {
+  /** One-line description of how the stat is derived, e.g. "Strength × 2". */
+  formula: string;
+  /** The individual terms that combine into the total, in order. */
+  factors: StatBreakdownFactor[];
+  /** The final value, repeated here so the tooltip's last line reads as a clear "= total". */
+  total: string;
+  /** What to raise to increase this stat -- the whole point of the tooltip (see the "COMBAT" stat hover-tooltip pass). */
+  hint: string;
+}
+
 export interface CombatStatRow {
   label: string;
   value: string;
+  breakdown: StatBreakdown;
 }
 
 export interface CombatStatGroup {
@@ -77,15 +98,53 @@ export interface CombatStatGroup {
 
 /** Tempo / Offense / Defense groups, ported from the handoff's `COMBAT` data -- mapped onto whichever of our own derived stats are the closest real equivalent (see README's "Character screen rebuild" section for what was substituted and why). */
 export function combatStatGroups(character: Character): CombatStatGroup[] {
+  const cls = CLASSES[character.classId];
   const resourceConfig = getClassResource(character.classId);
   const weaponId = character.equipment.meleeWeapon ?? character.equipment.rangedWeapon;
   const weapon = weaponId ? getItem(weaponId) : undefined;
-  const attackPower = computeAttackPower(character.abilityScores[weapon?.ability ?? "str"]);
-  const totalEvasion = Math.round(computeEvasion(character.abilityScores.dex) + character.gearEvasionBonus);
+  const attackAbility: AbilityKey = weapon?.ability ?? "str";
+  const attackAbilityScore = character.abilityScores[attackAbility];
+  const attackPower = computeAttackPower(attackAbilityScore);
+  const dex = character.abilityScores.dex;
+  const critChance = computeCritChance(dex);
+  const dexEvasion = computeEvasion(dex);
+  const totalEvasion = Math.round(dexEvasion + character.gearEvasionBonus);
 
-  const tempoRows: CombatStatRow[] = [{ label: "Action Points", value: `${PLAYER_AP_PER_TURN} / turn` }];
+  const armor = character.equipment.armor ? getItem(character.equipment.armor) : undefined;
+  const accessory = character.equipment.accessory ? getItem(character.equipment.accessory) : undefined;
+  const armorFactors: StatBreakdownFactor[] = [];
+  if (armor?.evasionBonus) armorFactors.push({ label: armor.name, value: `+${armor.evasionBonus}%` });
+  if (accessory?.evasionBonus) armorFactors.push({ label: accessory.name, value: `+${accessory.evasionBonus}%` });
+  if (cls?.passiveEvasionBonus) armorFactors.push({ label: `${cls.name} passive`, value: `+${cls.passiveEvasionBonus}%` });
+
+  const vit = character.abilityScores.vit;
+  const classHealthBonus = CLASS_HEALTH_BONUS[character.classId] ?? 0;
+  // No exported per-level HP constant to read directly, so back it out from the total instead of duplicating the number.
+  const levelHealthGrowth = character.maxHp - 100 - vit * 10 - classHealthBonus;
+
+  const tempoRows: CombatStatRow[] = [
+    {
+      label: "Action Points",
+      value: `${PLAYER_AP_PER_TURN} / turn`,
+      breakdown: {
+        formula: "Fixed for every character",
+        factors: [],
+        total: `${PLAYER_AP_PER_TURN} / turn`,
+        hint: "Not affected by any attribute -- every character gets the same amount each turn.",
+      },
+    },
+  ];
   if (resourceConfig) {
-    tempoRows.push({ label: `${resourceConfig.name} per Hit`, value: `+${resourceConfig.gainOnBasicAttack}` });
+    tempoRows.push({
+      label: `${resourceConfig.name} per Hit`,
+      value: `+${resourceConfig.gainOnBasicAttack}`,
+      breakdown: {
+        formula: `Fixed per class (${cls?.name ?? character.classId})`,
+        factors: [],
+        total: `+${resourceConfig.gainOnBasicAttack}`,
+        hint: `Not affected by any attribute -- every landed Basic Attack grants this much ${resourceConfig.name}.`,
+      },
+    });
   }
 
   return [
@@ -93,17 +152,84 @@ export function combatStatGroups(character: Character): CombatStatGroup[] {
     {
       title: "Offense",
       rows: [
-        { label: "Attack Power", value: `${attackPower}` },
-        { label: "Critical Chance", value: `${computeCritChance(character.abilityScores.dex).toFixed(1)}%` },
-        { label: "Critical Effect", value: `${Math.round(CRIT_MULTIPLIER * 100)}%` },
+        {
+          label: "Attack Power",
+          value: `${attackPower}`,
+          breakdown: {
+            formula: `${ABILITY_NAMES[attackAbility]} × 2`,
+            factors: [{ label: `${ABILITY_NAMES[attackAbility]} score`, value: `${attackAbilityScore}` }],
+            total: `${attackPower}`,
+            hint: weapon
+              ? `Governed by your equipped weapon's ability (${ABILITY_NAMES[attackAbility]}). Raise ${ABILITY_NAMES[attackAbility]}, or equip a weapon keyed to a higher score, to increase this.`
+              : `No weapon equipped, so this defaults to Strength. Raise Strength, or equip a weapon, to increase this.`,
+          },
+        },
+        {
+          label: "Critical Chance",
+          value: `${critChance.toFixed(1)}%`,
+          breakdown: {
+            formula: "5% base + (Dexterity × 1.2%)",
+            factors: [
+              { label: "Base", value: "5%" },
+              { label: `Dexterity (${dex})`, value: `+${(dex * 1.2).toFixed(1)}%` },
+            ],
+            total: `${critChance.toFixed(1)}%`,
+            hint: "Raise your Dexterity to increase this.",
+          },
+        },
+        {
+          label: "Critical Effect",
+          value: `${Math.round(CRIT_MULTIPLIER * 100)}%`,
+          breakdown: {
+            formula: "Fixed for every character",
+            factors: [],
+            total: `${Math.round(CRIT_MULTIPLIER * 100)}%`,
+            hint: "Not affected by any attribute -- every critical hit deals this much of a normal hit's damage.",
+          },
+        },
       ],
     },
     {
       title: "Defense",
       rows: [
-        { label: "Health", value: `${character.maxHp}` },
-        { label: "Evasion", value: `${totalEvasion}%` },
-        { label: "Armor Bonus", value: `+${character.gearEvasionBonus}` },
+        {
+          label: "Health",
+          value: `${character.maxHp}`,
+          breakdown: {
+            formula: "100 base + (Vitality × 10) + class bonus + level growth",
+            factors: [
+              { label: "Base", value: "100" },
+              { label: `Vitality (${vit})`, value: `+${vit * 10}` },
+              { label: `${cls?.name ?? character.classId} class bonus`, value: `+${classHealthBonus}` },
+              { label: `Level ${character.level} growth`, value: `+${levelHealthGrowth}` },
+            ],
+            total: `${character.maxHp}`,
+            hint: "Raise your Vitality, or level up, to increase this.",
+          },
+        },
+        {
+          label: "Evasion",
+          value: `${totalEvasion}%`,
+          breakdown: {
+            formula: "(Dexterity × 1.5%) + Armor Bonus",
+            factors: [
+              { label: `Dexterity (${dex})`, value: `${dexEvasion.toFixed(1)}%` },
+              { label: "Armor Bonus", value: `+${character.gearEvasionBonus}%` },
+            ],
+            total: `${totalEvasion}%`,
+            hint: "Raise your Dexterity, or equip gear with a higher evasion bonus, to increase this.",
+          },
+        },
+        {
+          label: "Armor Bonus",
+          value: `+${character.gearEvasionBonus}`,
+          breakdown: {
+            formula: armorFactors.length > 0 ? "Sum of equipped armor/accessory/passive bonuses" : "Nothing currently contributes",
+            factors: armorFactors,
+            total: `+${character.gearEvasionBonus}`,
+            hint: "Equip armor or an accessory with a higher evasion bonus to increase this.",
+          },
+        },
       ],
     },
   ];

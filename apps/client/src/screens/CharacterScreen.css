@@ -380,6 +380,21 @@
   margin: 4px 0 6px;
 }
 
+.aow-stat-row-hoverable {
+  cursor: help;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: 0 -4px;
+}
+
+.aow-stat-row-hoverable:hover {
+  background: var(--aow-inset);
+}
+
+.aow-stat-row-hoverable:hover span:first-child {
+  color: var(--aow-ember);
+}
+
 /* -- Resistances -- */
 
 .aow-resist-body {

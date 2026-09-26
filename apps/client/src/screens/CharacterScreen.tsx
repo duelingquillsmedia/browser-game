@@ -19,6 +19,7 @@ import { combatStatGroups, equipmentTileStyle, resistanceRows } from "../game/ch
 import { ItemIcon } from "../components/ItemIcon";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
 import { ItemTooltipContent } from "../components/ItemTooltipContent";
+import { StatBreakdownTooltipContent } from "../components/StatBreakdownTooltipContent";
 import { Tooltip } from "../components/Tooltip";
 import "./CharacterScreen.css";
 
@@ -307,10 +308,12 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
                 <div key={group.title} className="aow-combat-group">
                   <div className="aow-combat-group-title">{group.title.toUpperCase()}</div>
                   {group.rows.map((row) => (
-                    <div key={row.label} className="aow-stat-row">
-                      <span>{row.label}</span>
-                      <span>{row.value}</span>
-                    </div>
+                    <Tooltip key={row.label} content={<StatBreakdownTooltipContent label={row.label} breakdown={row.breakdown} />}>
+                      <div className="aow-stat-row aow-stat-row-hoverable">
+                        <span>{row.label}</span>
+                        <span>{row.value}</span>
+                      </div>
+                    </Tooltip>
                   ))}
                 </div>
               ))}
