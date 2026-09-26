@@ -128,7 +128,7 @@ interface AbilityInput {
  * `critChanceAbilityScore`/`critDamageAbilityScore` exactly.
  */
 function offenseRows(
-  powerLabel: "Attack Power" | "Magic Power",
+  powerLabel: "Attack Power" | "Spell Power",
   critChanceLabel: "Critical Chance" | "Magical Critical Chance",
   critDamageLabel: "Critical Damage" | "Magical Critical Damage",
   power: AbilityInput,
@@ -262,7 +262,7 @@ export function combatStatGroups(character: Character): CombatStatGroup[] {
     subgroups.push({
       title: "Magical",
       rows: offenseRows(
-        "Magic Power",
+        "Spell Power",
         "Magical Critical Chance",
         "Magical Critical Damage",
         { ability: magicAbility, score: magicScore },

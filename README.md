@@ -1442,7 +1442,7 @@ armor's numbers (see below) was the right way to do it.
   `ability` field — this automatically gets Soldier's "whichever of STR/DEX
   is higher" rule right without duplicating that logic, since the resolved
   action already has it baked in (see `generateBasicAttacks`'s
-  `variantAbility`). A new **Magic Power** (same formula, INT for Wizard,
+  `variantAbility`). A new **Spell Power** (same formula, INT for Wizard,
   WIS for Cleric/Druid) covers magical offense.
 
 **Which classes get a Magical Offense section**: a new `magicalAttackAbility`
@@ -1484,7 +1484,7 @@ Verified with all 147 engine tests (several rewritten for the new
 evasion/crit numbers, since the old ones encoded the previous formulas'
 exact math), a clean build, and a live Playwright pass: a Warrior's sheet
 shows only a Physical subsection while a Wizard's shows both, tooltip
-breakdowns compute correctly (e.g. Wizard's Magic Power 22 = Intellect 11
+breakdowns compute correctly (e.g. Wizard's Spell Power 22 = Intellect 11
 × 2), item tooltips show the rescaled Armor values, and a real fight
 (Warrior vs. goblins) resolves hits/misses/crits/damage without error under
 the new math.

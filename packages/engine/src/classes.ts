@@ -480,7 +480,7 @@ export function getClass(id: string): CharacterClass {
  * attack, or any damaging spell), or undefined if it has none -- Cleric and
  * Druid (Wisdom) and Wizard (Intellect) today. Used to decide whether the
  * Character screen's Magical Offense section applies, and which score
- * powers it (Character Stats Style Sheet's Magic Power/Magical Critical
+ * powers it (Character Stats Style Sheet's Spell Power/Magical Critical
  * Chance/Magical Critical Damage).
  */
 export function magicalAttackAbility(cls: CharacterClass): AbilityKey | undefined {
