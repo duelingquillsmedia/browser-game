@@ -179,6 +179,10 @@ export function CombatStage({
   const stageRef = useRef<HTMLDivElement | null>(null);
   const player = state.combatants.find((c) => c.side === "party")!;
   const enemies = state.combatants.filter((c) => c.side === "enemy");
+  // Solo play only (see game/setup.ts's beginEncounter) -- the player is the only possible
+  // "ally", so an ally-targeted heal (Mend, Wylde Healing) clicks the player's own portrait
+  // exactly like a self-targeted one (Nature's Remedy) does.
+  const targetsPlayerPortrait = pendingAction?.target === "self" || pendingAction?.target === "ally";
   const enemyFront = enemies.filter((c) => c.rank === "front");
   const enemyBack = enemies.filter((c) => c.rank === "back");
 
@@ -206,7 +210,7 @@ export function CombatStage({
             title: "YOUR TURN",
             color: "var(--aow-ember)",
             sub: pendingAction
-              ? pendingAction.target === "self"
+              ? targetsPlayerPortrait
                 ? `Click ${currentActor.name} to cast ${pendingAction.name} · Esc to cancel`
                 : `Choose a target for ${pendingAction.name} · Esc to cancel`
               : `${currentActor.ap ?? 0} AP remaining`,
@@ -215,7 +219,7 @@ export function CombatStage({
           ? { title: "ENEMY TURN", color: "var(--aow-hp)", sub: currentActor.name }
           : null;
 
-  const playerSelectable = pendingAction?.target === "self" && isSelectable(player);
+  const playerSelectable = targetsPlayerPortrait && isSelectable(player);
   const playerIsDown = player.hp <= 0 || player.fled;
   const playerActing = currentActor?.id === player.id && !playerIsDown;
 
@@ -326,7 +330,7 @@ export function CombatStage({
               height: layout.playerHeight,
               boxShadow: playerActing
                 ? "0 0 0 1px var(--aow-hp), 0 0 22px rgba(208,96,74,.55)"
-                : pendingAction?.target === "self"
+                : targetsPlayerPortrait
                   ? "0 0 0 1px var(--aow-mana), 0 0 28px rgba(95,196,214,.45)"
                   : "none",
             }}
