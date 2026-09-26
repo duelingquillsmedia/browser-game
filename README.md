@@ -877,17 +877,24 @@ combat-victory XP is wired up so far.
   `applyCombatResults` only awards XP on a clean `party_won` (not a flee or
   a loss), summed from every defeated enemy's `MonsterTemplate.xpValue`
   (hand-tuned per template, same curated-stat-block precedent as their
-  HP — 35 to 90 per monster in the three starting encounters).
-  `ResultScreen.tsx` shows the XP gained and, on a level-up, a callout with
-  the new level and any newly unlocked abilities. `HomeScreen.tsx` and
+  HP — 35 to 90 per monster in the three starting encounters). `App.tsx`
+  computes it as soon as the fight ends and feeds it straight into the
+  in-battle `CombatResultOverlay` popup (the dimmed-battlefield "VICTORY/
+  DEFEAT/ESCAPED" panel) — there used to be a second, full-page
+  `ResultScreen` shown after clicking that popup's Continue button, but a
+  rewards popup and a rewards page one click apart was a redundant, jarring
+  extra step, so it's gone; the popup itself now shows the XP gained and,
+  on a level-up, a callout with the new level and any newly unlocked
+  abilities, and Continue goes straight to Home. `HomeScreen.tsx` and
   `CharacterScreen.tsx` both got a third, thinner XP bar (reusing the
   handoff's existing gold gradient) alongside their HP/resource bars.
 
 ### Critical files
 `packages/engine/src/stats.ts`, `character.ts`, `monsters.ts`, `combat.ts`;
 `apps/client/src/game/setup.ts`, `App.tsx`; `apps/client/src/screens/
-ResultScreen.tsx`, `CharacterScreen.tsx`, `HomeScreen.tsx`;
-`apps/client/src/components/combat/CombatHud.tsx`, `GameShell.tsx`.
+CharacterScreen.tsx`, `HomeScreen.tsx`, `CombatScreen.tsx`;
+`apps/client/src/components/combat/CombatResultOverlay.tsx`, `CombatHud.tsx`,
+`GameShell.tsx`.
 
 ## Lore
 

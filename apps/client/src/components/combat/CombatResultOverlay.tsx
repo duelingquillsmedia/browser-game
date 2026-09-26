@@ -1,8 +1,13 @@
-import type { CombatStatus } from "@eridan/engine";
+import type { CombatActionDef, CombatStatus } from "@eridan/engine";
 
 export interface CombatResultOverlayProps {
   status: Exclude<CombatStatus, "active">;
   round: number;
+  /** XP actually awarded (post race-bonus); 0 on a defeat or a flee -- see game/setup.ts's applyCombatResults. */
+  xpGained: number;
+  levelsGained: number;
+  newLevel: number;
+  newlyUnlockedActions: CombatActionDef[];
   onContinue: () => void;
 }
 
@@ -26,11 +31,24 @@ const RESULT_COPY: Record<Exclude<CombatStatus, "active">, { title: string; colo
 
 /**
  * The handoff's "RESTART ENCOUNTER" concept becomes "Continue" here: our
- * game moves on to a rewards/navigation screen rather than restarting the
- * fight, so the button is restyled to match, not renamed to match a flow
- * this game doesn't have.
+ * game moves on to Home rather than restarting the fight, so the button is
+ * restyled to match, not renamed to match a flow this game doesn't have.
+ *
+ * This is also the only post-fight screen -- there used to be a second,
+ * full-page ResultScreen shown after clicking Continue here, but a rewards
+ * popup and a rewards page one click apart was a redundant, jarring extra
+ * step; XP/level-up/new-ability info now lives here instead, in the same
+ * dimmed-battlefield popup, and clicking Continue goes straight to Home.
  */
-export function CombatResultOverlay({ status, round, onContinue }: CombatResultOverlayProps) {
+export function CombatResultOverlay({
+  status,
+  round,
+  xpGained,
+  levelsGained,
+  newLevel,
+  newlyUnlockedActions,
+  onContinue,
+}: CombatResultOverlayProps) {
   const copy = RESULT_COPY[status];
   return (
     <div className="cbt-result-overlay">
@@ -40,6 +58,20 @@ export function CombatResultOverlay({ status, round, onContinue }: CombatResultO
           {copy.title}
         </div>
         <div className="cbt-result-sub">{copy.sub}</div>
+
+        {xpGained > 0 && <div className="cbt-result-xp">+{xpGained.toLocaleString()} XP</div>}
+
+        {levelsGained > 0 && (
+          <div className="cbt-result-levelup">
+            <div className="cbt-result-levelup-title">Level Up! Now level {newLevel}</div>
+            {newlyUnlockedActions.map((action) => (
+              <div key={action.id} className="cbt-result-new-ability">
+                New ability: {action.name}!
+              </div>
+            ))}
+          </div>
+        )}
+
         <button type="button" className="cbt-result-button" onClick={onContinue}>
           Continue
         </button>

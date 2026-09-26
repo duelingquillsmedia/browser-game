@@ -11,7 +11,6 @@ import { InventoryScreen } from "./screens/InventoryScreen";
 import { SkillsScreen } from "./screens/SkillsScreen";
 import { WorldMapScreen } from "./screens/WorldMapScreen";
 import { CombatScreen } from "./screens/CombatScreen";
-import { ResultScreen } from "./screens/ResultScreen";
 import { GAME_NAME, WORLD_NAME, type Encounter } from "./game/lore";
 import { applyCombatResults, beginEncounter, restCharacter } from "./game/setup";
 import { addCharacterToRoster, loadMostRecentCharacter, updateCharacterInRoster } from "./game/roster";
@@ -27,7 +26,7 @@ type Screen =
   | { kind: "inventory"; character: Character }
   | { kind: "skills"; character: Character }
   | { kind: "encounterSelect"; character: Character }
-  | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter; resultReady?: boolean };
+  | { kind: "combat"; character: Character; combat: CombatState; encounter: Encounter };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
@@ -295,29 +294,21 @@ function App() {
     }
   }
 
-  if (combat.status !== "active" && screen.resultReady) {
-    const { character: updatedCharacter, xpGained, levelsGained, newlyUnlockedActions } = applyCombatResults(
-      character,
-      combat
-    );
+  // Computed as soon as the fight ends so the in-battle result popup can show
+  // XP/level-up/new-ability info immediately, rather than waiting for a
+  // separate screen after "Continue". Pure and cheap, so recomputing across
+  // re-renders (including mid-animation ones) is harmless -- it's only
+  // persisted once, when the popup's Continue button is actually clicked.
+  const combatResult = combat.status !== "active" ? applyCombatResults(character, combat) : null;
 
-    return (
-      <ResultScreen
-        status={combat.status}
-        xpGained={xpGained}
-        levelsGained={levelsGained}
-        newLevel={updatedCharacter.level}
-        newlyUnlockedActions={newlyUnlockedActions}
-        onContinue={async () => {
-          setScreen({ kind: "home", character: updatedCharacter });
-          try {
-            await updateCharacterInRoster(updatedCharacter);
-          } catch (err) {
-            console.error("Failed to save combat result:", err);
-          }
-        }}
-      />
-    );
+  async function handleCombatContinue() {
+    if (!combatResult) return;
+    setScreen({ kind: "home", character: combatResult.character });
+    try {
+      await updateCharacterInRoster(combatResult.character);
+    } catch (err) {
+      console.error("Failed to save combat result:", err);
+    }
   }
 
   return (
@@ -325,8 +316,9 @@ function App() {
       key={encounter.id}
       combat={combat}
       encounter={encounter}
+      combatResult={combatResult}
       onSubmitAction={handleSubmitAction}
-      onContinue={() => setScreen({ kind: "combat", character, combat, encounter, resultReady: true })}
+      onContinue={handleCombatContinue}
     />
   );
 }

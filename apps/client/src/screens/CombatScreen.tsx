@@ -14,6 +14,7 @@ import { CombatStage, type CombatantEffect } from "../components/combat/CombatSt
 import { CombatHud } from "../components/combat/CombatHud";
 import { CombatResultOverlay } from "../components/combat/CombatResultOverlay";
 import type { Encounter } from "../game/lore";
+import type { CombatResult } from "../game/setup";
 // Combat, like Title and Character Creation, renders outside <GameShell> (a full letterboxed
 // canvas, not a screen with the left nav) -- so it imports the shared design tokens directly
 // rather than relying on GameShell having already loaded them first.
@@ -24,6 +25,8 @@ export interface CombatScreenProps {
   combat: CombatState;
   encounter: Encounter;
   onSubmitAction: (request: ActionRequest) => void;
+  /** XP/level-up/new-ability outcome of this fight, computed by the parent once `combat.status !== "active"`; null while the fight is still active. Shown directly in the result popup. */
+  combatResult: CombatResult | null;
   /** Called when the player clicks Continue after a finished fight, once they're done reviewing the battlefield and log. */
   onContinue?: () => void;
 }
@@ -85,7 +88,7 @@ function useCanvasScale(): number {
   return scale;
 }
 
-export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: CombatScreenProps) {
+export function CombatScreen({ combat, encounter, onSubmitAction, combatResult, onContinue }: CombatScreenProps) {
   const scale = useCanvasScale();
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
@@ -281,7 +284,15 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
           onEndTurn={handleEndTurn}
         />
         {visualState.status !== "active" && !isAnimating && (
-          <CombatResultOverlay status={visualState.status} round={visualState.round} onContinue={() => onContinue?.()} />
+          <CombatResultOverlay
+            status={visualState.status}
+            round={visualState.round}
+            xpGained={combatResult?.xpGained ?? 0}
+            levelsGained={combatResult?.levelsGained ?? 0}
+            newLevel={combatResult?.character.level ?? 0}
+            newlyUnlockedActions={combatResult?.newlyUnlockedActions ?? []}
+            onContinue={() => onContinue?.()}
+          />
         )}
       </div>
     </div>
