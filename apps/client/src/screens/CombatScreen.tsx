@@ -124,7 +124,27 @@ export function CombatScreen({ combat, encounter, onSubmitAction, onContinue }: 
 
     const newEntries = combat.log.slice(revealedRef.current);
     const startIndex = revealedRef.current;
-    let working = visualState;
+
+    // No log entry carries a "resource/AP is now X" delta, so these fields
+    // would otherwise only ever catch up once the *entire* batch below has
+    // finished playing -- which can span several trailing enemy turns after
+    // the player's own action. Adopt them immediately instead, in step with
+    // the action's own animation, so a resource/AP cost (or a cooldown, or a
+    // buff's evasion bump) reads as spent the instant the ability fires
+    // rather than lagging behind it. HP -- and the death/flee state that's
+    // visually derived from it (`isDown` below checks `hp <= 0`, not these
+    // flags) -- keeps animating step by step via `applyEventToWorkingState`,
+    // since those correspond to actual narrated hit/heal events.
+    let working: CombatState = {
+      ...combat,
+      combatants: combat.combatants.map((c) => {
+        const prior = visualState.combatants.find((v) => v.id === c.id);
+        return prior ? { ...c, hp: prior.hp, dead: prior.dead, unconscious: prior.unconscious, fled: prior.fled } : c;
+      }),
+      log: visualState.log,
+    };
+    setVisualState(working);
+
     let cancelled = false;
 
     setIsAnimating(true);
