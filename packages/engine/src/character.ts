@@ -82,6 +82,25 @@ export interface WorldMapState {
   day: number;
   partyHexKey: string;
   exploredHexKeys: string[];
+  /**
+   * An in-progress journey from `partyHexKey` toward `toHexKey`, timed in
+   * real-world seconds (not turns or in-world days) so it keeps progressing
+   * correctly even if the player navigates away or reloads. `partyHexKey`
+   * itself doesn't change until the journey resolves (see
+   * `apps/client/src/screens/WorldMapScreen.tsx`'s `completeTravel`), at
+   * which point it becomes `toHexKey` and `travel` is cleared. Absent when
+   * the party isn't traveling.
+   */
+  travel?: TravelState;
+}
+
+export interface TravelState {
+  toHexKey: string;
+  /** `Date.now()`-style epoch milliseconds. */
+  startedAt: number;
+  arriveAt: number;
+  /** In-world days this journey adds once it completes -- already fixed at the start (hex distance), so arrival doesn't need to recompute it. */
+  days: number;
 }
 
 export interface CharacterAppearance {

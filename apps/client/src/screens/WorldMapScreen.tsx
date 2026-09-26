@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { MONSTER_TEMPLATES, type Character, type WorldMapState } from "@eridan/engine";
+import { MONSTER_TEMPLATES, type Character, type TravelState, type WorldMapState } from "@eridan/engine";
 import {
   ENCOUNTERS,
   HOME_TOWN_DESCRIPTION,
@@ -26,6 +26,7 @@ import {
   hexDisk,
   hexDistance,
   hexKey,
+  hexLine,
   hexPath,
   hexPoints,
   pixelToHex,
@@ -46,6 +47,17 @@ const ZOOM_MIN = 2;
 const ZOOM_MAX = 6;
 const ZOOM_STEP = 0.5;
 const ZOOM_DEFAULT = 4;
+
+/** Real-world seconds a single hex of travel takes -- homebrew pacing, not an in-world time unit. */
+const TRAVEL_SECONDS_PER_HEX = 30;
+
+/** "M:SS" countdown display, floored so it never shows a misleading "0:00" before travel has actually resolved. */
+function formatRemaining(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
 
 const MINIMAP_W = 190;
 const MINIMAP_H = MINIMAP_W * (MAP_H / MAP_W);
@@ -95,8 +107,33 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
   } | null>(null);
   const pendingCenterRef = useRef<{ x: number; y: number } | null>(null);
   const didInitialCenter = useRef(false);
+  const travel = mapState.travel;
+  const [travelNow, setTravelNow] = useState(() => Date.now());
+  const travelCompletingRef = useRef(false);
 
   const canVenture = character.hp > 0;
+
+  // While traveling, tick a live "now" (driving the countdown + the animated dot) and complete
+  // the journey the moment real time catches up to `arriveAt` -- whether that's during this tick
+  // loop or immediately on mount, if it finished while the player was on a different screen.
+  useEffect(() => {
+    if (!travel) return;
+    travelCompletingRef.current = false;
+    const tick = () => {
+      const now = Date.now();
+      if (now >= travel.arriveAt) {
+        if (travelCompletingRef.current) return;
+        travelCompletingRef.current = true;
+        completeTravel(travel);
+        return;
+      }
+      setTravelNow(now);
+    };
+    tick();
+    const id = setInterval(tick, 150);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [travel?.toHexKey, travel?.arriveAt]);
 
   // Sample the map image's own pixels for terrain, once, entirely client-side.
   useEffect(() => {
@@ -270,18 +307,53 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
     centerOnHex(key);
   }
 
-  function handleTravel(destKey: string, days: number) {
-    const revealed = hexDisk(destKey, 4);
+  /** Starts a timed journey instead of resolving it instantly -- see `completeTravel`. */
+  function startTravel(destKey: string, days: number) {
+    const now = Date.now();
+    setTravelNow(now);
+    onUpdateCharacter({
+      ...character,
+      worldMapState: {
+        ...mapState,
+        travel: { toHexKey: destKey, startedAt: now, arriveAt: now + days * TRAVEL_SECONDS_PER_HEX * 1000, days },
+      },
+    });
+  }
+
+  /** Applies arrival: the same day-advance/fog-reveal/party-move `handleTravel` used to do instantly, now run once real time catches up. */
+  function completeTravel(finishedTravel: TravelState) {
+    const revealed = hexDisk(finishedTravel.toHexKey, 4);
     const nextExplored = new Set(mapState.exploredHexKeys);
     for (const key of revealed) nextExplored.add(key);
     onUpdateCharacter({
       ...character,
       worldMapState: {
-        day: mapState.day + days,
-        partyHexKey: destKey,
+        day: mapState.day + finishedTravel.days,
+        partyHexKey: finishedTravel.toHexKey,
         exploredHexKeys: [...nextExplored],
+        travel: undefined,
       },
     });
+  }
+
+  /** The path being animated along, recomputed only when a journey actually starts (not every tick). */
+  const travelPath = useMemo(
+    () => (travel ? hexLine(mapState.partyHexKey, travel.toHexKey) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [travel?.toHexKey]
+  );
+
+  /** Current image-space (x, y) of the traveling dot, interpolated along `travelPath` by elapsed real time. */
+  function travelDotPosition(): { x: number; y: number } | null {
+    if (!travel || !travelPath || travelPath.length < 2) return null;
+    const totalMs = travel.arriveAt - travel.startedAt;
+    const t = totalMs > 0 ? Math.min(1, Math.max(0, (travelNow - travel.startedAt) / totalMs)) : 1;
+    const segT = t * (travelPath.length - 1);
+    const idx = Math.min(travelPath.length - 2, Math.floor(segT));
+    const localT = segT - idx;
+    const a = travelPath[idx];
+    const b = travelPath[idx + 1];
+    return { x: a.x + (b.x - a.x) * localT, y: a.y + (b.y - a.y) * localT };
   }
 
   const activeHexKey = selectedHexKey ?? mapState.partyHexKey;
@@ -301,6 +373,18 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
   const partyPlaceName =
     POI_BY_HEX[mapState.partyHexKey]?.name ??
     (mapState.partyHexKey === PARTY_START_HEX ? HOME_TOWN_NAME : (terrain?.regionByHex[mapState.partyHexKey]?.id && REGION_BY_ID[terrain.regionByHex[mapState.partyHexKey]!.id!]?.name) || "the wilds");
+
+  const travelDot = travelDotPosition();
+  const travelDurationMs = travel ? travel.arriveAt - travel.startedAt : 0;
+  const travelRemainingMs = travel ? travel.arriveAt - travelNow : 0;
+  const travelProgressPct =
+    travel && travelDurationMs > 0 ? Math.min(100, Math.max(0, ((travelNow - travel.startedAt) / travelDurationMs) * 100)) : 0;
+  const travelDestName =
+    travel &&
+    (POI_BY_HEX[travel.toHexKey]?.name ??
+      (travel.toHexKey === PARTY_START_HEX
+        ? HOME_TOWN_NAME
+        : (terrain?.regionByHex[travel.toHexKey]?.id && REGION_BY_ID[terrain.regionByHex[travel.toHexKey]!.id!]?.name) || "the wilds"));
 
   return (
     <div className="aow-worldmap">
@@ -347,7 +431,7 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                       strokeWidth={1.5}
                     />
                   )}
-                  {selectedHexKey && selectedHexKey !== mapState.partyHexKey && (
+                  {selectedHexKey && selectedHexKey !== mapState.partyHexKey && !travel && (
                     <line
                       x1={partyHex.x}
                       y1={partyHex.y}
@@ -358,8 +442,28 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                       strokeDasharray="5 4"
                     />
                   )}
-                  <polygon points={hexPoints(partyHex.c, partyHex.r)} fill="none" stroke="#d9b865" strokeWidth={2.5} />
-                  <circle cx={partyHex.x} cy={partyHex.y} r={4} fill="#d9b865" />
+                  {travel && travelDot && (
+                    <line
+                      x1={partyHex.x}
+                      y1={partyHex.y}
+                      x2={HEX_BY_KEY[travel.toHexKey].x}
+                      y2={HEX_BY_KEY[travel.toHexKey].y}
+                      stroke="#d9b865"
+                      strokeWidth={1.5}
+                      strokeDasharray="5 4"
+                    />
+                  )}
+                  {travel && travelDot ? (
+                    <>
+                      <polygon points={hexPoints(HEX_BY_KEY[travel.toHexKey].c, HEX_BY_KEY[travel.toHexKey].r)} fill="none" stroke="#d9b865" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.5} />
+                      <circle className="aow-hexmap-travel-dot" cx={travelDot.x} cy={travelDot.y} r={5} fill="#d9b865" />
+                    </>
+                  ) : (
+                    <>
+                      <polygon points={hexPoints(partyHex.c, partyHex.r)} fill="none" stroke="#d9b865" strokeWidth={2.5} />
+                      <circle cx={partyHex.x} cy={partyHex.y} r={4} fill="#d9b865" />
+                    </>
+                  )}
                   {selectedHexKey && (
                     <polygon points={hexPoints(activeHex.c, activeHex.r)} fill="none" stroke="#f3ece4" strokeWidth={2} />
                   )}
@@ -400,7 +504,10 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
               )}
               <div
                 className="aow-minimap-party-dot"
-                style={{ left: partyHex.x * MINIMAP_SCALE, top: partyHex.y * MINIMAP_SCALE }}
+                style={{
+                  left: (travelDot?.x ?? partyHex.x) * MINIMAP_SCALE,
+                  top: (travelDot?.y ?? partyHex.y) * MINIMAP_SCALE,
+                }}
               />
             </div>
           </div>
@@ -416,6 +523,21 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
         </div>
 
         <div className="aow-map-side-column">
+          {travel && (
+            <div className="aow-panel aow-map-travel-panel">
+              <div className="aow-panel-header">
+                TRAVELING
+                <span className="aow-open">{formatRemaining(travelRemainingMs)} LEFT</span>
+              </div>
+              <div className="aow-card-body">
+                <div className="aow-item-name">En route to {travelDestName}</div>
+                <div className="aow-bar-track" style={{ marginTop: 8 }}>
+                  <div className="aow-bar-fill gold" style={{ width: `${travelProgressPct}%` }} />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="aow-panel aow-map-detail-panel">
             <div className="aow-panel-header">{isHome ? "HOME" : matchedEncounter ? "ENCOUNTER" : "SELECTED HEX"}</div>
             <div className="aow-card-body">
@@ -476,7 +598,11 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
 
               {matchedEncounter && !canVenture && <p className="aow-warning">Too wounded to venture out — rest first.</p>}
 
-              {matchedEncounter ? (
+              {travel ? (
+                <button type="button" className="aow-button-primary aow-map-venture-button" disabled>
+                  Traveling…
+                </button>
+              ) : matchedEncounter ? (
                 <button
                   type="button"
                   className="aow-button-primary aow-map-venture-button"
@@ -497,7 +623,7 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                 <button
                   type="button"
                   className="aow-button-primary aow-map-venture-button"
-                  onClick={() => handleTravel(activeHexKey, distanceDays)}
+                  onClick={() => startTravel(activeHexKey, distanceDays)}
                 >
                   Travel · {distanceDays} Day{distanceDays === 1 ? "" : "s"}
                 </button>
@@ -505,7 +631,7 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
             </div>
           </div>
 
-          {activePoi?.kind === "settlement" && isPartyHere && (
+          {activePoi?.kind === "settlement" && isPartyHere && !travel && (
             <TownHubPanel townName={activePoi.name} character={character} onUpdateCharacter={onUpdateCharacter} />
           )}
 

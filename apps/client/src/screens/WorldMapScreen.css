@@ -160,6 +160,33 @@
   margin-top: 12px;
 }
 
+/* -- Travel timer -- */
+
+.aow-map-travel-panel .aow-panel-header .aow-open {
+  font-family: var(--aow-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--aow-gold);
+}
+
+.aow-hexmap-travel-dot {
+  animation: aow-travel-dot-pulse 1.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes aow-travel-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    r: 5;
+  }
+  50% {
+    opacity: 0.65;
+    r: 6.5;
+  }
+}
+
 /* -- Town Hub (Inn / General Store / Blacksmith) -- */
 
 .aow-town-hub-gold {

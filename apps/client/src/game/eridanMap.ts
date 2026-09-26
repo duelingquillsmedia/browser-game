@@ -117,6 +117,68 @@ export function hexDisk(centerKey: string, radius: number): Set<string> {
   return result;
 }
 
+interface Cube {
+  x: number;
+  y: number;
+  z: number;
+}
+
+function toCube(h: HexCoord): Cube {
+  const [q, r] = axial(h.c, h.r);
+  return { x: q, y: -q - r, z: r };
+}
+
+function cubeRound(cube: Cube): Cube {
+  let rx = Math.round(cube.x);
+  let ry = Math.round(cube.y);
+  let rz = Math.round(cube.z);
+  const dx = Math.abs(rx - cube.x);
+  const dy = Math.abs(ry - cube.y);
+  const dz = Math.abs(rz - cube.z);
+  if (dx > dy && dx > dz) rx = -ry - rz;
+  else if (dy > dz) ry = -rx - rz;
+  else rz = -rx - ry;
+  return { x: rx, y: ry, z: rz };
+}
+
+/** Inverse of `toCube` -- cube coordinates back to offset (odd-r) column/row, same convention `pixelToHex` rounds to. */
+function cubeToOffset(cube: Cube): HexCoord {
+  const r = cube.z;
+  return { c: cube.x + (cube.z - (cube.z & 1)) / 2, r };
+}
+
+/**
+ * The straight line of hexes from `fromKey` to `toKey`, inclusive of both
+ * ends, in travel order -- for animating a party's journey between them.
+ * Standard cube-coordinate line-draw (redblobgames): lerp each endpoint's
+ * cube coordinates and round to the nearest hex at `hexDistance + 1` evenly
+ * spaced steps. A tiny epsilon nudge on one endpoint avoids the rounding
+ * landing exactly on a shared edge between two hexes, which would otherwise
+ * make the line waver unpredictably between them.
+ */
+export function hexLine(fromKey: string, toKey: string): HexRecord[] {
+  const from = HEX_BY_KEY[fromKey];
+  const to = HEX_BY_KEY[toKey];
+  if (!from || !to) return [from ?? to].filter((h): h is HexRecord => Boolean(h));
+  const steps = hexDistance(from, to);
+  if (steps === 0) return [from];
+
+  const EPS = 1e-6;
+  const a = toCube(from);
+  const bRaw = toCube(to);
+  // Nudge both endpoints' lerp inputs so no interpolated point sits exactly on a hex edge.
+  const b: Cube = { x: bRaw.x + EPS, y: bRaw.y + EPS, z: bRaw.z - 2 * EPS };
+
+  const path: HexRecord[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const lerped: Cube = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
+    const rec = HEX_BY_KEY[hexKey(cubeToOffset(cubeRound(lerped)))];
+    if (rec) path.push(rec);
+  }
+  return path;
+}
+
 export function nearest<T extends { x: number; y: number }>(list: T[], x: number, y: number): T {
   return list.reduce<{ d: number; item: T }>(
     (best, item) => {

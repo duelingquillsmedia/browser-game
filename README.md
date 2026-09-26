@@ -1282,6 +1282,41 @@ DOM node via `addEventListener(..., { passive: false })` in a `useEffect`.
 ### Critical files
 `apps/client/src/screens/WorldMapScreen.tsx`.
 
+## World Map: Timed Travel with an Animated Party Dot
+
+Selecting a distant hex used to move the party there instantly. Travel is
+now timed in real-world seconds — 30 seconds per hex of distance, so a
+4-hex journey takes 2 real minutes — with a dot animating smoothly along
+the straight-line path of hexes between origin and destination while a
+"TRAVELING" panel shows a live countdown and progress bar. Venture Out,
+starting a new Travel, and the Town Hub are all disabled/hidden for the
+duration; they re-enable the moment the party arrives.
+
+The journey is stored as `WorldMapState.travel` (`{ toHexKey, startedAt,
+arriveAt, days }`, epoch milliseconds) on the character itself rather than
+component state, specifically so it survives navigating to another screen
+and back, or a page reload — progress is always recomputed from the
+current wall-clock time (`Date.now()`), never from a counter that only
+ticks while mounted. A 150ms interval drives the countdown/animation and
+calls the same `onUpdateCharacter` completion path once real time reaches
+`arriveAt`, guarded by a ref so it can't double-fire; the actual
+persistence call (`onUpdateCharacter`, which syncs to Supabase in the
+background) only happens twice per journey — at start and at arrival — not
+on every tick.
+
+The dot's path is a straight line of hexes computed with the standard
+cube-coordinate line-draw algorithm (lerp each endpoint's cube coordinates
+at `hexDistance + 1` steps, round each to the nearest hex), added as a new
+`hexLine()` helper in `eridanMap.ts` alongside a small `Cube`/`toCube`/
+`cubeRound`/`cubeToOffset` coordinate-conversion set (reusing the file's
+existing private `axial()` helper). The dot's on-screen position is then
+linearly interpolated along that path by elapsed real time and rendered on
+both the main hex map (an animated, pulsing SVG circle) and the minimap.
+
+### Critical files
+`packages/engine/src/character.ts`, `apps/client/src/game/eridanMap.ts`,
+`apps/client/src/screens/WorldMapScreen.tsx` (+ `.css`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
