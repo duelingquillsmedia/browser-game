@@ -225,6 +225,30 @@ describe("equipItem / unequipItem", () => {
     expect(disarmed.rangedWeaponDamageMax).toBeUndefined();
   });
 
+  it("a Soldier's Basic Attack uses whichever of Strength/Dexterity is higher, even when the equipped weapon has its own default scaling ability", () => {
+    // The starting shortsword is tagged ability: "dex" (its default for a generic wielder), but a
+    // Soldier's own class rule ("strength or dexterity, whichever is higher") must win over that --
+    // otherwise a Soldier built for Strength would be silently locked onto Dexterity instead.
+    const strSoldier = createCharacter({
+      id: "pc-soldier-str",
+      name: "Bram",
+      raceId: "human",
+      classId: "soldier",
+      baseAbilityScores: { str: 18, dex: 10, vit: 12, int: 10, wis: 10 },
+    });
+    expect(strSoldier.equipment.meleeWeapon).toBe("shortsword");
+    expect(strSoldier.actions.find((a) => a.id === "strike-melee")?.ability).toBe("str");
+
+    const dexSoldier = createCharacter({
+      id: "pc-soldier-dex",
+      name: "Vex",
+      raceId: "human",
+      classId: "soldier",
+      baseAbilityScores: { str: 10, dex: 18, vit: 12, int: 10, wis: 10 },
+    });
+    expect(dexSoldier.actions.find((a) => a.id === "strike-melee")?.ability).toBe("dex");
+  });
+
   it("throws when equipping an item the character doesn't own", () => {
     expect(() => equipItem(warrior(), "oakenStaff")).toThrow();
   });

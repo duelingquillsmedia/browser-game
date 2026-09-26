@@ -1152,6 +1152,39 @@ Display-only renames; no engine or mechanical changes.
 `apps/client/src/screens/InventoryScreen.tsx`, `SkillsScreen.tsx`,
 `CharacterCreationScreen.tsx`.
 
+## Attribute-Wiring Audit: Soldier's Basic Attack Fixed
+
+A pass verifying every attribute is actually driving what the Class Style
+Sheet and the Character screen's own hints say it does: STR into melee
+weapon attacks, DEX into ranged weapon attacks plus evasion/crit chance/
+initiative, and INT/WIS into Wizard/Cleric/Druid spells. Every leveled
+ability's `percentOfAbility` already matched the sheet exactly (Mend/Nature's
+Remedy/Wylde Healing 10%, Radiant Beam/Elemental Shard 20%, Wylde Wrath 25%,
+Poisoned Throw 15%, Evasive Jab 20%, Arcane Barrier 50%), and DEX was already
+correctly wired into `computeEvasion`, `computeCritChance`, and initiative
+rolls -- only one real bug turned up:
+
+- **Soldier's Basic Attack ignored "whichever of Strength/Dexterity is
+  higher."** `generateBasicAttacks`'s `effectiveAbility` checked the
+  equipped weapon's own default scaling ability (e.g. the starting
+  shortsword's `ability: "dex"`, meant as a sensible default for whoever
+  else wields it) *before* checking a class's `basicAttackAbilityMode`. A
+  Soldier built for Strength would still have their Basic Attack silently
+  locked onto Dexterity as long as they had a dex-tagged weapon equipped —
+  which includes both of Soldier's own starting loadouts. Fixed by checking
+  `basicAttackAbilityMode` first, so Soldier's own class rule always wins.
+
+Every other class's Basic Attack was already correct: a plain weapon (no
+`ability` override, e.g. the Warrior's longsword) falls back to the class's
+`primaryAbility`; a caster's spellcasting-focus weapon (staff/mace) is
+explicitly tagged with that class's own casting stat; every ranged weapon
+is explicitly tagged `dex`. None of those paths go through
+`basicAttackAbilityMode`, so they were never affected by this bug.
+
+### Critical files
+`packages/engine/src/character.ts`;
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

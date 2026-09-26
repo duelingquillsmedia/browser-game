@@ -115,10 +115,13 @@ function generateBasicAttacks(character: Character, cls: CharacterClass): Combat
   const rangedWeapon = character.equipment.rangedWeapon ? getItem(character.equipment.rangedWeapon) : undefined;
 
   const effectiveAbility = (weapon: ReturnType<typeof getItem> | undefined): AbilityKey => {
-    if (weapon?.ability) return weapon.ability;
+    // Soldier's own class rule ("strength or dexterity, whichever is higher") must win over a
+    // weapon's own default scaling ability -- otherwise equipping a dex-tagged weapon like the
+    // starting shortsword would silently lock them out of ever using Strength.
     if (cls.basicAttackAbilityMode === "highestOfStrDex") {
       return character.abilityScores.str >= character.abilityScores.dex ? "str" : "dex";
     }
+    if (weapon?.ability) return weapon.ability;
     return cls.primaryAbility;
   };
 
