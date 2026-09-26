@@ -1,13 +1,11 @@
 import {
   CRIT_MULTIPLIER,
   DAMAGE_TYPES,
-  RACES,
   computeAttackPower,
   computeCritChance,
   computeEvasion,
   getClassResource,
   getItem,
-  initiativeModifier,
   PLAYER_AP_PER_TURN,
   type Character,
   type DamageType,
@@ -77,24 +75,15 @@ export interface CombatStatGroup {
   rows: CombatStatRow[];
 }
 
-function formatModifier(value: number): string {
-  return value >= 0 ? `+${value}` : `${value}`;
-}
-
 /** Tempo / Offense / Defense groups, ported from the handoff's `COMBAT` data -- mapped onto whichever of our own derived stats are the closest real equivalent (see README's "Character screen rebuild" section for what was substituted and why). */
 export function combatStatGroups(character: Character): CombatStatGroup[] {
-  const race = RACES[character.raceId];
   const resourceConfig = getClassResource(character.classId);
   const weaponId = character.equipment.meleeWeapon ?? character.equipment.rangedWeapon;
   const weapon = weaponId ? getItem(weaponId) : undefined;
   const attackPower = computeAttackPower(character.abilityScores[weapon?.ability ?? "str"]);
   const totalEvasion = Math.round(computeEvasion(character.abilityScores.dex) + character.gearEvasionBonus);
 
-  const tempoRows: CombatStatRow[] = [
-    { label: "Action Points", value: `${PLAYER_AP_PER_TURN} / turn` },
-    { label: "Initiative", value: formatModifier(initiativeModifier(character)) },
-    { label: "Speed", value: `${race?.speed ?? 30} ft` },
-  ];
+  const tempoRows: CombatStatRow[] = [{ label: "Action Points", value: `${PLAYER_AP_PER_TURN} / turn` }];
   if (resourceConfig) {
     tempoRows.push({ label: `${resourceConfig.name} per Hit`, value: `+${resourceConfig.gainOnBasicAttack}` });
   }
@@ -115,7 +104,6 @@ export function combatStatGroups(character: Character): CombatStatGroup[] {
         { label: "Health", value: `${character.maxHp}` },
         { label: "Evasion", value: `${totalEvasion}%` },
         { label: "Armor Bonus", value: `+${character.gearEvasionBonus}` },
-        { label: "Proficiency Bonus", value: formatModifier(character.proficiencyBonus) },
       ],
     },
   ];

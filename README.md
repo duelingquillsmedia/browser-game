@@ -1112,6 +1112,22 @@ with no background bonus folded in anywhere.
 `apps/client/src/game/appearance.ts`; `apps/client/src/screens/
 CharacterCreationScreen.tsx` (+ `.css`), `CharacterScreen.tsx`.
 
+## Initiative/Speed/Proficiency Bonus Dropped from the Character Screen
+
+The Character screen's Combat panel no longer shows **Initiative**, **Speed**,
+or **Proficiency Bonus** — display-only leftovers from the original SRD
+character sheet that mean nothing under this engine's own combat math (a
+flat percent-based hit/evasion/crit system, not d20-vs-DC). Removed from the
+UI only: `proficiencyBonus` still exists on `Character` and still feeds the
+Flee saving throw in `combat.ts`, and a race's `speed`/a character's
+initiative modifier are still computed engine-side — none of that changed,
+just what the sheet surfaces. Tempo now shows Action Points and (where the
+class has one) resource-per-hit; Defense shows Health, Evasion, and Armor
+Bonus.
+
+### Critical files
+`apps/client/src/game/characterDisplay.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
