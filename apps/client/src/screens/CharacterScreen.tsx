@@ -361,6 +361,12 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
               </div>
             ))
           )}
+          {cls?.passives.map((passive) => (
+            <div key={passive.name} className="aow-trait-card">
+              <h3>{passive.name}</h3>
+              <p>{passive.description}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

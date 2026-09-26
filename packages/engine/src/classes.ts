@@ -22,6 +22,12 @@ export interface BasicAttackVariant {
   percentOfAbility: number;
 }
 
+/** A class's own passive ability, shown on the Character screen's Traits panel alongside race traits. */
+export interface ClassPassive {
+  name: string;
+  description: string;
+}
+
 export interface CharacterClass {
   id: string;
   name: string;
@@ -48,6 +54,8 @@ export interface CharacterClass {
    * everything past a level-1 kit until a leveling system exists.
    */
   actions: CombatActionDef[];
+  /** This class's own Class Style Sheet passive(s), for the Character screen's Traits panel. Empty for Rogue, whose passive the sheet itself still just calls "Placeholder". */
+  passives: ClassPassive[];
   /** Soldier's "Experience with a blade" passive (+5% parry chance) — modeled as flat evasion, since this engine has no separate parry/riposte roll to hang it on (see README). */
   passiveEvasionBonus?: number;
   /** Ranger's Sharpshooter passive: flat hit/crit bonus while their ranged weapon is the one swinging. */
@@ -135,6 +143,12 @@ export const CLASSES: Record<string, CharacterClass> = {
         unlockLevel: 4,
       },
     ],
+    passives: [
+      {
+        name: "Furious",
+        description: "Generates Fury equal to 25% of the damage taken whenever you're struck by an enemy attack.",
+      },
+    ],
     startingEquipmentOptions: [
       { id: "sword-and-mail", label: "Longsword & Chain Shirt", equipment: { meleeWeapon: "ironLongsword", armor: "chainShirt" } },
       { id: "sword-and-leather", label: "Longsword & Studded Leather", equipment: { meleeWeapon: "ironLongsword", armor: "studdedLeather" } },
@@ -184,6 +198,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         unlockLevel: 4,
       },
     ],
+    passives: [{ name: "Experience with a Blade", description: "Parry chance increased by 5%." }],
     // "Experience with a blade": +5% parry chance -- see passiveEvasionBonus's own doc comment.
     passiveEvasionBonus: 5,
     startingEquipmentOptions: [
@@ -234,6 +249,9 @@ export const CLASSES: Record<string, CharacterClass> = {
         unlockLevel: 4,
       },
     ],
+    passives: [
+      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Wisdom score." },
+    ],
     startingEquipmentOptions: [
       { id: "mace-and-leather", label: "Ashen Mace & Studded Leather", equipment: { meleeWeapon: "ashenMace", armor: "studdedLeather" } },
       { id: "mace-and-mail", label: "Ashen Mace & Chain Shirt", equipment: { meleeWeapon: "ashenMace", armor: "chainShirt" } },
@@ -276,6 +294,12 @@ export const CLASSES: Record<string, CharacterClass> = {
         apCost: 2,
         schoolId: "martial",
         unlockLevel: 4,
+      },
+    ],
+    passives: [
+      {
+        name: "Sharpshooter",
+        description: "Increases hit chance and critical chance by 5% while attacking with a ranged weapon.",
       },
     ],
     // Sharpshooter: +5% hit and crit chance with their ranged weapon (see rangedAttackHitBonus's own doc comment).
@@ -335,7 +359,9 @@ export const CLASSES: Record<string, CharacterClass> = {
         unlockLevel: 4,
       },
     ],
-    // The Class Style Sheet itself just says "Placeholder" for Rogue's passive -- left unimplemented rather than invented.
+    // The Class Style Sheet itself just says "Placeholder" for Rogue's passive -- left unimplemented
+    // rather than invented, so `passives` stays empty (no card shows on the Character screen).
+    passives: [],
     startingEquipmentOptions: [
       { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { rangedWeapon: "huntersShortbow", armor: "leatherArmor" } },
       { id: "shortsword", label: "Shortsword & Leather Armor", equipment: { meleeWeapon: "shortsword", armor: "leatherArmor" } },
@@ -383,6 +409,9 @@ export const CLASSES: Record<string, CharacterClass> = {
         unlockLevel: 4,
       },
     ],
+    passives: [
+      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Wisdom score." },
+    ],
     startingEquipmentOptions: [
       { id: "mace", label: "Ashen Mace & Leather Armor", equipment: { meleeWeapon: "ashenMace", armor: "leatherArmor" } },
       { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { rangedWeapon: "huntersShortbow", armor: "leatherArmor" } },
@@ -428,6 +457,9 @@ export const CLASSES: Record<string, CharacterClass> = {
         applyStatus: { defId: "fortified", turns: 3, power: 0.5 },
         unlockLevel: 4,
       },
+    ],
+    passives: [
+      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Intellect score." },
     ],
     startingEquipmentOptions: [
       { id: "staff", label: "Oaken Staff & Traveler's Robe", equipment: { meleeWeapon: "oakenStaff", armor: "travelersRobe" } },

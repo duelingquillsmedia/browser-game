@@ -303,6 +303,24 @@ describe("equipItem / unequipItem", () => {
     }
   });
 
+  it("gives every class its own Class Style Sheet passive(s), for the Character screen's Traits panel", () => {
+    const named: Record<string, string[]> = {
+      warrior: ["Furious"],
+      soldier: ["Experience with a Blade"],
+      cleric: ["Spellcasting"],
+      ranger: ["Sharpshooter"],
+      rogue: [], // the sheet itself just says "Placeholder" -- nothing to show, not invented.
+      druid: ["Spellcasting"],
+      wizard: ["Spellcasting"],
+    };
+    for (const cls of Object.values(CLASSES)) {
+      expect(cls.passives.map((p) => p.name), cls.id).toEqual(named[cls.id]);
+      for (const passive of cls.passives) {
+        expect(passive.description.length, `${cls.id}'s ${passive.name} description`).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it("throws when equipping an item the character doesn't own", () => {
     expect(() => equipItem(warrior(), "oakenStaff")).toThrow();
   });

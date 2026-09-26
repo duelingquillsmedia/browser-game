@@ -1240,6 +1240,30 @@ formatting, so a highlight-based diff has to read the underlying XML).
 `packages/engine/src/__tests__/character.test.ts`, `combat.test.ts`;
 `apps/client/src/screens/SkillsScreen.tsx`.
 
+## Class Passives Surfaced on the Character Screen
+
+The Traits panel used to show only race traits (plus a Half-elf's chosen
+passive); a class's own Class Style Sheet passive — Warrior's Furious,
+Soldier's Experience with a Blade, Ranger's Sharpshooter, and a
+Wisdom/Intellect spellcasting note for Cleric/Druid/Wizard — existed only
+as flavor text buried in `classes.ts`'s own doc comments, with no in-game
+way to look it up. It's now a real, structured field.
+
+- **`classes.ts`**: new `ClassPassive` type (`name`/`description`) and a
+  `passives: ClassPassive[]` field on every class, populated from the
+  sheet's own "Passive Abilities" section. Rogue's stays `[]` — the sheet
+  itself still just says "Placeholder" there, so there's nothing to show
+  rather than something invented. Cleric/Druid/Wizard's spellcasting note
+  has no name in the sheet, so it's homebrew-titled "Spellcasting".
+- **`CharacterScreen.tsx`**: the Traits panel now renders `cls.passives`
+  as additional cards alongside the existing race trait(s), so a class's
+  own passive is visible any time, not just recalled from memory.
+
+### Critical files
+`packages/engine/src/classes.ts`;
+`packages/engine/src/__tests__/character.test.ts`;
+`apps/client/src/screens/CharacterScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
