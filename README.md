@@ -1346,13 +1346,15 @@ dark panel, subtle border, heavy drop shadow).
 A new generic `Tooltip` component (`components/Tooltip.tsx`) wraps any
 hoverable element and portals the popup to `document.body` via
 `createPortal`, so it's never clipped by a panel's `overflow` and always
-renders above everything else. It positions itself above the hovered
-element by default (flipping below if there's no room) and clamps to the
-viewport; the wrapper itself uses `display: contents` so it never disturbs
-the grid/flex layout of what it wraps (the Inventory bag grid, in
-particular, depends on this). The tooltip panel itself is
-`pointer-events: none`, so moving the mouse onto it can't flicker the
-hover state of the element underneath.
+renders above everything else. It follows the mouse, tracking `onMouseMove`
+and sitting just to the left of the cursor (vertically centered on it) so
+the player never has to look away to read it — flipping to the right when
+there's no room on the left (e.g. hovering a bag cell near the screen's
+left edge) — and clamps to the viewport so it's never cut off. The wrapper
+itself uses `display: contents` so it never disturbs the grid/flex layout
+of what it wraps (the Inventory bag grid, in particular, depends on this).
+The tooltip panel itself is `pointer-events: none`, so moving the mouse
+onto it can't flicker the hover state of the element underneath.
 
 `ItemTooltipContent` (`components/ItemTooltipContent.tsx`) renders the
 actual item info, reusing the same `.aow-item-name`/`.aow-item-stats`/

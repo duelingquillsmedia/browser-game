@@ -9,7 +9,7 @@ export interface TooltipProps {
   disabled?: boolean;
 }
 
-const GAP = 10;
+const GAP = 16;
 const MARGIN = 12;
 
 /**
@@ -17,47 +17,49 @@ const MARGIN = 12;
  * portaled to `document.body` -- styled to match the end-of-battle result
  * popup (see CombatResultOverlay/CombatScreen.css's cbt-result-panel).
  *
- * Positioned above the hovered element by default (flipping below if there's
- * no room) and clamped to the viewport so it's never cut off. The wrapper
- * itself uses `display: contents` (see Tooltip.css) so it never disturbs a
- * flex/grid layout of the element it wraps.
+ * Follows the mouse, sitting just to its left (vertically centered on it) so
+ * the player never has to look away from the cursor to read it -- flipping
+ * to the right if there's no room on the left, and clamped to the viewport
+ * so it's never cut off. The wrapper itself uses `display: contents` (see
+ * Tooltip.css) so it never disturbs a flex/grid layout of what it wraps.
  */
 export function Tooltip({ content, children, disabled }: TooltipProps) {
-  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
   const [style, setStyle] = useState<{ left: number; top: number } | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    if (!anchor || !panelRef.current) {
+    if (!point || !panelRef.current) {
       setStyle(null);
       return;
     }
     const panel = panelRef.current.getBoundingClientRect();
-    let left = anchor.left + anchor.width / 2 - panel.width / 2;
-    let top = anchor.top - panel.height - GAP;
-    if (top < MARGIN) top = anchor.bottom + GAP;
-    left = Math.min(Math.max(left, MARGIN), Math.max(MARGIN, window.innerWidth - panel.width - MARGIN));
-    top = Math.min(top, Math.max(MARGIN, window.innerHeight - panel.height - MARGIN));
+    let left = point.x - GAP - panel.width;
+    if (left < MARGIN) left = point.x + GAP;
+    let top = point.y - panel.height / 2;
+    left = Math.min(left, Math.max(MARGIN, window.innerWidth - panel.width - MARGIN));
+    top = Math.min(Math.max(top, MARGIN), Math.max(MARGIN, window.innerHeight - panel.height - MARGIN));
     setStyle({ left, top });
     // `content` isn't referenced above, but its size drives `panel`'s measured rect, so re-measure when it changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchor, content]);
+  }, [point, content]);
 
   if (disabled) return <>{children}</>;
 
   return (
     <span
       className="aow-tooltip-trigger"
-      onMouseEnter={(e) => setAnchor(e.currentTarget.getBoundingClientRect())}
-      onMouseLeave={() => setAnchor(null)}
+      onMouseEnter={(e) => setPoint({ x: e.clientX, y: e.clientY })}
+      onMouseMove={(e) => setPoint({ x: e.clientX, y: e.clientY })}
+      onMouseLeave={() => setPoint(null)}
     >
       {children}
-      {anchor &&
+      {point &&
         createPortal(
           <div
             ref={panelRef}
             className="aow-tooltip"
-            style={style ?? { left: anchor.left, top: anchor.top, visibility: "hidden" }}
+            style={style ?? { left: point.x, top: point.y, visibility: "hidden" }}
           >
             {content}
           </div>,
