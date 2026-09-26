@@ -7,6 +7,7 @@ import {
   assignActionBarSlot,
   buyItem,
   clearActionBarSlot,
+  computeAbilityScores,
   createCharacter,
   equipItem,
   gainExperience,
@@ -19,7 +20,7 @@ import {
   xpToNextLevel,
 } from "../character.js";
 import type { Character } from "../character.js";
-import { RACES } from "../races.js";
+import { RACES, type HalfElfChoice } from "../races.js";
 import { CLASSES } from "../classes.js";
 import { BACKGROUNDS } from "../backgrounds.js";
 
@@ -34,15 +35,16 @@ describe("createCharacter", () => {
       baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10 },
     });
 
-    // Base scores + Criminal background (+1 dex/vit/int) + Elf (dex+2,wis+2,int+1,vit-1) + Rogue (dex+5,int+2,str+1)
-    expect(character.abilityScores.str).toBe(11);
-    expect(character.abilityScores.dex).toBe(20); // 15 +1 +2 +5 = 23, clamped to 20
-    expect(character.abilityScores.vit).toBe(12); // 12 +1 -1 = 12
-    expect(character.abilityScores.int).toBe(14); // 10 +1 +1 +2 = 14
+    // Base scores + Criminal background (+1 dex/vit/int, one-time) + Elf's own growth at level 1 (odd: dex+2,wis+2)
+    // + Rogue's own growth at even levels up to 1 (none yet -- starts at level 2).
+    expect(character.abilityScores.str).toBe(10);
+    expect(character.abilityScores.dex).toBe(18); // 15 +1 +2 = 18
+    expect(character.abilityScores.vit).toBe(13); // 12 +1 = 13
+    expect(character.abilityScores.int).toBe(11); // 10 +1 = 11
     expect(character.abilityScores.wis).toBe(12); // 10 +2 = 12
 
-    // Rogue: 100 + vit*10 + class health bonus (20) = 100 + 120 + 20 = 240
-    expect(character.maxHp).toBe(240);
+    // Rogue: 100 + vit*10 + class health bonus (20) = 100 + 130 + 20 = 250
+    expect(character.maxHp).toBe(250);
     expect(character.hp).toBe(character.maxHp);
 
     // Starting gear: Hunter's Shortbow (no evasion bonus) + Leather Armor (+3)
@@ -55,7 +57,7 @@ describe("createCharacter", () => {
     expect(character.actions.some((a) => a.id === "flee")).toBe(true);
   });
 
-  it("grants a Dwarf's Stoneblood poison resistance and applies its ability bonuses", () => {
+  it("grants a Dwarf's Axe-wielders passive and applies its odd-level ability growth", () => {
     const character = createCharacter({
       id: "pc-1c",
       name: "Vex",
@@ -65,11 +67,13 @@ describe("createCharacter", () => {
       baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
 
-    expect(character.damageResistances).toContain("poison");
-    // Soldier background (+1 str/dex/vit), then Dwarf (vit+3,str+2,dex-1), then Warrior (str+4,vit+3,dex+1)
-    expect(character.abilityScores.str).toBe(20); // 15 +1 +2 +4 = 22, clamped to 20
-    expect(character.abilityScores.vit).toBe(20); // 13 +1 +3 +3 = 20
-    expect(character.abilityScores.dex).toBe(15); // 14 +1 -1 +1 = 15
+    expect(character.racePassiveId).toBe("axeWielders");
+    expect(character.damageResistances).not.toContain("poison"); // Stoneblood was replaced by Axe-wielders, not kept alongside it
+    // Soldier background (+1 str/dex/vit, one-time), then Dwarf's own growth at level 1 (odd: str+2,vit+2);
+    // Warrior's own growth doesn't apply yet (starts at level 2).
+    expect(character.abilityScores.str).toBe(18); // 15 +1 +2 = 18
+    expect(character.abilityScores.vit).toBe(16); // 13 +1 +2 = 16
+    expect(character.abilityScores.dex).toBe(15); // 14 +1 = 15
   });
 
   it("starts with class-appropriate equipped gear and a spare accessory", () => {
@@ -396,10 +400,12 @@ describe("gainExperience / xpToNextLevel", () => {
     const before = character.maxHp;
     const result = gainExperience(character, xpToNextLevel(1));
 
+    // Level 2 also crosses Warrior's first even-level growth threshold, so Vitality itself grows too
+    // (+2 at level 2), stacking with the flat HP_PER_LEVEL: 20 (10 HP/point * 2 VIT) + 12 = 32.
     expect(result.levelsGained).toBe(1);
     expect(result.character.level).toBe(2);
     expect(result.character.xp).toBe(0);
-    expect(result.character.maxHp).toBe(before + 12);
+    expect(result.character.maxHp).toBe(before + 32);
     expect(result.character.hp).toBe(result.character.maxHp); // was already full, stays full
     expect(result.newlyUnlockedActions.map((a) => a.id)).toEqual(["cleave"]);
     expect(result.character.actions.some((a) => a.id === "cleave")).toBe(true);
@@ -408,7 +414,7 @@ describe("gainExperience / xpToNextLevel", () => {
   it("heals by the exact HP delta rather than fully, when not already at full HP", () => {
     const character = { ...warriorAtLevel(1), hp: 10 };
     const result = gainExperience(character, xpToNextLevel(1));
-    expect(result.character.hp).toBe(22); // 10 + 12 HP_PER_LEVEL delta, not a full heal
+    expect(result.character.hp).toBe(42); // 10 + 32 HP delta (see the test above), not a full heal
   });
 
   it("advances multiple levels from one large XP grant, landing on the exact boundary", () => {
@@ -463,7 +469,7 @@ describe("gainExperience / xpToNextLevel", () => {
     expect(gainExperience(character, xpToNextLevel(1)).xpAwarded).toBe(xpToNextLevel(1));
   });
 
-  it("grants a Human's Many Roads trait +10% XP from every source, rounded", () => {
+  it("grants a Human's Adaptable trait +10% XP from every source, rounded", () => {
     const human = createCharacter({
       id: "pc-xp-human",
       name: "Elowen",
@@ -666,5 +672,97 @@ describe("action bar", () => {
     const placed = assignActionBarSlot(character, 1, "second-wind");
     const cleared = clearActionBarSlot(placed, 1);
     expect(cleared.actionBarIds).toEqual(Array(ACTION_BAR_SLOT_COUNT).fill(null));
+  });
+});
+
+describe("computeAbilityScores (Race/Class Style Sheet growth)", () => {
+  it("applies only the race's odd-level growth at level 1, with no class growth yet", () => {
+    const scores = computeAbilityScores(
+      { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
+      BACKGROUNDS.acolyte,
+      RACES.dwarf,
+      undefined,
+      CLASSES.warrior,
+      1
+    );
+    expect(scores).toEqual({ str: 12, dex: 10, vit: 12, int: 11, wis: 11 }); // +1 int/wis from Acolyte, +2 str/vit from Dwarf's level-1 growth
+  });
+
+  it("accumulates both race (odd) and class (even) growth across multiple levels", () => {
+    const base = { str: 10, dex: 10, vit: 10, int: 10, wis: 10 };
+    // Dwarf (str+2,vit+2 per odd level) + Warrior (str+2,vit+2,dex+1 per even level), no background.
+    const level4 = computeAbilityScores(base, BACKGROUNDS.acolyte, RACES.dwarf, undefined, CLASSES.warrior, 4);
+    // Odd levels <= 4: 1, 3 (2 hits). Even levels <= 4: 2, 4 (2 hits).
+    expect(level4.str).toBe(10 + 2 * 2 + 2 * 2); // 18
+    expect(level4.vit).toBe(10 + 2 * 2 + 2 * 2); // 18
+    expect(level4.dex).toBe(10 + 1 * 2); // 12, Warrior-only growth
+  });
+
+  it("a Half-elf's HalfElfChoice substitutes for the race's own (empty) growth table", () => {
+    const base = { str: 10, dex: 10, vit: 10, int: 10, wis: 10 };
+    const choice: HalfElfChoice = { doubleAbility: "dex", singleAbilities: ["str", "wis"], passiveSource: "elf" };
+    const scores = computeAbilityScores(base, BACKGROUNDS.acolyte, RACES.halfElf, choice, CLASSES.warrior, 1);
+    expect(scores.dex).toBe(12); // +2, the doubled ability
+    expect(scores.str).toBe(11); // +1, a singled ability
+    expect(scores.wis).toBe(12); // +1 (singled) +1 (Acolyte background)
+  });
+});
+
+describe("Half-elf: player-chosen ability growth and passive", () => {
+  it("grows the doubled and singled abilities and resolves the chosen passive", () => {
+    const halfElf = createCharacter({
+      id: "pc-halfelf",
+      name: "Vaenor",
+      raceId: "halfElf",
+      classId: "wizard",
+      backgroundId: "sage",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10 },
+      raceChoice: { doubleAbility: "int", singleAbilities: ["dex", "wis"], passiveSource: "elf" },
+    });
+
+    expect(halfElf.racePassiveId).toBe("spellcasters");
+    // Sage background (+1 vit/int/wis), then Half-elf's own choice at level 1 (int+2, dex+1, wis+1).
+    expect(halfElf.abilityScores.int).toBe(18); // 15 +1 +2
+    expect(halfElf.abilityScores.dex).toBe(11); // 10 +1
+    expect(halfElf.abilityScores.wis).toBe(12); // 10 +1 +1
+  });
+
+  it("resolves the Human-flavored passive when chosen instead", () => {
+    const halfElf = createCharacter({
+      id: "pc-halfelf-2",
+      name: "Bevan",
+      raceId: "halfElf",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
+      raceChoice: { doubleAbility: "str", singleAbilities: ["vit", "dex"], passiveSource: "human" },
+    });
+    expect(halfElf.racePassiveId).toBe("adaptable");
+  });
+});
+
+describe("legacy ability score migration", () => {
+  it("recovers a pre-reforge character's true baseAbilityScores from its already-bonused abilityScores", () => {
+    const modern = createCharacter({
+      id: "pc-legacy-abilities",
+      name: "Old Guard",
+      raceId: "dwarf",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
+    });
+    // Simulate a row persisted before baseAbilityScores existed, with abilityScores computed under the
+    // OLD flat one-time model instead of the new per-level growth this character actually has.
+    const { baseAbilityScores: _base, ...withoutBase } = modern;
+    const legacy = {
+      ...withoutBase,
+      abilityScores: { str: 22, dex: 15, vit: 20, int: 12, wis: 10 }, // str 15+1+2+4, dex 14+1-1+1, vit 13+1+3+3, int/wis untouched by Soldier's background
+    } as unknown as Character;
+
+    const migrated = withStartingGearIfMissing(legacy);
+
+    expect(migrated.baseAbilityScores).toEqual({ str: 15, dex: 14, vit: 13, int: 12, wis: 10 });
+    // abilityScores is then recomputed fresh from the recovered base under the new growth formula.
+    expect(migrated.abilityScores).toEqual(modern.abilityScores);
   });
 });

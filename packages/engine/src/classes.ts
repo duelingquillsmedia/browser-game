@@ -15,8 +15,13 @@ export interface CharacterClass {
   description: string;
   primaryAbility: AbilityKey;
   savingThrowProficiencies: AbilityKey[];
-  /** Flat ability score bonuses granted just for picking this class (design handoff's "10 + race bonus + class bonus" model). */
-  abilityScoreBonuses: Partial<Record<AbilityKey, number>>;
+  /**
+   * Per the Class Style Sheet: this class's own attributes grow by this much
+   * on every even level (2, 4, 6, 8, ...) -- see character.ts's
+   * `computeAbilityScores`. Replaces the old one-time flat "class bonus"
+   * model.
+   */
+  evenLevelAbilityGrowth: Partial<Record<AbilityKey, number>>;
   /** The Class Style Sheet's name for this class's free, resource-building Basic Attack (e.g. "Wild Swing") — the actual action(s) are generated per equipped weapon slot in character.ts's `generateBasicAttacks`, not listed here. */
   basicAttackName: string;
   /** Soldier only: the Basic Attack scales off whichever of STR/DEX is higher, instead of `primaryAbility`. */
@@ -68,7 +73,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "Steel and stubbornness. Warriors build Fury by dealing and taking blows, then spend it on crushing strikes.",
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "vit"],
-    abilityScoreBonuses: { str: 4, vit: 3, dex: 1 },
+    evenLevelAbilityGrowth: { str: 2, vit: 2, dex: 1 },
     basicAttackName: "Wild Swing",
     actions: [
       {
@@ -127,7 +132,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "A disciplined blade-and-shield fighter, trading burst damage for tempo: knock foes down and punish their openings.",
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "dex"],
-    abilityScoreBonuses: { str: 3, dex: 3, vit: 2 },
+    evenLevelAbilityGrowth: { str: 2, dex: 2, vit: 1 },
     basicAttackName: "Practiced Strike",
     basicAttackAbilityMode: "highestOfStrDex",
     actions: [
@@ -177,7 +182,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "A vessel of the dawn. Clerics mend wounds and lash out with radiant judgment, husbanding a slim reserve of Prayer.",
     primaryAbility: "wis",
     savingThrowProficiencies: ["wis"],
-    abilityScoreBonuses: { wis: 4, vit: 1 },
+    evenLevelAbilityGrowth: { wis: 2, str: 1, vit: 1 },
     basicAttackName: "Swinging Smite",
     actions: [
       {
@@ -224,7 +229,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "A sharpshooting scout, favoring the bow but never without a blade close at hand.",
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "wis"],
-    abilityScoreBonuses: { dex: 5, wis: 2, vit: 1 },
+    evenLevelAbilityGrowth: { dex: 2, wis: 1, vit: 1 },
     basicAttackName: "Quick Shot",
     actions: [
       {
@@ -273,7 +278,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "Quick blades from the shadows. Rogues win by striking first and striking smart.",
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "int"],
-    abilityScoreBonuses: { dex: 5, int: 2, str: 1 },
+    evenLevelAbilityGrowth: { dex: 3 },
     basicAttackName: "Subtle Slash",
     actions: [
       {
@@ -324,7 +329,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "Wardens of root and bloom, drawing on nature's own magic in battle.",
     primaryAbility: "wis",
     savingThrowProficiencies: ["int", "wis"],
-    abilityScoreBonuses: { wis: 3, vit: 2, dex: 1 },
+    evenLevelAbilityGrowth: { wis: 2, vit: 1, dex: 1 },
     basicAttackName: "Nature's Strike",
     actions: [
       {
@@ -370,7 +375,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "Scholars of the arcane, channeling raw magic through years of study.",
     primaryAbility: "int",
     savingThrowProficiencies: ["int", "wis"],
-    abilityScoreBonuses: { int: 5 },
+    evenLevelAbilityGrowth: { int: 3 },
     basicAttackName: "Arcane Bolt",
     actions: [
       {

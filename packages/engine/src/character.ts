@@ -1,8 +1,8 @@
 import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier } from "./dice.js";
-import { getRace, type Race } from "./races.js";
+import { getRace, resolveRacePassiveId, type HalfElfChoice, type Race, type RacePassiveId } from "./races.js";
 import { getClass, type CharacterClass } from "./classes.js";
-import { getBackground } from "./backgrounds.js";
+import { getBackground, type Background } from "./backgrounds.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
@@ -25,6 +25,12 @@ export interface Character {
   xp: number;
   /** Currency spent at a settlement's General Store/Blacksmith (see game/setup.ts's Town Hub) and earned from combat victories. */
   gold: number;
+  /** The raw stat block dealt at creation (standard array/rolled assignment), before the Background's flat +1 or any race/class growth -- the input to `computeAbilityScores`, recomputed into `abilityScores` below on every load and level-up. */
+  baseAbilityScores: AbilityScores;
+  /** Only meaningful for a Half-elf: the player's own pick of which ability doubles its racial growth, which two get the ordinary growth, and which parent race's passive to inherit (see races.ts). */
+  raceChoice?: HalfElfChoice;
+  /** This character's resolved racial passive -- Human/Elf/Dwarf's own, or a Half-elf's chosen one (see races.ts's `resolveRacePassiveId`). */
+  racePassiveId?: RacePassiveId;
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
@@ -35,6 +41,9 @@ export interface Character {
   meleeWeaponDamageMax?: number;
   rangedWeaponDamageMin?: number;
   rangedWeaponDamageMax?: number;
+  /** Whether the equipped melee/ranged weapon is an axe, for a Dwarf's (or a Half-elf's) Axe-wielders passive (see combat.ts). */
+  meleeWeaponIsAxe?: boolean;
+  rangedWeaponIsAxe?: boolean;
   /** Used only for the Alert origin feat's initiative bonus and the Flee saving throw; no longer feeds attack rolls (see stats.ts). */
   proficiencyBonus: number;
   actions: CombatActionDef[];
@@ -171,8 +180,56 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
     meleeWeaponDamageMax: meleeWeapon?.damageMax,
     rangedWeaponDamageMin: rangedWeapon?.damageMin,
     rangedWeaponDamageMax: rangedWeapon?.damageMax,
+    meleeWeaponIsAxe: meleeWeapon?.weaponCategory === "axe",
+    rangedWeaponIsAxe: rangedWeapon?.weaponCategory === "axe",
     damageResistances: race.damageResistances ?? [],
   };
+}
+
+/** A Half-elf substitutes their own `HalfElfChoice` for a race's (otherwise empty) `oddLevelAbilityGrowth` table. */
+function raceAbilityGrowth(race: Race, raceChoice: HalfElfChoice | undefined): Partial<Record<AbilityKey, number>> {
+  if (race.id !== "halfElf" || !raceChoice) return race.oddLevelAbilityGrowth;
+  const growth: Partial<Record<AbilityKey, number>> = { [raceChoice.doubleAbility]: 2 };
+  for (const key of raceChoice.singleAbilities) {
+    growth[key] = (growth[key] ?? 0) + 1;
+  }
+  return growth;
+}
+
+/**
+ * Ability scores at any level, per the Race/Class Style Sheets: `baseAbilityScores`
+ * (the raw stat block from creation) plus the Background's flat +1 (one-time,
+ * unaffected by level), plus the race's own growth summed over every odd
+ * level from 1 to `level`, plus the class's own growth summed over every
+ * even level from 2 to `level`. Replaces the old one-time flat "10 + race
+ * bonus + class bonus" model -- including its `Math.min(20, ...)` ceiling,
+ * which no longer makes sense once ability scores keep growing all the way
+ * to `LEVEL_CAP` alongside the rest of this engine's big, MMO-scale numbers.
+ */
+export function computeAbilityScores(
+  baseAbilityScores: AbilityScores,
+  background: Background,
+  race: Race,
+  raceChoice: HalfElfChoice | undefined,
+  cls: CharacterClass,
+  level: number
+): AbilityScores {
+  const scores = { ...baseAbilityScores };
+  for (const key of background.abilityScores) {
+    scores[key] += 1;
+  }
+  const growth = raceAbilityGrowth(race, raceChoice);
+  for (let lv = 1; lv <= level; lv += 2) {
+    for (const [key, amount] of Object.entries(growth) as [AbilityKey, number][]) {
+      scores[key] += amount;
+    }
+  }
+  for (let lv = 2; lv <= level; lv += 2) {
+    for (const [key, amount] of Object.entries(cls.evenLevelAbilityGrowth) as [AbilityKey, number][]) {
+      scores[key] += amount;
+    }
+  }
+  return scores;
 }
 
 export function equipItem(character: Character, itemId: string): Character {
@@ -297,10 +354,8 @@ export function gainExperience(character: Character, amount: number): Experience
     return { character, levelsGained: 0, xpAwarded: 0, newlyUnlockedActions: [] };
   }
 
-  // Human's "Many Roads" trait: +10% XP from all sources (see races.ts). No
-  // structured trait-effect data exists yet, so this follows the same
-  // raceId-gated precedent as Elf's Silverleaf Step in combat.ts.
-  const awarded = character.raceId === "human" ? Math.round(amount * 1.1) : amount;
+  // Human's (or a Half-elf who chose it) Adaptable trait: +10% XP from all sources (see races.ts).
+  const awarded = character.racePassiveId === "adaptable" ? Math.round(amount * 1.1) : amount;
 
   const startLevel = character.level;
   let level = character.level;
@@ -320,17 +375,20 @@ export function gainExperience(character: Character, amount: number): Experience
 
   const cls = getClass(character.classId);
   const race = getRace(character.raceId);
+  const background = getBackground(character.backgroundId);
 
-  const newMaxHp = computeMaxHealth(character.abilityScores, cls.id, level);
-  const hpDelta = newMaxHp - character.maxHp;
-  const newResourceMax = computeResourceMax(character.abilityScores, cls.id, level);
+  const newAbilityScores = computeAbilityScores(character.baseAbilityScores, background, race, character.raceChoice, cls, level);
   const oldResourceMax = computeResourceMax(character.abilityScores, cls.id, startLevel);
+  const newMaxHp = computeMaxHealth(newAbilityScores, cls.id, level);
+  const hpDelta = newMaxHp - character.maxHp;
+  const newResourceMax = computeResourceMax(newAbilityScores, cls.id, level);
   const resourceDelta = (newResourceMax ?? 0) - (oldResourceMax ?? 0);
 
   const leveled: Character = {
     ...character,
     level,
     xp,
+    abilityScores: newAbilityScores,
     maxHp: newMaxHp,
     hp: Math.min(newMaxHp, character.hp + hpDelta),
     resource:
@@ -381,6 +439,8 @@ export interface CreateCharacterOptions {
   classId: string;
   backgroundId: string;
   baseAbilityScores: AbilityScores;
+  /** Required when `raceId` is Half-elf; ignored otherwise. */
+  raceChoice?: HalfElfChoice;
   level?: number;
   /** Which of the class's startingEquipmentOptions to start with; defaults to the first. */
   equipmentOptionId?: string;
@@ -442,22 +502,80 @@ export function withClassMigrationIfMissing(character: Character): Character {
 }
 
 /**
+ * The old, one-time flat ability bonuses from before the Race/Class Style
+ * Sheets' per-level growth model replaced them -- kept only so
+ * `recoverLegacyBaseAbilityScores` can reverse-engineer a legacy character's
+ * true creation-time `baseAbilityScores`. Never used for anything else.
+ */
+const LEGACY_RACE_ABILITY_BONUSES: Record<string, Partial<Record<AbilityKey, number>>> = {
+  elf: { dex: 2, wis: 2, int: 1, vit: -1 },
+  human: { str: 1, dex: 1, int: 1, wis: 1, vit: 1 },
+  dwarf: { vit: 3, str: 2, dex: -1 },
+};
+const LEGACY_CLASS_ABILITY_BONUSES: Record<string, Partial<Record<AbilityKey, number>>> = {
+  warrior: { str: 4, vit: 3, dex: 1 },
+  soldier: { str: 3, dex: 3, vit: 2 },
+  cleric: { wis: 4, vit: 1 },
+  ranger: { dex: 5, wis: 2, vit: 1 },
+  rogue: { dex: 5, int: 2, str: 1 },
+  druid: { wis: 3, vit: 2, dex: 1 },
+  wizard: { int: 5 },
+};
+
+/**
+ * Recovers a pre-Style-Sheet-reforge character's true creation-time ability
+ * spread by subtracting the old flat race/class/background bonuses back out
+ * of their current (already-bonused) `abilityScores`. Not perfectly exact --
+ * the old model's own `Math.min(20, ...)` clamp could have silently
+ * truncated an overflow, which this can't reverse -- but close enough for a
+ * one-time migration; the result is stored as `baseAbilityScores` afterward,
+ * so this only ever runs once per character.
+ */
+function recoverLegacyBaseAbilityScores(character: Character, cls: CharacterClass, race: Race, background: Background): AbilityScores {
+  const scores = { ...character.abilityScores };
+  for (const key of background.abilityScores) {
+    scores[key] -= 1;
+  }
+  for (const [key, amount] of Object.entries(LEGACY_RACE_ABILITY_BONUSES[race.id] ?? {}) as [AbilityKey, number][]) {
+    scores[key] -= amount;
+  }
+  for (const [key, amount] of Object.entries(LEGACY_CLASS_ABILITY_BONUSES[cls.id] ?? {}) as [AbilityKey, number][]) {
+    scores[key] -= amount;
+  }
+  return scores;
+}
+
+/**
  * Backfills fields on a character persisted before this engine version:
- * inventory/equipment (added first), and background (added later — defaults
- * to Acolyte since the original data has no equivalent). A no-op once every
- * field is already present.
+ * inventory/equipment (added first), background (added later — defaults to
+ * Acolyte since the original data has no equivalent), and `baseAbilityScores`
+ * (added by the Race/Class Style Sheet reforge — recovered from the old flat
+ * bonus model, see `recoverLegacyBaseAbilityScores`). `abilityScores` and
+ * `racePassiveId` are recomputed from scratch every time this runs (a pure
+ * function of `baseAbilityScores` + level + race/class/background), so a
+ * character always reflects the current growth formulas on load, not just
+ * whatever was true the last time it leveled up.
  */
 export function withStartingGearIfMissing(character: Character): Character {
   const cls = getClass(character.classId);
   const race = getRace(character.raceId);
   const backgroundId = character.backgroundId ?? "acolyte";
+  const background = getBackground(backgroundId);
   const defaultEquipment = resolveStartingEquipment(cls);
+
+  const baseAbilityScores = character.baseAbilityScores ?? recoverLegacyBaseAbilityScores(character, cls, race, background);
+  const racePassiveId = resolveRacePassiveId(race.id, character.raceChoice);
+  const abilityScores = computeAbilityScores(baseAbilityScores, background, race, character.raceChoice, cls, character.level);
+
   const withGear: Character = {
     ...character,
     backgroundId,
+    baseAbilityScores,
+    racePassiveId,
+    abilityScores,
     inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
     equipment: character.equipment ?? { ...defaultEquipment },
-    resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id, character.level),
+    resource: character.resource ?? computeResourceStart(abilityScores, cls.id, character.level),
     actionBarIds: character.actionBarIds ?? emptyActionBar(),
     xp: character.xp ?? 0,
     // No free retroactive gold for old saves -- unlike createCharacter's STARTING_GOLD seed.
@@ -474,17 +592,11 @@ export function createCharacter(options: CreateCharacterOptions): Character {
   const cls = getClass(options.classId);
   const background = getBackground(options.backgroundId);
   const level = options.level ?? 1;
+  const raceChoice = race.id === "halfElf" ? options.raceChoice : undefined;
 
-  const abilityScores = { ...options.baseAbilityScores };
-  for (const key of background.abilityScores) {
-    abilityScores[key] = Math.min(20, abilityScores[key] + 1);
-  }
-  for (const [key, bonus] of Object.entries(race.abilityScoreBonuses) as [AbilityKey, number][]) {
-    abilityScores[key] = Math.min(20, abilityScores[key] + bonus);
-  }
-  for (const [key, bonus] of Object.entries(cls.abilityScoreBonuses) as [AbilityKey, number][]) {
-    abilityScores[key] = Math.min(20, abilityScores[key] + bonus);
-  }
+  const baseAbilityScores = { ...options.baseAbilityScores };
+  const abilityScores = computeAbilityScores(baseAbilityScores, background, race, raceChoice, cls, level);
+  const racePassiveId = resolveRacePassiveId(race.id, raceChoice);
 
   const maxHp = computeMaxHealth(abilityScores, cls.id, level);
   const equipment = resolveStartingEquipment(cls, options.equipmentOptionId);
@@ -498,6 +610,9 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     level,
     xp: 0,
     gold: STARTING_GOLD,
+    baseAbilityScores,
+    raceChoice,
+    racePassiveId,
     abilityScores,
     maxHp,
     hp: maxHp,

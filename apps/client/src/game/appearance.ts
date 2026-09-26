@@ -26,6 +26,14 @@ export const APPEARANCE_PRESETS: Record<string, CharacterAppearance[]> = {
     { presetName: "Ashforge", skin: "#a87a5c", hair: "#1a1618", eyes: "#e08a72" },
     { presetName: "Frostpeak", skin: "#e6ccb4", hair: "#e6dcd0", eyes: "#5fc4d6" },
   ],
+  halfElf: [
+    { presetName: "Duskborn", skin: "#dcb99e", hair: "#5a3d2a", eyes: "#86c46f" },
+    { presetName: "Wanderhome", skin: "#c79a78", hair: "#2a2118", eyes: "#6aa7e6" },
+    { presetName: "Gladewalker", skin: "#e9d8c6", hair: "#8a6a4a", eyes: "#5fc4d6" },
+    { presetName: "Farsight", skin: "#b8977c", hair: "#1e1a1c", eyes: "#d9b865" },
+    { presetName: "Twinbough", skin: "#e2c1a4", hair: "#b85c4a", eyes: "#8fc6e6" },
+    { presetName: "Evenmere", skin: "#8a6a58", hair: "#9fb8c6", eyes: "#a39a93" },
+  ],
 };
 
 /** Name pools from the same handoff's `NAMES` data, used by the Random name button. */
@@ -33,6 +41,7 @@ export const NAME_POOLS: Record<string, string[]> = {
   elf: ["Kel'hos", "Aelira", "Thaelis", "Sylvaren", "Iriel", "Faelan", "Naeris", "Loriath"],
   human: ["Aldric", "Maren", "Corwin", "Isolde", "Tobias", "Wren", "Edda", "Garrick"],
   dwarf: ["Thrain", "Dagna", "Borin", "Helga", "Kazrik", "Runa", "Gorrim", "Brenna"],
+  halfElf: ["Elyan", "Marisel", "Corentha", "Bevan", "Isolwen", "Tamlin", "Sorcha", "Aldeth"],
 };
 
 /** Which existing Background best fits a class's flavor, since the new creation flow no longer asks for one. */

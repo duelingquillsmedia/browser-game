@@ -35,6 +35,13 @@ const ABILITY_HINTS: Record<AbilityKey, string> = {
   wis: "Cleric and Druid spellcasting; Wisdom saves.",
 };
 
+/** A Half-elf's own race entry only carries the generic "Of Two Bloodlines" flavor trait -- this shows the actual passive they chose instead. */
+const RACE_PASSIVE_DETAILS: Record<string, { name: string; description: string }> = {
+  adaptable: { name: "Adaptable", description: "Gain 10% more experience from all sources." },
+  spellcasters: { name: "Spellcasters", description: "All spell damage is increased by 5%." },
+  axeWielders: { name: "Axe-wielders", description: "Attacks with an axe deal 5 bonus damage." },
+};
+
 /** Slot layout matching the design handoff's paper-doll grouping. Only weapon/armor/accessory are real today. */
 const LEFT_SLOTS: { id: string; label: string; real?: ItemSlot }[] = [
   { id: "head", label: "Head" },
@@ -350,12 +357,19 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
               <p>{background.description}</p>
             </div>
           )}
-          {race?.traits.map((trait) => (
-            <div key={trait.name} className="aow-trait-card">
-              <h3>{trait.name}</h3>
-              <p>{trait.description}</p>
+          {race?.id === "halfElf" && character.racePassiveId && RACE_PASSIVE_DETAILS[character.racePassiveId] ? (
+            <div className="aow-trait-card">
+              <h3>{RACE_PASSIVE_DETAILS[character.racePassiveId].name}</h3>
+              <p>{RACE_PASSIVE_DETAILS[character.racePassiveId].description}</p>
             </div>
-          ))}
+          ) : (
+            race?.traits.map((trait) => (
+              <div key={trait.name} className="aow-trait-card">
+                <h3>{trait.name}</h3>
+                <p>{trait.description}</p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

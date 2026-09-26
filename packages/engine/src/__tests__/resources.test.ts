@@ -5,11 +5,12 @@ import { GUARANTEED_FAILURE, GUARANTEED_SUCCESS, forD20, forVariance, sequenceRn
 
 /**
  * A character built from flat 10s, so its final ability scores are just
- * "10 + Soldier background (+1 str/dex/vit) + Human race (+1 all) + this
- * class's own bonuses" -- easy to hand-trace for each class. `level`
- * defaults to 4 so every class's lvl-2/lvl-4 abilities (the only ones with
- * a resource cost -- the Basic Attack is always free) are actually present
- * to exercise; see actions.ts's `unlockLevel`.
+ * "10 + Soldier background (+1 str/dex/vit, one-time) + Human's own growth
+ * at every odd level up to `level` (+1 all) + this class's own growth at
+ * every even level up to `level`" -- easy to hand-trace for each class.
+ * `level` defaults to 4 so every class's lvl-2/lvl-4 abilities (the only
+ * ones with a resource cost -- the Basic Attack is always free) are
+ * actually present to exercise; see actions.ts's `unlockLevel`.
  */
 function makeCharacter(classId: string, raceId = "human", level = 4) {
   return createCharacter({
@@ -47,7 +48,6 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     fled: false,
     unconscious: false,
     dead: false,
-    usedSilverleafStep: false,
     rank: "front",
     statusEffects: [],
     ...overrides,
@@ -63,15 +63,17 @@ describe("class resource pools", () => {
     expect(makeCharacter("ranger").resource).toBe(0);
     expect(makeCharacter("rogue").resource).toBe(0);
     // Druid/Wizard: still mana-like -- full at creation, scaling with an ability score and level (default level here is 4).
-    // Wizard: int16 -> 100 + 16*6 + (4-1)*8 = 220.
-    expect(makeCharacter("wizard").resource).toBe(220);
-    // Druid: wis14 -> 100 + 14*6 + (4-1)*8 = 208.
-    expect(makeCharacter("druid").resource).toBe(208);
+    // Wizard: base int 10, no Soldier background bonus, Human's own growth at odd levels 1/3 (+1 each) = +2,
+    // Wizard's own growth at even levels 2/4 (+3 each) = +6 -> int 18 -> 100 + 18*6 + (4-1)*8 = 232.
+    expect(makeCharacter("wizard").resource).toBe(232);
+    // Druid: base wis 10, Human's own growth at odd levels 1/3 (+1 each) = +2,
+    // Druid's own growth at even levels 2/4 (+2 each) = +4 -> wis 16 -> 100 + 16*6 + (4-1)*8 = 220.
+    expect(makeCharacter("druid").resource).toBe(220);
   });
 
   it("carries a character's resource value into their Combatant", () => {
     const combatant = toCombatant(makeCharacter("wizard"), "party");
-    expect(combatant.resource).toBe(220);
+    expect(combatant.resource).toBe(232);
   });
 
   it("marks an action not-ready when the actor can't pay its resource cost", () => {
@@ -96,7 +98,7 @@ describe("class resource pools", () => {
       { actorId: wizard.id, actionId: "elemental-shard", targetId: "foe" },
       sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss
     );
-    expect(after.combatants.find((c) => c.id === wizard.id)!.resource).toBe(190); // 220 - 30, spent even on a miss
+    expect(after.combatants.find((c) => c.id === wizard.id)!.resource).toBe(202); // 232 - 30, spent even on a miss
   });
 
   it("builds Fury when a Warrior uses their melee Basic Attack, hit or miss", () => {

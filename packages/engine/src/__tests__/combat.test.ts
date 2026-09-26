@@ -42,7 +42,6 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     fled: false,
     unconscious: false,
     dead: false,
-    usedSilverleafStep: false,
     // A 1-AP budget means any default-cost (1 AP) action immediately
     // exhausts it, reproducing "exactly one action per turn" for every
     // existing test below without touching their bodies. Tests exercising
@@ -88,7 +87,6 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     fled: false,
     unconscious: false,
     dead: false,
-    usedSilverleafStep: false,
     rank: "front",
     statusEffects: [],
     ...overrides,
@@ -265,7 +263,7 @@ describe("combat engine", () => {
     expect(after.combatants.find((c) => c.id === "foe2")!.hp).toBe(0);
   });
 
-  it("discounts an Elf's first resource-costing action each combat by 1 (Silverleaf Step)", () => {
+  it("adds an Elf's (or a Half-elf who chose it) Spellcasters +5% to a non-weapon attack's damage", () => {
     const firebolt = {
       id: "firebolt",
       name: "Firebolt",
@@ -275,23 +273,72 @@ describe("combat engine", () => {
       ability: "int" as const,
       power: 1,
       damageType: "fire" as const,
-      resourceCost: 4,
     };
     const state = startCombat(
-      [makeHero({ raceId: "elf", actions: [firebolt], resource: 4 })],
-      [makeFoe()],
+      [makeHero({ racePassiveId: "spellcasters", actions: [firebolt] })],
+      [makeFoe({ maxHp: 1000, hp: 1000 })],
       sequenceRng([forD20(15), forD20(5)])
     );
 
     const after = submitPlayerAction(
       state,
       { actorId: "hero", actionId: "firebolt", targetId: "foe" },
-      sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss -- only the resource spend matters here
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
 
-    expect(after.log.some((entry) => entry.message.includes("Silverleaf Step"))).toBe(true);
-    // 4 resource, discounted to a cost of 3 -- 1 left over instead of running out.
-    expect(after.combatants.find((c) => c.id === "hero")!.resource).toBe(1);
+    // int(10) * power(1) * variance(1.0) = 10, +5% Spellcasters = round(10.5) = 11.
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 11);
+  });
+
+  it("never applies Spellcasters to a weapon-scaled attack", () => {
+    const meleeStrike = { ...BASIC_ATTACK, id: "strike-melee", weaponDamageSource: "melee" as const };
+    const state = startCombat(
+      [
+        makeHero({
+          racePassiveId: "spellcasters",
+          actions: [meleeStrike, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
+          meleeWeaponDamageMin: 14,
+          meleeWeaponDamageMax: 14,
+        }),
+      ],
+      [makeFoe({ maxHp: 1000, hp: 1000 })],
+      sequenceRng([forD20(15), forD20(5)])
+    );
+
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "strike-melee", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE])
+    );
+
+    // Weapon roll fixed at 14 + Attack Power bonus (str 16 -> AP 32 -> +5); no Spellcasters multiplier on a weapon strike.
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - (14 + 5));
+  });
+
+  it("adds a Dwarf's (or a Half-elf's) Axe-wielders +5 flat damage on a hit with an equipped axe", () => {
+    const meleeStrike = { ...BASIC_ATTACK, id: "strike-melee", weaponDamageSource: "melee" as const };
+    const state = startCombat(
+      [
+        makeHero({
+          racePassiveId: "axeWielders",
+          actions: [meleeStrike, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
+          meleeWeaponIsAxe: true,
+          meleeWeaponDamageMin: 14,
+          meleeWeaponDamageMax: 14,
+        }),
+      ],
+      [makeFoe({ maxHp: 1000, hp: 1000 })],
+      sequenceRng([forD20(15), forD20(5)])
+    );
+
+    const after = submitPlayerAction(
+      state,
+      { actorId: "hero", actionId: "strike-melee", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE])
+    );
+
+    // Weapon roll fixed at 14 + Attack Power bonus (str 16 -> AP 32 -> +5) + Axe-wielders' flat +5.
+    expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - (14 + 5 + 5));
   });
 
   it("blocks a cooldown action from reuse until enough rounds have passed, then allows it again", () => {
@@ -430,14 +477,15 @@ describe("weapon damage", () => {
     const foe = makeFoe({ maxHp: 1000, hp: 1000 });
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // str 16 -> Attack Power 32 -> +round(32*0.15) = +5 flat bonus.
+    // Level 1: str 10 base + Soldier background (+1) + Human's own odd-level growth at level 1 (+1) = 12,
+    // no Warrior class growth yet (starts at level 2) -- Attack Power 24 -> +round(24*0.15) = +4 flat bonus.
     // Force the weapon roll to its minimum (14 of 14-20).
     state = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19); // 14 + 5
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18); // 14 + 4
 
     // Force the weapon roll to its maximum (20).
     state = submitPlayerAction(
@@ -445,7 +493,7 @@ describe("weapon damage", () => {
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_FAILURE])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 19 - 25); // 20 + 5
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18 - 24); // 20 + 4
   });
 
   it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {
@@ -460,13 +508,13 @@ describe("weapon damage", () => {
     const foe = makeFoe({ maxHp: 1000, hp: 1000 });
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // str 16 * power 1.8 * exact variance 1.0 = round(28.8) = 29 -- no weapon range or Attack Power involved.
+    // str 12 (see the level-1 growth math above) * power 1.8 * exact variance 1.0 = round(21.6) = 22 -- no weapon range or Attack Power involved.
     state = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "test-power-attack", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 29);
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 22);
   });
 });
 

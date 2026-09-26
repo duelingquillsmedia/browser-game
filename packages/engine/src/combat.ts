@@ -1,4 +1,5 @@
 import type { AbilityKey, AbilityScores } from "./abilities.js";
+import type { RacePassiveId } from "./races.js";
 import { abilityModifier, rollD20, rollD20WithEdge, type RNG } from "./dice.js";
 import { DEFEND_ACTION, type CombatActionDef } from "./actions.js";
 import type { Character } from "./character.js";
@@ -46,8 +47,10 @@ export interface Combatant {
   id: string;
   name: string;
   side: Side;
-  /** A party member's species (for race-specific mechanics like Elf's Silverleaf Step); monsters have none. */
+  /** A party member's species (for UI purposes, e.g. picking a combat sprite); monsters have none. */
   raceId?: string;
+  /** A party member's resolved racial passive (see races.ts's `resolveRacePassiveId`); monsters have none. */
+  racePassiveId?: RacePassiveId;
   /** A party member's class (for UI purposes, e.g. picking a combat sprite); monsters have none. */
   classId?: string;
   /** A monster's template (for UI purposes, e.g. picking a combat sprite); party members have none. */
@@ -64,6 +67,9 @@ export interface Combatant {
   meleeWeaponDamageMax?: number;
   rangedWeaponDamageMin?: number;
   rangedWeaponDamageMax?: number;
+  /** Whether the equipped melee/ranged weapon is an axe, for a Dwarf's (or a Half-elf's) Axe-wielders passive. */
+  meleeWeaponIsAxe?: boolean;
+  rangedWeaponIsAxe?: boolean;
   /** Used only for the Flee saving throw; monsters have none. */
   proficiencyBonus?: number;
   actions: CombatActionDef[];
@@ -87,8 +93,6 @@ export interface Combatant {
   unconscious: boolean;
   /** Only from an instant-death overkill hit; otherwise a party member simply goes Unconscious. */
   dead: boolean;
-  /** Whether an Elf's Silverleaf Step has already discounted a resource cost this fight. */
-  usedSilverleafStep: boolean;
   /** Current Action Points this turn; refills to apMax at the start of each of this combatant's own turns. Undefined for monsters — they're AP-exempt. */
   ap?: number;
   apMax?: number;
@@ -104,6 +108,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     name: source.name,
     side,
     raceId: "raceId" in source ? source.raceId : undefined,
+    racePassiveId: "racePassiveId" in source ? source.racePassiveId : undefined,
     classId: "classId" in source ? source.classId : undefined,
     templateId: "templateId" in source ? source.templateId : undefined,
     level: "classId" in source ? source.level : undefined,
@@ -115,6 +120,8 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     meleeWeaponDamageMax: "meleeWeaponDamageMax" in source ? source.meleeWeaponDamageMax : undefined,
     rangedWeaponDamageMin: "rangedWeaponDamageMin" in source ? source.rangedWeaponDamageMin : undefined,
     rangedWeaponDamageMax: "rangedWeaponDamageMax" in source ? source.rangedWeaponDamageMax : undefined,
+    meleeWeaponIsAxe: "meleeWeaponIsAxe" in source ? source.meleeWeaponIsAxe : undefined,
+    rangedWeaponIsAxe: "rangedWeaponIsAxe" in source ? source.rangedWeaponIsAxe : undefined,
     proficiencyBonus: "classId" in source ? source.proficiencyBonus : undefined,
     actions: source.actions,
     actionUses: { ...source.actionUses },
@@ -136,7 +143,6 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     // monsters have no equivalent state, so this never applies to them.
     unconscious: side === "party" && source.hp <= 0,
     dead: false,
-    usedSilverleafStep: false,
     ap: side === "party" ? PLAYER_AP_PER_TURN : undefined,
     apMax: side === "party" ? PLAYER_AP_PER_TURN : undefined,
     rank: side === "party" ? "front" : (source as Monster).rank,
@@ -277,23 +283,39 @@ function beingStruckResourceGain(target: Combatant, damageTaken: number): number
  * formula this generalizes): the weapon's own min-max range already is the
  * randomness.
  */
+/** Elf's (or a Half-elf who chose it) Spellcasters passive: +5% damage on any attack that isn't a weapon-scaled strike. */
+const SPELLCASTER_DAMAGE_MULTIPLIER = 1.05;
+/** Dwarf's (or a Half-elf's) Axe-wielders passive: +5 flat damage on an attack made with an equipped axe. */
+const AXE_WIELDER_BONUS_DAMAGE = 5;
+
+function axeBonusDamage(actor: Combatant, source: "melee" | "ranged" | undefined): number {
+  if (actor.racePassiveId !== "axeWielders") return 0;
+  if (source === "melee" && actor.meleeWeaponIsAxe) return AXE_WIELDER_BONUS_DAMAGE;
+  if (source === "ranged" && actor.rangedWeaponIsAxe) return AXE_WIELDER_BONUS_DAMAGE;
+  return 0;
+}
+
 function computeBaseDamage(actor: Combatant, action: CombatActionDef, rng: RNG): number {
   const weaponRange = weaponDamageRange(actor, action.weaponDamageSource);
   const usesNewFormula = weaponRange !== undefined || action.flatBase !== undefined || action.percentOfAbility !== undefined;
+  const spellMultiplier = actor.racePassiveId === "spellcasters" ? SPELLCASTER_DAMAGE_MULTIPLIER : 1;
 
   if (!usesNewFormula) {
     const variance = randomVariance(rng);
-    return Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance));
+    const base = Math.max(0, Math.round(actor.abilityScores[action.ability] * (action.power ?? 1) * variance));
+    return Math.round(base * spellMultiplier);
   }
 
   if (weaponRange) {
     // A weapon roll is its own source of randomness (MMO-tooltip style) -- no extra variance
-    // band on top, same as the original Basic-Attack-only formula this generalizes.
+    // band on top, same as the original Basic-Attack-only formula this generalizes. Weapon
+    // strikes aren't "spells", so Spellcasters never applies here -- only Axe-wielders can.
     const roll = rollUniform(weaponRange.min, weaponRange.max, rng);
     let base = roll + computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]));
     if (action.percentOfAbility !== undefined) {
       base += Math.round(actor.abilityScores[action.ability] * action.percentOfAbility);
     }
+    base += axeBonusDamage(actor, action.weaponDamageSource);
     return Math.max(0, base);
   }
 
@@ -301,22 +323,29 @@ function computeBaseDamage(actor: Combatant, action: CombatActionDef, rng: RNG):
   const base = action.flatBase ?? 0;
   const withPercent = base + Math.round(actor.abilityScores[action.ability] * (action.percentOfAbility ?? 0));
   const variance = randomVariance(rng);
-  return Math.max(0, Math.round(withPercent * variance));
+  const rolled = Math.max(0, Math.round(withPercent * variance));
+  return Math.round(rolled * spellMultiplier);
 }
 
 /** Same shape as `computeBaseDamage`, deterministic bounds instead of a roll -- for `previewAttack`'s hover tooltip. */
 function previewBaseDamageRange(actor: Combatant, action: CombatActionDef): { min: number; max: number } {
   const weaponRange = weaponDamageRange(actor, action.weaponDamageSource);
   const usesNewFormula = weaponRange !== undefined || action.flatBase !== undefined || action.percentOfAbility !== undefined;
+  const spellMultiplier = actor.racePassiveId === "spellcasters" ? SPELLCASTER_DAMAGE_MULTIPLIER : 1;
 
   if (!usesNewFormula) {
     const base = actor.abilityScores[action.ability] * (action.power ?? 1);
-    return { min: Math.max(0, Math.round(base * 0.85)), max: Math.max(0, Math.round(base * 1.15)) };
+    return {
+      min: Math.max(0, Math.round(base * 0.85 * spellMultiplier)),
+      max: Math.max(0, Math.round(base * 1.15 * spellMultiplier)),
+    };
   }
 
   if (weaponRange) {
     // No variance band on a weapon roll (see computeBaseDamage) -- the weapon's own range already is the spread.
-    const bonus = computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]));
+    const bonus =
+      computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability])) +
+      axeBonusDamage(actor, action.weaponDamageSource);
     const percentAdd =
       action.percentOfAbility !== undefined ? Math.round(actor.abilityScores[action.ability] * action.percentOfAbility) : 0;
     return { min: weaponRange.min + bonus + percentAdd, max: weaponRange.max + bonus + percentAdd };
@@ -325,7 +354,10 @@ function previewBaseDamageRange(actor: Combatant, action: CombatActionDef): { mi
   const flatWithPercent =
     (action.flatBase ?? 0) +
     (action.percentOfAbility !== undefined ? Math.round(actor.abilityScores[action.ability] * action.percentOfAbility) : 0);
-  return { min: Math.max(0, Math.round(flatWithPercent * 0.85)), max: Math.max(0, Math.round(flatWithPercent * 1.15)) };
+  return {
+    min: Math.max(0, Math.round(flatWithPercent * 0.85 * spellMultiplier)),
+    max: Math.max(0, Math.round(flatWithPercent * 1.15 * spellMultiplier)),
+  };
 }
 
 /**
@@ -796,12 +828,7 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
 
   if (action.resourceCost !== undefined) {
     const resourceConfig = getClassResource(actor.classId);
-    let cost = action.resourceCost;
-    if (actor.raceId === "elf" && !actor.usedSilverleafStep) {
-      actor.usedSilverleafStep = true;
-      cost = Math.max(0, cost - 1);
-      log(state, `${actor.name}'s Silverleaf Step discounts the cost of ${action.name}.`, { kind: "info", actorId: actor.id });
-    }
+    const cost = action.resourceCost;
     const available = actor.resource ?? 0;
     if (available < cost) {
       throw new Error(`${actor.name} doesn't have enough ${resourceConfig?.name ?? "resource"} to use ${action.name}.`);

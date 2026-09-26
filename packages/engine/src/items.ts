@@ -24,6 +24,8 @@ export interface ItemTemplate {
   ability?: AbilityKey;
   /** Damage type for Strike while this weapon is equipped; defaults to Strike's own (slashing). */
   damageType?: DamageType;
+  /** A weapon sub-type a race passive can key off of (e.g. a Dwarf's Axe-wielders bonus damage) -- see combat.ts. */
+  weaponCategory?: "axe";
   /** Price in gold pieces: what the General Store/Blacksmith charge to buy it (see character.ts's buyItem/sellItem). */
   value: number;
   /** Present only on a drinkable/usable item (a potion); see character.ts's useConsumable. Absent on equipment. */
@@ -98,6 +100,17 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     damageMax: 9,
     damageType: "piercing",
     value: 6,
+  },
+  dwarvenHandaxe: {
+    id: "dwarvenHandaxe",
+    name: "Dwarven Handaxe",
+    description: "A stout, well-balanced axe favored by the grey peaks' delvers -- as handy in a mine as in a fight.",
+    slot: "meleeWeapon",
+    damageMin: 14,
+    damageMax: 20,
+    damageType: "slashing",
+    weaponCategory: "axe",
+    value: 15,
   },
   shortsword: {
     id: "shortsword",

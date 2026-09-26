@@ -1,17 +1,20 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ABILITY_KEYS,
   ABILITY_NAMES,
   BACKGROUNDS,
   CLASSES,
   RACES,
+  computeAbilityScores,
   computeMaxHealth,
   computeResourceMax,
   createCharacter,
   getClassResource,
   type AbilityKey,
+  type AbilityScores,
   type Character,
   type CharacterClass,
+  type HalfElfChoice,
   type Race,
 } from "@eridan/engine";
 import { APPEARANCE_PRESETS, DEFAULT_BACKGROUND_BY_CLASS, NAME_POOLS } from "../game/appearance";
@@ -24,7 +27,7 @@ export interface CharacterCreationScreenProps {
   onBack: () => void;
 }
 
-const RACE_GLYPHS: Record<string, string> = { elf: "ᛖ", human: "ᛗ", dwarf: "ᛟ" };
+const RACE_GLYPHS: Record<string, string> = { elf: "ᛖ", human: "ᛗ", dwarf: "ᛟ", halfElf: "ᛇ" };
 const CLASS_GLYPHS: Record<string, string> = {
   cleric: "ᛋ",
   warrior: "ᛏ",
@@ -76,37 +79,30 @@ function sign(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }
 
-/**
- * This flow doesn't ask for a Background (the design has no such step), but
- * `createCharacter` still auto-assigns one per class (see
- * DEFAULT_BACKGROUND_BY_CLASS) for its own +1 bonus to three abilities.
- * Folding that +1 into the "class" column keeps this preview numerically
- * identical to the character that actually gets saved.
- */
-function classBonusWithBackground(cls: CharacterClass): Partial<Record<AbilityKey, number>> {
+const BASE_ABILITY_SCORES: AbilityScores = { str: 10, dex: 10, vit: 10, int: 10, wis: 10 };
+
+/** Same growth formula the engine actually applies at creation -- see character.ts's `computeAbilityScores`. */
+function totalAbilityScores(race: Race, cls: CharacterClass, raceChoice: HalfElfChoice | undefined): AbilityScores {
   const backgroundId = DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier";
-  const bonus: Partial<Record<AbilityKey, number>> = { ...cls.abilityScoreBonuses };
-  for (const key of BACKGROUNDS[backgroundId].abilityScores) {
-    bonus[key] = (bonus[key] ?? 0) + 1;
-  }
-  return bonus;
+  return computeAbilityScores(BASE_ABILITY_SCORES, BACKGROUNDS[backgroundId], race, raceChoice, cls, 1);
 }
 
-/**
- * The design's base-10 + race + class formula, with the class column also
- * folding in its paired Background. Applies each source's clamp-to-20
- * sequentially (background implicitly first, folded into the class bonus
- * above, then race, then class) to match createCharacter's own order.
- */
-function totalAbilityScores(race: Race, cls: CharacterClass): Record<AbilityKey, number> {
-  const classBonus = classBonusWithBackground(cls);
-  const totals = {} as Record<AbilityKey, number>;
-  for (const key of ABILITY_KEYS) {
-    const afterRace = Math.min(20, 10 + (race.abilityScoreBonuses[key] ?? 0));
-    totals[key] = Math.min(20, afterRace + (classBonus[key] ?? 0));
-  }
-  return totals;
+/** A race's own odd-level growth, or a Half-elf's chosen substitute -- see races.ts's `HalfElfChoice`. */
+function raceGrowthForDisplay(race: Race, raceChoice: HalfElfChoice | undefined): Partial<Record<AbilityKey, number>> {
+  if (race.id !== "halfElf") return race.oddLevelAbilityGrowth;
+  if (!raceChoice) return {};
+  const growth: Partial<Record<AbilityKey, number>> = { [raceChoice.doubleAbility]: 2 };
+  for (const key of raceChoice.singleAbilities) growth[key] = (growth[key] ?? 0) + 1;
+  return growth;
 }
+
+function growthLabel(growth: Partial<Record<AbilityKey, number>>, perLevelSuffix: string): string {
+  const parts = ABILITY_KEYS.filter((key) => growth[key]).map((key) => `${key.toUpperCase()} ${sign(growth[key]!)}`);
+  return parts.length > 0 ? `${parts.join(", ")} ${perLevelSuffix}` : "None yet";
+}
+
+const DEFAULT_HALF_ELF_DOUBLE: AbilityKey = "dex";
+const DEFAULT_HALF_ELF_SINGLES: [AbilityKey, AbilityKey] = ["str", "wis"];
 
 export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreationScreenProps) {
   const [step, setStep] = useState(0);
@@ -118,14 +114,32 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [halfElfDouble, setHalfElfDouble] = useState<AbilityKey>(DEFAULT_HALF_ELF_DOUBLE);
+  const [halfElfSingles, setHalfElfSingles] = useState<[AbilityKey, AbilityKey]>(DEFAULT_HALF_ELF_SINGLES);
+  const [halfElfPassive, setHalfElfPassive] = useState<"human" | "elf">("human");
+
   const race = raceId ? RACES[raceId] : undefined;
   const cls = classId ? CLASSES[classId] : undefined;
   const resourceConfig = getClassResource(classId ?? undefined);
   const looks = race ? APPEARANCE_PRESETS[race.id] : [];
   const chosenLook = looks[lookIndex];
 
-  const totals = useMemo(() => (race && cls ? totalAbilityScores(race, cls) : null), [race, cls]);
-  const classBonus = useMemo(() => (cls ? classBonusWithBackground(cls) : null), [cls]);
+  const raceChoice: HalfElfChoice | undefined =
+    raceId === "halfElf" ? { doubleAbility: halfElfDouble, singleAbilities: halfElfSingles, passiveSource: halfElfPassive } : undefined;
+
+  /** Swaps whichever of the three Half-elf ability slots currently holds `key` into `slot`'s old value, so all three always stay distinct. */
+  function reassignHalfElfAbility(slot: "double" | 0 | 1, key: AbilityKey) {
+    const triple: [AbilityKey, AbilityKey, AbilityKey] = [halfElfDouble, halfElfSingles[0], halfElfSingles[1]];
+    const targetIndex = slot === "double" ? 0 : slot === 0 ? 1 : 2;
+    const conflictIndex = triple.findIndex((v, i) => v === key && i !== targetIndex);
+    if (conflictIndex !== -1) triple[conflictIndex] = triple[targetIndex];
+    triple[targetIndex] = key;
+    setHalfElfDouble(triple[0]);
+    setHalfElfSingles([triple[1], triple[2]]);
+  }
+
+  const totals = race && cls ? totalAbilityScores(race, cls, raceChoice) : null;
+  const raceGrowth = race ? raceGrowthForDisplay(race, raceChoice) : {};
   const trimmedName = name.trim();
   const nameValid = trimmedName.length >= 2;
 
@@ -166,7 +180,8 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
         raceId: race.id,
         classId: cls.id,
         backgroundId: DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier",
-        baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
+        baseAbilityScores: BASE_ABILITY_SCORES,
+        raceChoice,
         appearance: chosenLook,
       });
       await onComplete(character);
@@ -243,31 +258,92 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
           <p className="aow-creation-sub">{STEPS[step].sub}</p>
 
           {step === 0 && (
-            <div className="aow-creation-race-grid">
-              {Object.values(RACES).map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  className={`aow-creation-card${raceId === r.id ? " selected" : ""}`}
-                  onClick={() => pickRace(r.id)}
-                >
-                  <span className="aow-creation-card-glyph">{RACE_GLYPHS[r.id]}</span>
-                  <span className="aow-creation-card-name">{r.name}</span>
-                  <p className="aow-creation-card-desc">{r.description}</p>
-                  <div className="aow-creation-bonus-row">
-                    {Object.entries(r.abilityScoreBonuses).map(([key, value]) => (
-                      <span key={key} className={`aow-creation-bonus-chip ${value! > 0 ? "positive" : "negative"}`}>
-                        {key.toUpperCase()} {sign(value!)}
-                      </span>
-                    ))}
+            <>
+              <div className="aow-creation-race-grid">
+                {Object.values(RACES).map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className={`aow-creation-card${raceId === r.id ? " selected" : ""}`}
+                    onClick={() => pickRace(r.id)}
+                  >
+                    <span className="aow-creation-card-glyph">{RACE_GLYPHS[r.id]}</span>
+                    <span className="aow-creation-card-name">{r.name}</span>
+                    <p className="aow-creation-card-desc">{r.description}</p>
+                    <div className="aow-creation-bonus-row">
+                      {r.id === "halfElf" ? (
+                        <span className="aow-creation-bonus-chip">Choose your growth at creation</span>
+                      ) : (
+                        Object.entries(r.oddLevelAbilityGrowth).map(([key, value]) => (
+                          <span key={key} className={`aow-creation-bonus-chip ${value! > 0 ? "positive" : "negative"}`}>
+                            {key.toUpperCase()} {sign(value!)}/odd lvl
+                          </span>
+                        ))
+                      )}
+                    </div>
+                    <div className="aow-creation-trait-box">
+                      <div className="aow-creation-trait-name">{r.traits[0].name}</div>
+                      <p className="aow-creation-trait-desc">{r.traits[0].description}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {raceId === "halfElf" && (
+                <div className="aow-creation-halfelf-panel">
+                  <div className="aow-creation-halfelf-title">OF TWO BLOODLINES · CHOOSE YOUR GROWTH</div>
+                  <label className="aow-creation-halfelf-row">
+                    <span>Doubled attribute (+2 / odd level)</span>
+                    <select value={halfElfDouble} onChange={(e) => reassignHalfElfAbility("double", e.target.value as AbilityKey)}>
+                      {ABILITY_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {ABILITY_NAMES[key]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="aow-creation-halfelf-row">
+                    <span>Attribute (+1 / odd level)</span>
+                    <select value={halfElfSingles[0]} onChange={(e) => reassignHalfElfAbility(0, e.target.value as AbilityKey)}>
+                      {ABILITY_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {ABILITY_NAMES[key]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="aow-creation-halfelf-row">
+                    <span>Attribute (+1 / odd level)</span>
+                    <select value={halfElfSingles[1]} onChange={(e) => reassignHalfElfAbility(1, e.target.value as AbilityKey)}>
+                      {ABILITY_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {ABILITY_NAMES[key]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="aow-creation-halfelf-row">
+                    <span>Passive</span>
+                    <div className="aow-creation-halfelf-passive-toggle">
+                      <button
+                        type="button"
+                        className={`aow-button-ghost${halfElfPassive === "human" ? " selected" : ""}`}
+                        onClick={() => setHalfElfPassive("human")}
+                      >
+                        Adaptable (+10% XP)
+                      </button>
+                      <button
+                        type="button"
+                        className={`aow-button-ghost${halfElfPassive === "elf" ? " selected" : ""}`}
+                        onClick={() => setHalfElfPassive("elf")}
+                      >
+                        Spellcasters (+5% spell dmg)
+                      </button>
+                    </div>
                   </div>
-                  <div className="aow-creation-trait-box">
-                    <div className="aow-creation-trait-name">{r.traits[0].name}</div>
-                    <p className="aow-creation-trait-desc">{r.traits[0].description}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+                </div>
+              )}
+            </>
           )}
 
           {step === 1 && (
@@ -331,26 +407,27 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
             </div>
           )}
 
-          {step === 2 && totals && classBonus && race && cls && (
+          {step === 2 && totals && race && cls && (
             <div className="aow-creation-attr-layout">
               <div className="aow-panel aow-creation-attr-panel">
                 <div className="aow-panel-header">
-                  ATTRIBUTES · {race.name.toUpperCase()} {cls.name.toUpperCase()}
+                  ATTRIBUTES AT LEVEL 1 · {race.name.toUpperCase()} {cls.name.toUpperCase()}
                 </div>
                 <div className="aow-card-body aow-creation-attr-table">
-                  {ABILITY_KEYS.map((key) => (
-                    <div key={key} className="aow-creation-attr-row">
-                      <span className="aow-creation-attr-name">{ABILITY_NAMES[key]}</span>
-                      <span className="aow-creation-attr-base">10</span>
-                      <span className={`aow-creation-attr-delta ${(race.abilityScoreBonuses[key] ?? 0) >= 0 ? "positive" : "negative"}`}>
-                        {sign(race.abilityScoreBonuses[key] ?? 0)}
-                      </span>
-                      <span className={`aow-creation-attr-delta ${(classBonus[key] ?? 0) >= 0 ? "positive" : "negative"}`}>
-                        {sign(classBonus[key] ?? 0)}
-                      </span>
-                      <span className="aow-creation-attr-total">{totals[key]}</span>
-                    </div>
-                  ))}
+                  {ABILITY_KEYS.map((key) => {
+                    const backgroundId = DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier";
+                    const backgroundDelta = BACKGROUNDS[backgroundId].abilityScores.includes(key) ? 1 : 0;
+                    const raceDelta = raceGrowth[key] ?? 0;
+                    return (
+                      <div key={key} className="aow-creation-attr-row">
+                        <span className="aow-creation-attr-name">{ABILITY_NAMES[key]}</span>
+                        <span className="aow-creation-attr-base">10</span>
+                        <span className={`aow-creation-attr-delta ${backgroundDelta >= 0 ? "positive" : "negative"}`}>{sign(backgroundDelta)}</span>
+                        <span className={`aow-creation-attr-delta ${raceDelta >= 0 ? "positive" : "negative"}`}>{sign(raceDelta)}</span>
+                        <span className="aow-creation-attr-total">{totals[key]}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <div className="aow-creation-tile-column">
@@ -370,7 +447,14 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                   <span className="aow-skill-stat-label">RACIAL TRAIT</span>
                   <span>{race.traits[0].name}</span>
                 </div>
-                <p className="aow-muted-text">Further points are earned by levelling.</p>
+                <div className="aow-creation-trait-box">
+                  <div className="aow-creation-trait-name">Grows every odd level ({race.name})</div>
+                  <p className="aow-creation-trait-desc">{growthLabel(raceGrowth, "")}</p>
+                </div>
+                <div className="aow-creation-trait-box">
+                  <div className="aow-creation-trait-name">Grows every even level ({cls.name})</div>
+                  <p className="aow-creation-trait-desc">{growthLabel(cls.evenLevelAbilityGrowth, "")}</p>
+                </div>
               </div>
             </div>
           )}

@@ -193,7 +193,9 @@ client-server milestone (combat is still resolved in the browser for now).
   it meant adopting the Character Creation handoff's own smaller roster --
   3 races (Elf, Human, Dwarf) and 5 classes (Warrior, Rogue, Mage, Cleric,
   Druid) -- and its deterministic "10 + race bonus + class bonus" attribute
-  model, in place of the old SRD point-buy/rolled-stats step. The six
+  model (**itself later replaced** by a per-level growth formula -- see
+  "Race/Class Style Sheet: Per-Level Attribute Growth" near the bottom of
+  this file), in place of the old SRD point-buy/rolled-stats step. The six
   ability scores are renamed to match (Constitution → Vitality, Charisma →
   Spirit; Strength/Dexterity/Intellect/Wisdom keep their names) -- **Spirit
   was later removed entirely** (see the Attribute-Driven Stats section
@@ -360,15 +362,17 @@ applies — only the underlying roll mechanic changed.
 - **Fireball**: a new Wizard spell demonstrating the SRD's save-for-half
   area rule — one damage roll, applied to every enemy, each rolling its
   own Dexterity save for half damage on a success.
-- **Race hooks**: (Superseded by Character Creation, below: the SRD-era
-  Halfling's Lucky reroll, Orc's Relentless Endurance, and Dragonborn's
-  Breath Weapon were removed along with those species; an Elf's Silverleaf
-  Step is the new roster's equivalent race-trait hook, discounting the
-  first resource-costing action each combat by 1.) Origin feats (Alert's
-  initiative bonus, Savage Attacker's reroll-and-keep-higher damage
-  variance, Magic Initiate's bonus attack, Skilled) were also removed
-  entirely — leftover SRD content that never belonged to the Class Style
-  Sheet's own classes, layered awkwardly on top of them via Background.
+- **Race hooks**: (Superseded by Character Creation, below, and then again
+  by "Race/Class Style Sheet: Per-Level Attribute Growth" further down: the
+  SRD-era Halfling's Lucky reroll, Orc's Relentless Endurance, and
+  Dragonborn's Breath Weapon were removed along with those species; an
+  Elf's Silverleaf Step — a once-per-combat resource discount — was that
+  roster's own race-trait hook, later itself replaced by Elf's Spellcasters
+  passive, below.) Origin feats (Alert's initiative bonus, Savage
+  Attacker's reroll-and-keep-higher damage variance, Magic Initiate's bonus
+  attack, Skilled) were also removed entirely — leftover SRD content that
+  never belonged to the Class Style Sheet's own classes, layered awkwardly
+  on top of them via Background.
 - **Action cooldowns (homebrew, not SRD)**: each class's signature attack
   (Firebolt, Slash, Eldritch Blast...) is at-will, usable every turn like a
   cantrip. Bigger one-off effects (Fireball, Second Wind, Arcane Shield...)
@@ -989,6 +993,80 @@ needing a replacement mechanic.
 `packages/engine/src/abilities.ts`, `races.ts`, `classes.ts`,
 `backgrounds.ts`, `monsters.ts`; `apps/client/src/screens/
 CharacterCreationScreen.tsx`, `CharacterScreen.tsx`.
+
+## Race/Class Style Sheet: Per-Level Attribute Growth
+
+Replaces the one-time flat "10 + race bonus + class bonus" attribute model
+(Character Creation Rewrite, above) with the **Race Style Sheet** and an
+update to the **Class Style Sheet** (both Google Drive, "Race Information"/
+"Class Information"): every race and class now grows a few of its own
+attributes *every level* instead of granting a fixed bonus once at
+creation. Races grow on **odd levels** (1, 3, 5, ...), classes on **even
+levels** (2, 4, 6, ...) — so a fresh level-1 character has only their race's
+first tick of growth; the class's own growth doesn't start until level 2.
+
+- **`Race.oddLevelAbilityGrowth`/`CharacterClass.evenLevelAbilityGrowth`**
+  replace the old flat `abilityScoreBonuses` fields. **Elf**: Dex/Wis +2 per
+  odd level. **Human**: all five abilities +1 per odd level. **Dwarf**:
+  Str/Vit +2 per odd level. **Warrior**: Str/Vit +2, Dex +1 per even level.
+  **Soldier**: Str/Dex +2, Vit +1. **Cleric**: Wis +2, Str/Vit +1.
+  **Ranger**: Dex +2, Wis/Vit +1. **Rogue**: Dex +3 only. **Druid**: Wis +2,
+  Vit/Dex +1. **Wizard**: Int +3 only. The Background system's own one-time
+  +1×2-or-3 bonus (unrelated to either style sheet) is untouched.
+- **`computeAbilityScores`** (character.ts) is the new single source of
+  truth: `baseAbilityScores` (the raw creation-time stat block) plus the
+  Background's flat bonus, plus the race's growth summed over every odd
+  level up to the character's current level, plus the class's growth summed
+  over every even level. It's **uncapped** — the old model's `Math.min(20,
+  ...)` ceiling was an SRD holdover that no longer fits a character growing
+  all the way to `LEVEL_CAP` (30) alongside this engine's other
+  big, MMO-scale numbers (HP pools in the hundreds, resource pools scaling
+  with level). `gainExperience` recomputes `abilityScores` (and derived
+  max HP/resource) on every level gained, the same way it already
+  recomputed max HP/resource pre-existing.
+- **`Character.baseAbilityScores`** is a new stored field — the pre-Style-Sheet
+  code baked race/class/background bonuses permanently into `abilityScores`
+  with nothing preserving the original creation-time spread, so there was no
+  way to later "regrow" a character under a different formula. A saved
+  character from before this pass has its true base **recovered**
+  (`recoverLegacyBaseAbilityScores`) by subtracting the old flat bonus
+  tables back out of its current `abilityScores` — not perfectly exact if
+  the old `Math.min(20, ...)` clamp ever silently truncated an overflow, but
+  close enough for a one-time migration, and it only ever runs once per
+  character.
+- **Half-elf** is a new fourth playable race. Its own growth table is
+  empty — instead, the player picks at creation which one ability doubles
+  its racial growth (+2/odd level) and which two get the ordinary +1, plus
+  borrows either Human's Adaptable or Elf's Spellcasters passive outright
+  ("Of Two Bloodlines"). Modeled as `HalfElfChoice` (races.ts), threaded
+  through `createCharacter`'s new `raceChoice` option and stored on
+  `Character.raceChoice`. `CharacterCreationScreen.tsx` gains an inline
+  chooser (three ability dropdowns that swap-on-conflict to stay distinct,
+  plus a passive toggle) shown only when Half-elf is selected.
+- **New race passives, resolved once via `resolveRacePassiveId`** (so a
+  Half-elf's choice and a "pure" race's own passive share one code path):
+  **Adaptable** (Human, or a Half-elf who chose it) is the old "Many
+  Roads" +10% XP trait, renamed to match the sheet. **Spellcasters** (Elf,
+  or a Half-elf who chose it) is new: +5% damage on any attack that isn't a
+  weapon-scaled strike (Radiant Beam, Wylde Wrath, Elemental Shard, ...),
+  replacing Elf's old Silverleaf Step (a once-per-combat resource discount,
+  removed outright rather than kept alongside the new passive). **Axe-wielders**
+  (Dwarf) is also new: +5 flat damage on a hit made with an equipped axe,
+  replacing Dwarf's old Stoneblood poison resistance. Axes didn't exist as
+  a concept in this engine before — `ItemTemplate.weaponCategory` and a new
+  Dwarven Handaxe item were added so the passive has something to apply to.
+- **`apps/client/src/screens/CharacterCreationScreen.tsx`**'s Attributes
+  step now shows each ability's base/Background/race-at-level-1 columns
+  (class contributes nothing yet at level 1) plus a plain-language "grows
+  every odd/even level" summary, computed via the engine's own
+  `computeAbilityScores` rather than a parallel client-side formula.
+
+### Critical files
+`packages/engine/src/races.ts`, `classes.ts`, `character.ts`, `combat.ts`,
+`items.ts`; `packages/engine/src/__tests__/character.test.ts`,
+`combat.test.ts`, `resources.test.ts`; `apps/client/src/game/appearance.ts`;
+`apps/client/src/screens/CharacterCreationScreen.tsx` (+ `.css`),
+`CharacterScreen.tsx`.
 
 ## Lore
 
