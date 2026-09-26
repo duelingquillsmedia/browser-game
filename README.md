@@ -1185,6 +1185,61 @@ is explicitly tagged `dex`. None of those paths go through
 `packages/engine/src/character.ts`;
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Class Style Sheet: Named, Explicitly-Scaled Basic Attack Variants
+
+The Class Style Sheet's Basic Attack section (Google Drive, highlighted
+yellow to flag the edit) went from a vague "damage based on equipped weapon
+and ability scores" line to two fully named, explicitly-scaled variants per
+class -- one melee, one ranged, each with its own ability and modifier %.
+Detected by downloading the live `.docx` and parsing its `word/document.xml`
+for `w:highlight` runs directly (Drive's plain-text export drops
+formatting, so a highlight-based diff has to read the underlying XML).
+
+| Class | Melee | Ranged |
+|---|---|---|
+| Warrior | Wild Swing — 20% STR | Wild Shot — 15% DEX |
+| Soldier | Practiced Strike — 15% max(STR,DEX) | Steady Shot — 15% max(STR,DEX) |
+| Cleric | Swinging Smite — 15% STR | Radiance — 15% WIS |
+| Ranger | Blade Slash — 15% STR | Quick Shot — 20% DEX |
+| Rogue | Subtle Slash — 15% STR | Quick Strike — 15% DEX |
+| Druid | Nature's Strike — 15% STR | Nature's Blast — 15% WIS |
+| Wizard | Arcane Smash — 15% STR | Arcane Bolt — 20% INT |
+
+- **`classes.ts`**: new `BasicAttackVariant` type (`name`/`ability`/
+  `percentOfAbility`); each class's old single `basicAttackName` string is
+  replaced by `basicAttackMelee`/`basicAttackRanged`, one per row above.
+- **`character.ts`'s `generateBasicAttacks`** no longer reads a weapon's own
+  `ability` field at all for Basic Attack (that mechanic — "this weapon's
+  default scaling stat" — belonged to the old, vaguer sheet wording); it
+  names and scales strictly from the class's own variant, with Soldier's
+  `basicAttackAbilityMode` overriding both variants' listed ability with
+  "whichever of STR/DEX is higher" as before. An empty melee slot still
+  falls back to the old unarmed, pure-ability-scaled strike (a homebrew
+  fallback the sheet doesn't cover), since `weaponDamageSource`/
+  `percentOfAbility` are now only set when a melee weapon is actually
+  equipped.
+- **Formula change, confirmed with the user**: a Basic Attack's flat bonus
+  is now *exactly* its own `percentOfAbility` (e.g. Wild Swing's 20% of
+  Strength), added to the weapon's own damage roll — this **replaces**,
+  rather than stacks with, the homebrew "Attack Power" bonus
+  (`computeAttackPowerBonusDamage`/`computeAttackPower`, ≈30% of the
+  ability) that used to apply to every weapon-scaled action indiscriminately.
+  Every other weapon-scaled ability the sheet doesn't cover (Cleave, Serrated
+  Blade, Defensive Flourish, Topple, Evasive Jab, Poisoned Throw) keeps the
+  old Attack-Power-based formula untouched, gated on the action's own
+  `isBasicAttack` flag.
+- **Client fix**: `SkillsScreen.tsx`'s own `powerRange` (a client-side
+  mirror of `combat.ts`'s damage math, used for the Skills page's damage
+  tooltip before a live `CombatState` exists) still unconditionally added
+  the old Attack Power bonus, double-counting it alongside the new
+  `percentOfAbility` for every Basic Attack. Fixed to skip it for
+  `isBasicAttack` actions, matching the engine.
+
+### Critical files
+`packages/engine/src/classes.ts`, `character.ts`, `combat.ts`;
+`packages/engine/src/__tests__/character.test.ts`, `combat.test.ts`;
+`apps/client/src/screens/SkillsScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

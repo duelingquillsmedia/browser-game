@@ -43,10 +43,10 @@ function bucketFor(kind: ActionKind): Exclude<FilterId, "all"> {
   return "utility";
 }
 
-/** A short glyph standing in for real ability art, e.g. "Arcane Bolt" -> "AB", "Wild Swing (Melee)" -> "WSM". */
+/** A short glyph standing in for real ability art, e.g. "Arcane Bolt" -> "AB", "Wild Swing" -> "WS". */
 function iconGlyph(name: string): string {
-  // Strips punctuation (e.g. a generated Basic Attack's "(Melee)"/"(Ranged)" suffix) before
-  // taking initials, so a stray "(" never ends up as one of them.
+  // Strips punctuation before taking initials, so a stray character from a possessive name
+  // (e.g. "Nature's Strike") never ends up as one of them.
   const words = name
     .trim()
     .split(/\s+/)
@@ -77,10 +77,13 @@ function hasComputableAmount(action: CombatActionDef): boolean {
 /**
  * The actual min-max range this action will roll for this character, mirroring
  * combat.ts's `computeBaseDamage`/`previewBaseDamageRange`: a weapon-scaled
- * action (every Basic Attack, plus Cleave/Serrated Blade/Evasive Jab/...) rolls
- * that weapon's own advertised range plus a flat Attack Power bonus, with no
- * extra variance on top; a flat-plus-percent action (Mend, Wylde Healing, ...)
- * passes through the same 85%-115% variance band as a plain power-scaled one.
+ * action rolls that weapon's own advertised range plus a flat bonus, with no
+ * extra variance on top -- a Basic Attack's bonus is its own named
+ * `percentOfAbility` (e.g. Wild Swing: 20% of Strength), which *replaces* the
+ * flat Attack Power bonus every other weapon-scaled ability (Cleave, Serrated
+ * Blade, Evasive Jab, ...) still gets; a flat-plus-percent action (Mend,
+ * Wylde Healing, ...) passes through the same 85%-115% variance band as a
+ * plain power-scaled one.
  */
 function powerRange(action: CombatActionDef, character: Character): [number, number] {
   const abilityScore = character.abilityScores[action.ability];
@@ -91,7 +94,7 @@ function powerRange(action: CombatActionDef, character: Character): [number, num
     const weaponMin = action.weaponDamageSource === "ranged" ? character.rangedWeaponDamageMin : character.meleeWeaponDamageMin;
     const weaponMax = action.weaponDamageSource === "ranged" ? character.rangedWeaponDamageMax : character.meleeWeaponDamageMax;
     if (weaponMin !== undefined && weaponMax !== undefined) {
-      const bonus = computeAttackPowerBonusDamage(computeAttackPower(abilityScore));
+      const bonus = action.isBasicAttack ? 0 : computeAttackPowerBonusDamage(computeAttackPower(abilityScore));
       return [weaponMin + bonus + percentAdd, weaponMax + bonus + percentAdd];
     }
   }

@@ -199,7 +199,7 @@ describe("equipItem / unequipItem", () => {
     expect(unequipped.gearEvasionBonus).toBe(equipped.gearEvasionBonus - 3);
   });
 
-  it("reflects the equipped weapon's ability on the Basic Attack, and reverts when unequipped", () => {
+  it("names and scales each Basic Attack variant from the class's own definition, and reverts when unequipped", () => {
     const rogue = createCharacter({
       id: "pc-5",
       name: "Kessa",
@@ -208,14 +208,19 @@ describe("equipItem / unequipItem", () => {
       baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10 },
     });
 
-    // Rogue starts with a Hunter's Shortbow (dex-based) equipped in the ranged slot, no melee weapon.
+    // Rogue starts with a Hunter's Shortbow equipped in the ranged slot, no melee weapon. Rogue's
+    // named variants (Class Style Sheet): ranged "Quick Strike" scales off Dexterity, melee
+    // "Subtle Slash" off Strength -- neither depends on the equipped weapon's own `ability` field
+    // anymore, or on Rogue's primaryAbility (dex).
     const rangedStrike = rogue.actions.find((a) => a.id === "strike-ranged");
+    expect(rangedStrike?.name).toBe("Quick Strike");
     expect(rangedStrike?.ability).toBe("dex");
     expect(rogue.rangedWeaponDamageMin).toBe(7);
     expect(rogue.rangedWeaponDamageMax).toBe(10);
-    // The unarmed melee variant is still offered, scaling off Rogue's primary ability (dex).
+    // The unarmed melee variant is still offered (Subtle Slash), scaling off Strength either way.
     const meleeStrike = rogue.actions.find((a) => a.id === "strike-melee");
-    expect(meleeStrike?.ability).toBe("dex");
+    expect(meleeStrike?.name).toBe("Subtle Slash");
+    expect(meleeStrike?.ability).toBe("str");
     expect(rogue.meleeWeaponDamageMin).toBeUndefined();
 
     // Unequipping the ranged weapon removes the ranged Basic Attack variant entirely.
@@ -225,10 +230,11 @@ describe("equipItem / unequipItem", () => {
     expect(disarmed.rangedWeaponDamageMax).toBeUndefined();
   });
 
-  it("a Soldier's Basic Attack uses whichever of Strength/Dexterity is higher, even when the equipped weapon has its own default scaling ability", () => {
-    // The starting shortsword is tagged ability: "dex" (its default for a generic wielder), but a
-    // Soldier's own class rule ("strength or dexterity, whichever is higher") must win over that --
-    // otherwise a Soldier built for Strength would be silently locked onto Dexterity instead.
+  it("a Soldier's Basic Attack uses whichever of Strength/Dexterity is higher, regardless of the named variant's own listed ability", () => {
+    // Practiced Strike/Steady Shot are both defined with a fixed ability in classes.ts, but a
+    // Soldier's own class rule ("strength or dexterity, whichever is higher") must override that
+    // -- otherwise a Soldier built for Strength would be silently locked onto whatever ability
+    // happened to be listed instead.
     const strSoldier = createCharacter({
       id: "pc-soldier-str",
       name: "Bram",
@@ -247,6 +253,54 @@ describe("equipItem / unequipItem", () => {
       baseAbilityScores: { str: 10, dex: 18, vit: 12, int: 10, wis: 10 },
     });
     expect(dexSoldier.actions.find((a) => a.id === "strike-melee")?.ability).toBe("dex");
+  });
+
+  it("names and scales every class's Basic Attack variants exactly per the Class Style Sheet", () => {
+    // Melee/ranged variant name, ability, and percentOfAbility for every class -- transcribed
+    // directly from the sheet's highlighted update (see classes.ts's own BasicAttackVariant entries).
+    const expected: Record<
+      string,
+      { melee: [string, string, number]; ranged: [string, string, number] }
+    > = {
+      warrior: { melee: ["Wild Swing", "str", 0.2], ranged: ["Wild Shot", "dex", 0.15] },
+      soldier: { melee: ["Practiced Strike", "str", 0.15], ranged: ["Steady Shot", "str", 0.15] },
+      cleric: { melee: ["Swinging Smite", "str", 0.15], ranged: ["Radiance", "wis", 0.15] },
+      ranger: { melee: ["Blade Slash", "str", 0.15], ranged: ["Quick Shot", "dex", 0.2] },
+      rogue: { melee: ["Subtle Slash", "str", 0.15], ranged: ["Quick Strike", "dex", 0.15] },
+      druid: { melee: ["Nature's Strike", "str", 0.15], ranged: ["Nature's Blast", "wis", 0.15] },
+      wizard: { melee: ["Arcane Smash", "str", 0.15], ranged: ["Arcane Bolt", "int", 0.2] },
+    };
+
+    for (const cls of Object.values(CLASSES)) {
+      const [meleeName, meleeAbility, meleePercent] = expected[cls.id].melee;
+      const [rangedName, rangedAbility, rangedPercent] = expected[cls.id].ranged;
+      // Give every class both a melee and a ranged weapon (bought fresh, so equipItem's
+      // ownership check passes regardless of that class's own default starting loadout) so
+      // both Basic Attack variants are actually generated.
+      const fresh = createCharacter({
+        id: `pc-basic-${cls.id}`,
+        name: "Test",
+        raceId: "human",
+        classId: cls.id,
+        baseAbilityScores: { str: 12, dex: 12, vit: 10, int: 10, wis: 10 },
+      });
+      const withBothWeapons = equipItem(
+        equipItem(buyItem(buyItem(fresh, "ironLongsword"), "huntersShortbow"), "ironLongsword"),
+        "huntersShortbow"
+      );
+
+      const melee = withBothWeapons.actions.find((a) => a.id === "strike-melee");
+      expect(melee?.name, `${cls.id} melee name`).toBe(meleeName);
+      // Soldier's own "highest of STR/DEX" mode overrides its variants' listed ability; str/dex
+      // are equal (both 12 + growth) here, and the tie-break picks str -- matching the table above.
+      expect(melee?.ability, `${cls.id} melee ability`).toBe(meleeAbility);
+      expect(melee?.percentOfAbility, `${cls.id} melee percentOfAbility`).toBe(meleePercent);
+
+      const ranged = withBothWeapons.actions.find((a) => a.id === "strike-ranged");
+      expect(ranged?.name, `${cls.id} ranged name`).toBe(rangedName);
+      expect(ranged?.ability, `${cls.id} ranged ability`).toBe(rangedAbility);
+      expect(ranged?.percentOfAbility, `${cls.id} ranged percentOfAbility`).toBe(rangedPercent);
+    }
   });
 
   it("throws when equipping an item the character doesn't own", () => {

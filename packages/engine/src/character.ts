@@ -1,7 +1,7 @@
 import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier } from "./dice.js";
 import { getRace, resolveRacePassiveId, type HalfElfChoice, type Race, type RacePassiveId } from "./races.js";
-import { getClass, type CharacterClass } from "./classes.js";
+import { getClass, type BasicAttackVariant, type CharacterClass } from "./classes.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
@@ -105,48 +105,52 @@ export function ownsItem(character: Character, itemId: string): boolean {
 
 /**
  * Every class's Basic Attack is generated here, not listed in `CharacterClass.actions`
- * -- one variant per filled weapon slot, named from the class's own `basicAttackName`
- * (e.g. "Wild Swing"). An empty melee slot still falls back to an unarmed,
- * ability-scaled strike (matching the old single-weapon behavior); an empty ranged
- * slot simply means no ranged variant is offered -- there's no "unarmed ranged" attack.
+ * -- one named variant per weapon slot (`cls.basicAttackMelee`/`basicAttackRanged`), each
+ * with its own Class-Style-Sheet-specified ability and `percentOfAbility` (e.g. Warrior's
+ * Wild Swing: 20% of Strength). An empty melee slot still falls back to an unarmed,
+ * ability-scaled strike (matching the old single-weapon behavior, and not one the sheet's
+ * weapon-specific modifiers describe) -- so `weaponDamageSource`/`percentOfAbility` are only
+ * set when a melee weapon is actually equipped. An empty ranged slot simply means no ranged
+ * variant is offered -- there's no "unarmed ranged" attack.
  */
 function generateBasicAttacks(character: Character, cls: CharacterClass): CombatActionDef[] {
   const meleeWeapon = character.equipment.meleeWeapon ? getItem(character.equipment.meleeWeapon) : undefined;
   const rangedWeapon = character.equipment.rangedWeapon ? getItem(character.equipment.rangedWeapon) : undefined;
 
-  const effectiveAbility = (weapon: ReturnType<typeof getItem> | undefined): AbilityKey => {
-    // Soldier's own class rule ("strength or dexterity, whichever is higher") must win over a
-    // weapon's own default scaling ability -- otherwise equipping a dex-tagged weapon like the
-    // starting shortsword would silently lock them out of ever using Strength.
-    if (cls.basicAttackAbilityMode === "highestOfStrDex") {
-      return character.abilityScores.str >= character.abilityScores.dex ? "str" : "dex";
-    }
-    if (weapon?.ability) return weapon.ability;
-    return cls.primaryAbility;
-  };
+  // Soldier's own class rule ("strength or dexterity, whichever is higher") overrides a
+  // variant's own listed `ability` -- see `basicAttackAbilityMode`'s own doc comment.
+  const variantAbility = (variant: BasicAttackVariant): AbilityKey =>
+    cls.basicAttackAbilityMode === "highestOfStrDex"
+      ? character.abilityScores.str >= character.abilityScores.dex
+        ? "str"
+        : "dex"
+      : variant.ability;
 
   const attacks: CombatActionDef[] = [
     {
       ...BASIC_ATTACK,
       id: "strike-melee",
-      name: `${cls.basicAttackName} (Melee)`,
+      name: cls.basicAttackMelee.name,
       description: `A basic melee attack${meleeWeapon ? ` with your equipped ${meleeWeapon.name}` : ""}.`,
-      ability: effectiveAbility(meleeWeapon),
+      ability: variantAbility(cls.basicAttackMelee),
       damageType: meleeWeapon?.damageType ?? BASIC_ATTACK.damageType,
       isBasicAttack: true,
-      weaponDamageSource: "melee",
+      ...(meleeWeapon
+        ? { weaponDamageSource: "melee" as const, percentOfAbility: cls.basicAttackMelee.percentOfAbility }
+        : {}),
     },
   ];
   if (rangedWeapon) {
     attacks.push({
       ...BASIC_ATTACK,
       id: "strike-ranged",
-      name: `${cls.basicAttackName} (Ranged)`,
+      name: cls.basicAttackRanged.name,
       description: `A basic ranged attack with your equipped ${rangedWeapon.name}.`,
-      ability: effectiveAbility(rangedWeapon),
+      ability: variantAbility(cls.basicAttackRanged),
       damageType: rangedWeapon.damageType ?? BASIC_ATTACK.damageType,
       isBasicAttack: true,
       weaponDamageSource: "ranged",
+      percentOfAbility: cls.basicAttackRanged.percentOfAbility,
     });
   }
   return attacks;

@@ -466,7 +466,7 @@ describe("weapon damage", () => {
     });
   }
 
-  it("rolls the melee Basic Attack within the weapon's own min-max range, plus a flat Attack Power bonus", () => {
+  it("rolls the melee Basic Attack within the weapon's own min-max range, plus Wild Swing's own 20%-of-Strength modifier", () => {
     const warrior = toCombatant(makeArmedWarrior(), "party");
     // Hunter's Longsword: 14-20 damage.
     expect(warrior.meleeWeaponDamageMin).toBe(14);
@@ -476,14 +476,15 @@ describe("weapon damage", () => {
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
     // Level 1: str 10 base + Human's own odd-level growth at level 1 (+1) = 11, no Warrior class
-    // growth yet (starts at level 2) -- Attack Power 22 -> +round(22*0.15) = +3 flat bonus.
+    // growth yet (starts at level 2) -- Wild Swing's own modifier: round(11 * 0.20) = +2 flat
+    // bonus (replaces the homebrew Attack Power bonus for Basic Attacks specifically).
     // Force the weapon roll to its minimum (14 of 14-20).
     state = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 17); // 14 + 3
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 16); // 14 + 2
 
     // Force the weapon roll to its maximum (20).
     state = submitPlayerAction(
@@ -491,7 +492,7 @@ describe("weapon damage", () => {
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_FAILURE])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 17 - 23); // 20 + 3
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 16 - 22); // 20 + 2
   });
 
   it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {
@@ -513,6 +514,32 @@ describe("weapon damage", () => {
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 20);
+  });
+
+  it("still applies the homebrew Attack Power bonus to a non-Basic-Attack weapon-scaled ability (Cleave)", () => {
+    const character = createCharacter({
+      id: "pc-cleave",
+      name: "Bram",
+      raceId: "human",
+      classId: "warrior",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
+      level: 2,
+    });
+    // Warrior starts every combat with 0 Fury -- give enough to actually cast Cleave (costs 50).
+    const warrior = { ...toCombatant(character, "party"), resource: 100 };
+    const foe = makeFoe({ maxHp: 1000, hp: 1000 });
+    const state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
+
+    // Level 2: str 10 base + Human's odd-level growth at level 1 (+1) + Warrior's own even-level
+    // growth at level 2 (+2) = 13 -- Attack Power 26 -> +round(26*0.15) = +4 flat bonus, same
+    // homebrew formula as before this pass (Cleave has no percentOfAbility of its own, and isn't
+    // a Basic Attack, so it's untouched by the Basic-Attack-only replacement above).
+    const result = submitPlayerAction(
+      state,
+      { actorId: warrior.id, actionId: "cleave", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
+    );
+    expect(result.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18); // weapon min 14 + 4
   });
 });
 

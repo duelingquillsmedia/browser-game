@@ -9,6 +9,19 @@ export interface StartingEquipmentOption {
   equipment: Partial<Record<ItemSlot, string>>;
 }
 
+/**
+ * One of a class's two named Basic Attack variants (melee/ranged), per the
+ * Class Style Sheet's own explicit per-slot name/ability/modifier (e.g.
+ * Warrior's "Wild Swing (20% of strength as modifier)"). `ability` is
+ * ignored in favor of `basicAttackAbilityMode` for a class that has one
+ * (Soldier) -- see character.ts's `generateBasicAttacks`.
+ */
+export interface BasicAttackVariant {
+  name: string;
+  ability: AbilityKey;
+  percentOfAbility: number;
+}
+
 export interface CharacterClass {
   id: string;
   name: string;
@@ -22,9 +35,10 @@ export interface CharacterClass {
    * model.
    */
   evenLevelAbilityGrowth: Partial<Record<AbilityKey, number>>;
-  /** The Class Style Sheet's name for this class's free, resource-building Basic Attack (e.g. "Wild Swing") — the actual action(s) are generated per equipped weapon slot in character.ts's `generateBasicAttacks`, not listed here. */
-  basicAttackName: string;
-  /** Soldier only: the Basic Attack scales off whichever of STR/DEX is higher, instead of `primaryAbility`. */
+  /** This class's free, resource-building Basic Attack, one named variant per weapon slot -- the actual action(s) are generated per equipped weapon slot in character.ts's `generateBasicAttacks`, not listed here. */
+  basicAttackMelee: BasicAttackVariant;
+  basicAttackRanged: BasicAttackVariant;
+  /** Soldier only: both Basic Attack variants scale off whichever of STR/DEX is higher, instead of their own listed `ability`. */
   basicAttackAbilityMode?: "highestOfStrDex";
   /**
    * The class's 2 leveled active abilities (Basic Attack and Defend/Flee/End
@@ -74,7 +88,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "vit"],
     evenLevelAbilityGrowth: { str: 2, vit: 2, dex: 1 },
-    basicAttackName: "Wild Swing",
+    basicAttackMelee: { name: "Wild Swing", ability: "str", percentOfAbility: 0.2 },
+    basicAttackRanged: { name: "Wild Shot", ability: "dex", percentOfAbility: 0.15 },
     actions: [
       {
         id: "enrage",
@@ -133,7 +148,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "dex"],
     evenLevelAbilityGrowth: { str: 2, dex: 2, vit: 1 },
-    basicAttackName: "Practiced Strike",
+    basicAttackMelee: { name: "Practiced Strike", ability: "str", percentOfAbility: 0.15 },
+    basicAttackRanged: { name: "Steady Shot", ability: "dex", percentOfAbility: 0.15 },
     basicAttackAbilityMode: "highestOfStrDex",
     actions: [
       {
@@ -183,7 +199,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "wis",
     savingThrowProficiencies: ["wis"],
     evenLevelAbilityGrowth: { wis: 2, str: 1, vit: 1 },
-    basicAttackName: "Swinging Smite",
+    basicAttackMelee: { name: "Swinging Smite", ability: "str", percentOfAbility: 0.15 },
+    basicAttackRanged: { name: "Radiance", ability: "wis", percentOfAbility: 0.15 },
     actions: [
       {
         id: "mend",
@@ -230,7 +247,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "wis"],
     evenLevelAbilityGrowth: { dex: 2, wis: 1, vit: 1 },
-    basicAttackName: "Quick Shot",
+    basicAttackMelee: { name: "Blade Slash", ability: "str", percentOfAbility: 0.15 },
+    basicAttackRanged: { name: "Quick Shot", ability: "dex", percentOfAbility: 0.2 },
     actions: [
       {
         id: "barbed-arrow",
@@ -279,7 +297,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "int"],
     evenLevelAbilityGrowth: { dex: 3 },
-    basicAttackName: "Subtle Slash",
+    basicAttackMelee: { name: "Subtle Slash", ability: "str", percentOfAbility: 0.15 },
+    basicAttackRanged: { name: "Quick Strike", ability: "dex", percentOfAbility: 0.15 },
     actions: [
       {
         id: "evasive-jab",
@@ -330,7 +349,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "wis",
     savingThrowProficiencies: ["int", "wis"],
     evenLevelAbilityGrowth: { wis: 2, vit: 1, dex: 1 },
-    basicAttackName: "Nature's Strike",
+    basicAttackMelee: { name: "Nature's Strike", ability: "str", percentOfAbility: 0.15 },
+    basicAttackRanged: { name: "Nature's Blast", ability: "wis", percentOfAbility: 0.15 },
     actions: [
       {
         id: "wylde-healing",
@@ -376,7 +396,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "int",
     savingThrowProficiencies: ["int", "wis"],
     evenLevelAbilityGrowth: { int: 3 },
-    basicAttackName: "Arcane Bolt",
+    basicAttackMelee: { name: "Arcane Smash", ability: "str", percentOfAbility: 0.15 },
+    basicAttackRanged: { name: "Arcane Bolt", ability: "int", percentOfAbility: 0.2 },
     actions: [
       {
         id: "elemental-shard",

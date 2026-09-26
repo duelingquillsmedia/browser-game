@@ -35,8 +35,8 @@ export function statusKindColor(kind: StatusEffectKind): string {
 
 /** A short 1-3 letter tag standing in for real portrait art, e.g. "Cinder Cultist" -> "CC". */
 export function initialsFor(name: string): string {
-  // Strips punctuation (e.g. the "(Melee)"/"(Ranged)" suffix on a generated Basic Attack's
-  // name) before taking initials, so a stray "(" never ends up as one of them.
+  // Strips punctuation before taking initials, so a stray character (e.g. from a possessive
+  // name like "Nature's Strike") never ends up as one of them.
   const words = name
     .trim()
     .split(/\s+/)

@@ -311,7 +311,10 @@ function computeBaseDamage(actor: Combatant, action: CombatActionDef, rng: RNG):
     // band on top, same as the original Basic-Attack-only formula this generalizes. Weapon
     // strikes aren't "spells", so Spellcasters never applies here -- only Axe-wielders can.
     const roll = rollUniform(weaponRange.min, weaponRange.max, rng);
-    let base = roll + computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]));
+    // A Basic Attack's flat bonus is exactly the Class Style Sheet's own named percentOfAbility
+    // (e.g. Wild Swing: 20% of Strength) -- it replaces the homebrew Attack Power bonus below,
+    // rather than stacking with it, since the sheet now specifies Basic Attack's own number.
+    let base = roll + (action.isBasicAttack ? 0 : computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability])));
     if (action.percentOfAbility !== undefined) {
       base += Math.round(actor.abilityScores[action.ability] * action.percentOfAbility);
     }
@@ -343,8 +346,10 @@ function previewBaseDamageRange(actor: Combatant, action: CombatActionDef): { mi
 
   if (weaponRange) {
     // No variance band on a weapon roll (see computeBaseDamage) -- the weapon's own range already is the spread.
+    // See computeBaseDamage's own comment: a Basic Attack's percentOfAbility replaces the Attack
+    // Power bonus rather than stacking with it.
     const bonus =
-      computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability])) +
+      (action.isBasicAttack ? 0 : computeAttackPowerBonusDamage(computeAttackPower(actor.abilityScores[action.ability]))) +
       axeBonusDamage(actor, action.weaponDamageSource);
     const percentAdd =
       action.percentOfAbility !== undefined ? Math.round(actor.abilityScores[action.ability] * action.percentOfAbility) : 0;
