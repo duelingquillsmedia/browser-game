@@ -27,11 +27,11 @@ export interface CharacterScreenProps {
 }
 
 const ABILITY_HINTS: Record<AbilityKey, string> = {
-  str: "Warrior attack rolls and melee damage.",
-  dex: "Evasion, crit chance, initiative, and Rogue attacks.",
-  vit: "Maximum HP and Second Wind-style healing.",
-  int: "Mage spellcasting and Intellect saves.",
-  wis: "Cleric and Druid spellcasting; Wisdom saves.",
+  str: "Melee weapon damage modifier.",
+  dex: "Ranged weapon damage modifier, evasion, crit chance, and initiative.",
+  vit: "Health.",
+  int: "Wizard spell modifier.",
+  wis: "Cleric and Druid spell modifier.",
 };
 
 /** A Half-elf's own race entry only carries the generic "Of Two Bloodlines" flavor trait -- this shows the actual passive they chose instead. */
