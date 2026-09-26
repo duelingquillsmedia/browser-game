@@ -124,7 +124,9 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     actionUses: { ...source.actionUses },
     actionCooldowns: {},
     resource:
-      "classId" in source ? (source.resource ?? computeResourceStart(source.abilityScores, source.classId)) : undefined,
+      "classId" in source
+        ? (source.resource ?? computeResourceStart(source.abilityScores, source.classId, source.level))
+        : undefined,
     savingThrowProficiencies: "classId" in source ? getClass(source.classId).savingThrowProficiencies : [],
     damageResistances: source.damageResistances ?? [],
     damageVulnerabilities: source.damageVulnerabilities ?? [],
@@ -444,7 +446,7 @@ export function isActionReady(actor: Combatant, action: CombatActionDef, round: 
 /** Applies a resource pool gain, clamped to that resource's Spirit/Intellect-derived max. A no-op if `combatant`'s class has no such pool. */
 function gainResource(combatant: Combatant, amount: number | undefined): void {
   if (!amount) return;
-  const max = computeResourceMax(combatant.abilityScores, combatant.classId ?? "");
+  const max = computeResourceMax(combatant.abilityScores, combatant.classId ?? "", combatant.level ?? 1);
   if (max === undefined) return;
   combatant.resource = Math.min(max, (combatant.resource ?? 0) + amount);
 }

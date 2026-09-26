@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   ACTION_BAR_SLOT_COUNT,
+  LEVEL_CAP,
   assignActionBarSlot,
   clearActionBarSlot,
   createCharacter,
   equipItem,
+  gainExperience,
   ownsItem,
   unequipItem,
   withClassMigrationIfMissing,
   withStartingGearIfMissing,
+  xpToNextLevel,
 } from "../character.js";
 import type { Character } from "../character.js";
 import { RACES } from "../races.js";
@@ -363,6 +366,123 @@ describe("level-gating (Class Style Sheet reforge)", () => {
     const level4 = warriorAtLevel(4);
     expect(level4.actions.some((a) => a.id === "cleave")).toBe(true);
     expect(level4.actions.some((a) => a.id === "serrated-blade")).toBe(true);
+  });
+});
+
+describe("gainExperience / xpToNextLevel", () => {
+  // Dwarf, not Human -- Human's "Many Roads" trait adds +10% XP from every
+  // source (tested separately below), which would throw off these tests'
+  // exact XP-boundary arithmetic.
+  function warriorAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-xp-${level}`,
+      name: "Bram",
+      raceId: "dwarf",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      level,
+    });
+  }
+
+  it("xpToNextLevel grows quadratically with level", () => {
+    expect(xpToNextLevel(1)).toBe(100);
+    expect(xpToNextLevel(5)).toBe(2500);
+    expect(xpToNextLevel(10)).toBe(10000);
+  });
+
+  it("advances exactly one level on exactly enough XP, unlocking Cleave and growing HP", () => {
+    const character = warriorAtLevel(1);
+    const before = character.maxHp;
+    const result = gainExperience(character, xpToNextLevel(1));
+
+    expect(result.levelsGained).toBe(1);
+    expect(result.character.level).toBe(2);
+    expect(result.character.xp).toBe(0);
+    expect(result.character.maxHp).toBe(before + 12);
+    expect(result.character.hp).toBe(result.character.maxHp); // was already full, stays full
+    expect(result.newlyUnlockedActions.map((a) => a.id)).toEqual(["cleave"]);
+    expect(result.character.actions.some((a) => a.id === "cleave")).toBe(true);
+  });
+
+  it("heals by the exact HP delta rather than fully, when not already at full HP", () => {
+    const character = { ...warriorAtLevel(1), hp: 10 };
+    const result = gainExperience(character, xpToNextLevel(1));
+    expect(result.character.hp).toBe(22); // 10 + 12 HP_PER_LEVEL delta, not a full heal
+  });
+
+  it("advances multiple levels from one large XP grant, landing on the exact boundary", () => {
+    const character = warriorAtLevel(1);
+    const totalForFourLevels = xpToNextLevel(1) + xpToNextLevel(2) + xpToNextLevel(3) + xpToNextLevel(4);
+    const result = gainExperience(character, totalForFourLevels);
+
+    expect(result.levelsGained).toBe(4);
+    expect(result.character.level).toBe(5);
+    expect(result.character.xp).toBe(0);
+    expect(result.newlyUnlockedActions.map((a) => a.id).sort()).toEqual(["cleave", "serrated-blade"]);
+  });
+
+  it("carries leftover XP past a level-up threshold", () => {
+    const character = warriorAtLevel(1);
+    const result = gainExperience(character, xpToNextLevel(1) + 37);
+    expect(result.character.level).toBe(2);
+    expect(result.character.xp).toBe(37);
+  });
+
+  it("does not grow a fixed resource pool (Fury) with level", () => {
+    const character = { ...warriorAtLevel(1), resource: 0 };
+    const result = gainExperience(character, xpToNextLevel(1));
+    expect(result.character.resource).toBe(0); // Fury's cap (100) never changes with level, so no delta to add
+  });
+
+  it("recomputes proficiency bonus on level-up", () => {
+    const character = warriorAtLevel(1);
+    expect(character.proficiencyBonus).toBe(2);
+    const totalToLevel5 = [1, 2, 3, 4].reduce((sum, lvl) => sum + xpToNextLevel(lvl), 0);
+    const result = gainExperience(character, totalToLevel5);
+    expect(result.character.level).toBe(5);
+    expect(result.character.proficiencyBonus).toBe(3); // 2 + floor((5-1)/4)
+  });
+
+  it("stops at the level cap and discards overflow XP", () => {
+    const capped = { ...warriorAtLevel(1), level: LEVEL_CAP, xp: 0 };
+    const result = gainExperience(capped, 999999);
+    expect(result.levelsGained).toBe(0);
+    expect(result.character).toBe(capped); // untouched, not even xp incremented
+  });
+
+  it("is a no-op for zero or negative XP", () => {
+    const character = warriorAtLevel(1);
+    expect(gainExperience(character, 0).character).toBe(character);
+    expect(gainExperience(character, -5).character).toBe(character);
+  });
+
+  it("reports the exact XP amount applied via xpAwarded", () => {
+    const character = warriorAtLevel(1);
+    expect(gainExperience(character, 40).xpAwarded).toBe(40);
+    expect(gainExperience(character, xpToNextLevel(1)).xpAwarded).toBe(xpToNextLevel(1));
+  });
+
+  it("grants a Human's Many Roads trait +10% XP from every source, rounded", () => {
+    const human = createCharacter({
+      id: "pc-xp-human",
+      name: "Elowen",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      level: 1,
+    });
+
+    const small = gainExperience(human, 45);
+    expect(small.xpAwarded).toBe(50); // round(45 * 1.1) = 50 -- not enough to level, so it lands straight in xp
+    expect(small.character.xp).toBe(50);
+
+    const exact = gainExperience(human, xpToNextLevel(1));
+    expect(exact.xpAwarded).toBe(110); // round(100 * 1.1)
+    expect(exact.levelsGained).toBe(1);
+    expect(exact.character.level).toBe(2);
+    expect(exact.character.xp).toBe(10); // 110 - 100 threshold, carried over
   });
 });
 

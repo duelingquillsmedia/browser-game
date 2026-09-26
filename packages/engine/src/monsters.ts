@@ -12,6 +12,8 @@ export interface MonsterTemplate {
   maxHp: number;
   /** Flat evasion-percentage bonus from natural armor/hide; monsters carry no gear. */
   evasionBonus: number;
+  /** XP awarded to the party on defeating one of these, hand-tuned against its relative HP/threat -- same curated-stat-block precedent as maxHp. */
+  xpValue: number;
   actions: CombatActionDef[];
   /** None of Eridan's current frontier threats have any — reserved for future undead/elemental monsters. */
   damageResistances?: DamageType[];
@@ -52,6 +54,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     abilityScores: { str: 8, dex: 14, vit: 10, int: 10, wis: 8, spi: 8 },
     maxHp: 75,
     evasionBonus: 0,
+    xpValue: 45,
     actions: [
       {
         id: "shortsword",
@@ -74,6 +77,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     abilityScores: { str: 15, dex: 15, vit: 13, int: 3, wis: 12, spi: 7 },
     maxHp: 120,
     evasionBonus: 0,
+    xpValue: 70,
     actions: [
       {
         id: "bite",
@@ -104,6 +108,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     abilityScores: { str: 16, dex: 12, vit: 14, int: 9, wis: 9, spi: 10 },
     maxHp: 160,
     evasionBonus: 0,
+    xpValue: 90,
     actions: [
       {
         id: "greataxe",
@@ -126,6 +131,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     abilityScores: { str: 7, dex: 15, vit: 8, int: 9, wis: 9, spi: 8 },
     maxHp: 55,
     evasionBonus: 5,
+    xpValue: 35,
     rank: "back",
     actions: [
       {
@@ -147,6 +153,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     abilityScores: { str: 9, dex: 10, vit: 11, int: 10, wis: 15, spi: 13 },
     maxHp: 110,
     evasionBonus: 0,
+    xpValue: 65,
     rank: "back",
     actions: [
       {
@@ -164,6 +171,13 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     ],
   },
 };
+
+/** Matches the getClass/getItem/getRace pattern; throws on an unknown id. */
+export function getMonsterTemplate(id: string): MonsterTemplate {
+  const template = MONSTER_TEMPLATES[id];
+  if (!template) throw new Error(`Unknown monster template: "${id}"`);
+  return template;
+}
 
 export function createMonster(templateId: string, instanceId: string, rankOverride?: "front" | "back"): Monster {
   const template = MONSTER_TEMPLATES[templateId];

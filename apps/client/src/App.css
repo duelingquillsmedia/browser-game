@@ -575,3 +575,28 @@ button.ghost {
 .result-screen.enemies_won h1 {
   color: var(--danger);
 }
+
+.result-screen .xp-gained {
+  margin-top: 1.25rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.result-screen .level-up-callout {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.result-screen .level-up-title {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.result-screen .new-ability {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+}

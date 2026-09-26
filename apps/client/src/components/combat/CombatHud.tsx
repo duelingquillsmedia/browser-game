@@ -71,7 +71,7 @@ export function CombatHud({
   }, [state.log.length]);
 
   const resource = getClassResource(player.classId);
-  const resourceMax = computeResourceMax(player.abilityScores, player.classId ?? "");
+  const resourceMax = computeResourceMax(player.abilityScores, player.classId ?? "", player.level ?? 1);
   const shield = player.statusEffects.find((e) => e.defId === "ward")?.amount ?? 0;
   const skillActions = player.actions.filter((a) => a.kind !== "flee" && a.kind !== "endTurn");
   const slots: (CombatActionDef | null)[] = Array.from(

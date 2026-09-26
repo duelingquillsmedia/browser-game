@@ -1,7 +1,11 @@
-import type { CombatStatus } from "@eridan/engine";
+import type { CombatActionDef, CombatStatus } from "@eridan/engine";
 
 export interface ResultScreenProps {
   status: Exclude<CombatStatus, "active">;
+  xpGained: number;
+  levelsGained: number;
+  newLevel: number;
+  newlyUnlockedActions: CombatActionDef[];
   onContinue: () => void;
 }
 
@@ -20,12 +24,23 @@ const COPY: Record<Exclude<CombatStatus, "active">, { title: string; body: strin
   },
 };
 
-export function ResultScreen({ status, onContinue }: ResultScreenProps) {
+export function ResultScreen({ status, xpGained, levelsGained, newLevel, newlyUnlockedActions, onContinue }: ResultScreenProps) {
   const copy = COPY[status];
   return (
     <div className={`screen result-screen ${status}`}>
       <h1>{copy.title}</h1>
       <p className="subtitle">{copy.body}</p>
+      {xpGained > 0 && <p className="xp-gained">+{xpGained.toLocaleString()} XP</p>}
+      {levelsGained > 0 && (
+        <div className="level-up-callout">
+          <p className="level-up-title">Level Up! Now level {newLevel}</p>
+          {newlyUnlockedActions.map((action) => (
+            <p key={action.id} className="new-ability">
+              New ability: {action.name}!
+            </p>
+          ))}
+        </div>
+      )}
       <button type="button" className="primary" onClick={onContinue}>
         Continue
       </button>

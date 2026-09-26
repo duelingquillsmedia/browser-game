@@ -3,9 +3,11 @@
  * layout, `Aetherwyn Prototype.dc.html` lines 195-287). Exact px/color/font values
  * below are copied verbatim from that source; deviations from it are called out
  * inline where our engine's data model doesn't have a real equivalent to copy
- * (no XP/leveling system, no Faith-style second resource, no item rarity, no
- * flat "Armor" mitigation stat, no per-element Fire/Frost/Nature/Shadow/Radiant/
- * Arcane resistance scale) -- see README's "Character screen rebuild" section.
+ * (no Faith-style second resource, no item rarity, no flat "Armor" mitigation
+ * stat, no per-element Fire/Frost/Nature/Shadow/Radiant/Arcane resistance
+ * scale) -- see README's "Character screen rebuild" section. The XP bar
+ * (added later, once the engine grew a leveling system) reuses the handoff's
+ * existing gold gradient rather than porting a new one.
  */
 
 .aow-character {

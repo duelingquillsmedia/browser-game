@@ -1,4 +1,13 @@
-import { createMonster, startCombat, toCombatant, type Character, type CombatState } from "@eridan/engine";
+import {
+  createMonster,
+  gainExperience,
+  getMonsterTemplate,
+  startCombat,
+  toCombatant,
+  type Character,
+  type CombatActionDef,
+  type CombatState,
+} from "@eridan/engine";
 import type { Encounter } from "./lore";
 import { PARTY_START_HEX, hexDisk } from "./eridanMap";
 
@@ -34,13 +43,41 @@ export function beginEncounter(character: Character, encounter: Encounter): Comb
   return startCombat(party, enemies);
 }
 
-/** Carries the player's ending HP back onto the persisted character. */
-export function applyCombatResults(character: Character, combat: CombatState): Character {
+export interface CombatResult {
+  character: Character;
+  xpGained: number;
+  levelsGained: number;
+  newlyUnlockedActions: CombatActionDef[];
+}
+
+/**
+ * Carries the player's ending HP back onto the persisted character, and on
+ * a clean victory (a full party_won, not a flee or defeat) awards XP for
+ * every enemy defeated in the fight.
+ */
+export function applyCombatResults(character: Character, combat: CombatState): CombatResult {
   const endingHp = new Map(combat.combatants.map((c) => [c.id, c.hp]));
-  return {
+  const woundedCharacter: Character = {
     ...character,
     hp: endingHp.get(character.id) ?? character.hp,
   };
+
+  if (combat.status !== "party_won") {
+    return { character: woundedCharacter, xpGained: 0, levelsGained: 0, newlyUnlockedActions: [] };
+  }
+
+  const baseXp = combat.combatants
+    .filter((c) => c.side === "enemy" && c.templateId)
+    .reduce((sum, c) => sum + getMonsterTemplate(c.templateId!).xpValue, 0);
+
+  const {
+    character: leveledCharacter,
+    levelsGained,
+    xpAwarded,
+    newlyUnlockedActions,
+  } = gainExperience(woundedCharacter, baseXp);
+
+  return { character: leveledCharacter, xpGained: xpAwarded, levelsGained, newlyUnlockedActions };
 }
 
 /** Fully heals the player — used when resting at the town hub. */

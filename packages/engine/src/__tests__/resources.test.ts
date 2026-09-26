@@ -62,16 +62,16 @@ describe("class resource pools", () => {
     expect(makeCharacter("cleric").resource).toBe(0);
     expect(makeCharacter("ranger").resource).toBe(0);
     expect(makeCharacter("rogue").resource).toBe(0);
-    // Druid/Wizard: still mana-like -- full at creation, scaling with an ability score.
-    // Wizard: int16 -> 100 + 16*6 = 196.
-    expect(makeCharacter("wizard").resource).toBe(196);
-    // Druid: wis14 -> 100 + 14*6 = 184.
-    expect(makeCharacter("druid").resource).toBe(184);
+    // Druid/Wizard: still mana-like -- full at creation, scaling with an ability score and level (default level here is 4).
+    // Wizard: int16 -> 100 + 16*6 + (4-1)*8 = 220.
+    expect(makeCharacter("wizard").resource).toBe(220);
+    // Druid: wis14 -> 100 + 14*6 + (4-1)*8 = 208.
+    expect(makeCharacter("druid").resource).toBe(208);
   });
 
   it("carries a character's resource value into their Combatant", () => {
     const combatant = toCombatant(makeCharacter("wizard"), "party");
-    expect(combatant.resource).toBe(196);
+    expect(combatant.resource).toBe(220);
   });
 
   it("marks an action not-ready when the actor can't pay its resource cost", () => {
@@ -96,7 +96,7 @@ describe("class resource pools", () => {
       { actorId: wizard.id, actionId: "elemental-shard", targetId: "foe" },
       sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss
     );
-    expect(after.combatants.find((c) => c.id === wizard.id)!.resource).toBe(166); // 196 - 30, spent even on a miss
+    expect(after.combatants.find((c) => c.id === wizard.id)!.resource).toBe(190); // 220 - 30, spent even on a miss
   });
 
   it("builds Fury when a Warrior uses their melee Basic Attack, hit or miss", () => {

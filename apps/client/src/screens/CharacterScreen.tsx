@@ -3,6 +3,7 @@ import {
   ABILITY_NAMES,
   BACKGROUNDS,
   CLASSES,
+  LEVEL_CAP,
   ORIGIN_FEATS,
   RACES,
   abilityMod,
@@ -11,6 +12,7 @@ import {
   getClassResource,
   getItem,
   unequipItem,
+  xpToNextLevel,
   type AbilityKey,
   type Character,
   type ItemSlot,
@@ -165,11 +167,15 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
   const background = BACKGROUNDS[character.backgroundId];
   const originFeat = ORIGIN_FEATS[character.originFeatId];
   const resourceConfig = getClassResource(character.classId);
-  const resourceMax = computeResourceMax(character.abilityScores, character.classId);
+  const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
 
   const hpPct = Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100));
   const resourcePct =
     resourceConfig && resourceMax ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceMax) * 100)) : 0;
+
+  const atLevelCap = character.level >= LEVEL_CAP;
+  const xpNeeded = atLevelCap ? 0 : xpToNextLevel(character.level);
+  const xpPct = atLevelCap ? 100 : Math.max(0, Math.min(100, (character.xp / xpNeeded) * 100));
 
   const gearValue = (Object.values(character.equipment).filter(Boolean) as string[]).reduce(
     (sum, id) => sum + getItem(id).value,
@@ -227,6 +233,14 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
                   </div>
                 </>
               )}
+
+              <div className="aow-bar-label" style={{ marginTop: 8 }}>
+                <span>EXPERIENCE</span>
+                <span>{atLevelCap ? "Max Level" : `${character.xp.toLocaleString()} / ${xpNeeded.toLocaleString()}`}</span>
+              </div>
+              <div className="aow-bar-track aow-bar-track-xp">
+                <div className="aow-bar-fill gold" style={{ width: `${xpPct}%` }} />
+              </div>
             </div>
           </div>
 

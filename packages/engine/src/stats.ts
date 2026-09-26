@@ -15,14 +15,19 @@ import type { AbilityKey, AbilityScores } from "./abilities.js";
 export const CLASS_HEALTH_BONUS: Record<string, number> = {
   cleric: 30,
   warrior: 60,
+  soldier: 50,
   rogue: 20,
-  mage: 0,
+  ranger: 10,
+  wizard: 0,
   druid: 30,
 };
 
-/** Health = 100 base + 10 per point of Vitality + a class's own bonus (per the Character Creation handoff). */
-export function computeMaxHealth(abilityScores: AbilityScores, classId: string): number {
-  return 100 + abilityScores.vit * 10 + (CLASS_HEALTH_BONUS[classId] ?? 0);
+/** Flat max HP granted per level above 1, the same for every class -- homebrew, since leveling didn't exist when the Vitality-based baseline formula was written. */
+const HP_PER_LEVEL = 12;
+
+/** Health = 100 base + 10 per point of Vitality + a class's own bonus (per the Character Creation handoff) + per-level growth. */
+export function computeMaxHealth(abilityScores: AbilityScores, classId: string, level: number): number {
+  return 100 + abilityScores.vit * 10 + (CLASS_HEALTH_BONUS[classId] ?? 0) + (level - 1) * HP_PER_LEVEL;
 }
 
 /**
@@ -54,17 +59,28 @@ const SCALING_RESOURCE_ABILITY: Record<string, AbilityKey> = {
 const SCALING_RESOURCE_BASE = 100;
 const SCALING_RESOURCE_PER_POINT = 6;
 
+/**
+ * Per-level growth for Wylde/Arcana only -- homebrew, same precedent as
+ * HP_PER_LEVEL. The five fixed pools (Fury, Expertise, Prayer, Focus,
+ * Cunning) are Class Style Sheet-specified exact integers and deliberately
+ * do NOT grow with level; only the two already-ability-scaled "mana-like"
+ * pools do.
+ */
+const RESOURCE_PER_LEVEL = 8;
+
 /** A class's resource pool ceiling, or undefined for a class with no pool. */
-export function computeResourceMax(abilityScores: AbilityScores, classId: string): number | undefined {
+export function computeResourceMax(abilityScores: AbilityScores, classId: string, level: number): number | undefined {
   if (classId in FIXED_RESOURCE_POOL) return FIXED_RESOURCE_POOL[classId];
   const scalingAbility = SCALING_RESOURCE_ABILITY[classId];
-  if (scalingAbility) return SCALING_RESOURCE_BASE + abilityScores[scalingAbility] * SCALING_RESOURCE_PER_POINT;
+  if (scalingAbility) {
+    return SCALING_RESOURCE_BASE + abilityScores[scalingAbility] * SCALING_RESOURCE_PER_POINT + (level - 1) * RESOURCE_PER_LEVEL;
+  }
   return undefined;
 }
 
 /** A fresh combatant's resource pool: full for a mana-like pool (Wylde/Arcana), empty for a generator/spender pool (everyone else). */
-export function computeResourceStart(abilityScores: AbilityScores, classId: string): number | undefined {
-  const max = computeResourceMax(abilityScores, classId);
+export function computeResourceStart(abilityScores: AbilityScores, classId: string, level: number): number | undefined {
+  const max = computeResourceMax(abilityScores, classId, level);
   if (max === undefined) return undefined;
   return classId in FIXED_RESOURCE_POOL ? 0 : max;
 }

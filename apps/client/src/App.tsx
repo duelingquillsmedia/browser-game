@@ -296,11 +296,18 @@ function App() {
   }
 
   if (combat.status !== "active" && screen.resultReady) {
-    const updatedCharacter = applyCombatResults(character, combat);
+    const { character: updatedCharacter, xpGained, levelsGained, newlyUnlockedActions } = applyCombatResults(
+      character,
+      combat
+    );
 
     return (
       <ResultScreen
         status={combat.status}
+        xpGained={xpGained}
+        levelsGained={levelsGained}
+        newLevel={updatedCharacter.level}
+        newlyUnlockedActions={newlyUnlockedActions}
         onContinue={async () => {
           setScreen({ kind: "home", character: updatedCharacter });
           try {

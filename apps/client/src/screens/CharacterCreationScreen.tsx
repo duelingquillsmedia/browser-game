@@ -191,8 +191,8 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
     setName(candidate);
   }
 
-  const health = cls && totals ? computeMaxHealth(totals, cls.id) : 0; // Matches createCharacter's maxHp formula exactly.
-  const resourceMax = cls && totals ? computeResourceMax(totals, cls.id) : undefined;
+  const health = cls && totals ? computeMaxHealth(totals, cls.id, 1) : 0; // Matches createCharacter's maxHp formula exactly.
+  const resourceMax = cls && totals ? computeResourceMax(totals, cls.id, 1) : undefined;
   const primaryScore = cls && totals ? totals[cls.primaryAbility] : 0;
 
   const canAdvance = valid(step);

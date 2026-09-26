@@ -7,7 +7,7 @@ import type { OriginFeatId } from "./feats.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
-import { computeMaxHealth, computeResourceStart } from "./stats.js";
+import { computeMaxHealth, computeResourceMax, computeResourceStart } from "./stats.js";
 
 export interface InventoryStack {
   itemId: string;
@@ -23,6 +23,8 @@ export interface Character {
   backgroundId: string;
   originFeatId: OriginFeatId;
   level: number;
+  /** XP accumulated toward this character's next level; resets to (any overflow past the threshold) on level-up. See `xpToNextLevel`/`gainExperience`. */
+  xp: number;
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
@@ -216,6 +218,97 @@ export function unequipItem(character: Character, slot: ItemSlot): Character {
   return applyEquipmentEffects({ ...character, equipment }, getClass(character.classId), getRace(character.raceId));
 }
 
+/** Highest level a character can reach. */
+export const LEVEL_CAP = 30;
+
+/**
+ * XP required to advance from `level` to `level + 1` -- homebrew, sized to
+ * feel like a WoW-style escalating grind (100 XP for the 1->2 hop, ~90,000
+ * for the last stretch into 30). No leveling system existed when the rest
+ * of this file's derived-stat formulas were invented, so there's no prior
+ * curve to match.
+ */
+export function xpToNextLevel(level: number): number {
+  return 100 * level * level;
+}
+
+export interface ExperienceGainResult {
+  character: Character;
+  levelsGained: number;
+  /** The actual XP applied, after race bonuses (e.g. Human's Many Roads) -- what a "+N XP" UI moment should show. */
+  xpAwarded: number;
+  /** Abilities whose `unlockLevel` falls in (startLevel, newLevel] -- for a "New ability learned!" UI moment. */
+  newlyUnlockedActions: CombatActionDef[];
+}
+
+/**
+ * Awards `amount` XP (before race bonuses -- see Many Roads below), advancing
+ * as many levels as it covers (capped at `LEVEL_CAP`; any overflow past the
+ * cap is discarded rather than banked). Each level gained recomputes max
+ * HP/resource/proficiency bonus and heals by the exact delta, so leveling up
+ * never leaves a character relatively worse off, then rebuilds the action
+ * list (`applyEquipmentEffects`, same as `equipItem`/`unequipItem`) so newly
+ * unlocked abilities are available immediately. A no-op for non-positive
+ * `amount` or an already-capped character.
+ */
+export function gainExperience(character: Character, amount: number): ExperienceGainResult {
+  if (amount <= 0 || character.level >= LEVEL_CAP) {
+    return { character, levelsGained: 0, xpAwarded: 0, newlyUnlockedActions: [] };
+  }
+
+  // Human's "Many Roads" trait: +10% XP from all sources (see races.ts). No
+  // structured trait-effect data exists yet, so this follows the same
+  // raceId-gated precedent as Elf's Silverleaf Step in combat.ts.
+  const awarded = character.raceId === "human" ? Math.round(amount * 1.1) : amount;
+
+  const startLevel = character.level;
+  let level = character.level;
+  let xp = character.xp + awarded;
+  while (level < LEVEL_CAP && xp >= xpToNextLevel(level)) {
+    xp -= xpToNextLevel(level);
+    level += 1;
+  }
+  if (level >= LEVEL_CAP) {
+    level = LEVEL_CAP;
+    xp = 0;
+  }
+
+  if (level === startLevel) {
+    return { character: { ...character, xp }, levelsGained: 0, xpAwarded: awarded, newlyUnlockedActions: [] };
+  }
+
+  const cls = getClass(character.classId);
+  const race = getRace(character.raceId);
+
+  const newMaxHp = computeMaxHealth(character.abilityScores, cls.id, level);
+  const hpDelta = newMaxHp - character.maxHp;
+  const newResourceMax = computeResourceMax(character.abilityScores, cls.id, level);
+  const oldResourceMax = computeResourceMax(character.abilityScores, cls.id, startLevel);
+  const resourceDelta = (newResourceMax ?? 0) - (oldResourceMax ?? 0);
+
+  const leveled: Character = {
+    ...character,
+    level,
+    xp,
+    maxHp: newMaxHp,
+    hp: Math.min(newMaxHp, character.hp + hpDelta),
+    resource:
+      newResourceMax !== undefined ? Math.min(newResourceMax, (character.resource ?? 0) + resourceDelta) : character.resource,
+    proficiencyBonus: 2 + Math.floor((level - 1) / 4),
+  };
+
+  const newlyUnlockedActions = cls.actions.filter(
+    (a) => (a.unlockLevel ?? 1) > startLevel && (a.unlockLevel ?? 1) <= level
+  );
+
+  return {
+    character: applyEquipmentEffects(leveled, cls, race),
+    levelsGained: level - startLevel,
+    xpAwarded: awarded,
+    newlyUnlockedActions,
+  };
+}
+
 /** Number of slots on the Skills page's action bar. */
 export const ACTION_BAR_SLOT_COUNT = 6;
 
@@ -323,8 +416,9 @@ export function withStartingGearIfMissing(character: Character): Character {
     originFeatId: character.originFeatId ?? getBackground(backgroundId).originFeatId,
     inventory: character.inventory ?? buildStartingInventory(cls, defaultEquipment),
     equipment: character.equipment ?? { ...defaultEquipment },
-    resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id),
+    resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id, character.level),
     actionBarIds: character.actionBarIds ?? emptyActionBar(),
+    xp: character.xp ?? 0,
   };
   return applyEquipmentEffects(withGear, cls, race);
 }
@@ -346,7 +440,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     abilityScores[key] = Math.min(20, abilityScores[key] + bonus);
   }
 
-  const maxHp = computeMaxHealth(abilityScores, cls.id);
+  const maxHp = computeMaxHealth(abilityScores, cls.id, level);
   const equipment = resolveStartingEquipment(cls, options.equipmentOptionId);
 
   const base: Character = {
@@ -357,6 +451,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     backgroundId: background.id,
     originFeatId: background.originFeatId,
     level,
+    xp: 0,
     abilityScores,
     maxHp,
     hp: maxHp,
@@ -364,7 +459,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     proficiencyBonus: 2 + Math.floor((level - 1) / 4),
     actions: [],
     actionUses: {},
-    resource: computeResourceStart(abilityScores, cls.id),
+    resource: computeResourceStart(abilityScores, cls.id, level),
     inventory: buildStartingInventory(cls, equipment),
     equipment: { ...equipment },
     appearance: options.appearance,

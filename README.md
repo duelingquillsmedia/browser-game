@@ -28,9 +28,9 @@ client-server milestone (combat is still resolved in the browser for now).
   Dwarf) carried over from the Character Creation handoff, each granting a
   flat ability score bonus (the handoff's own "10 + race + class" model, not
   the SRD's roll-or-point-buy) plus one named trait. Elf's Silverleaf Step
-  (the first resource-costing action each combat costs 1 less) and Dwarf's
-  Stoneblood (poison resistance) are real; Human's Many Roads (+10%
-  experience) is flavor-only, since there's no leveling/XP system yet.
+  (the first resource-costing action each combat costs 1 less), Dwarf's
+  Stoneblood (poison resistance), and Human's Many Roads (+10% experience
+  from every source, rounded, applied in `gainExperience`) are all real.
 - A Background system, per the SRD 2024 rules: it's your Background, not
   your species, that grants ability score increases and an Origin feat.
   The 4 backgrounds detailed in the free SRD are implemented (Acolyte,
@@ -835,6 +835,59 @@ equivalent to the sheet's mechanic:
 `combatDisplay.ts`, `roster.ts`; `apps/client/src/screens/
 CharacterCreationScreen.tsx`, `CharacterScreen.tsx`, `InventoryScreen.tsx`,
 `SkillsScreen.tsx`.
+
+## XP & Leveling System
+
+A WoW-style leveling loop: defeating monsters in combat grants XP,
+accumulating toward each level's threshold (`xpToNextLevel(level) = 100 *
+level^2` — homebrew, no prior curve existed to match) up to a **level cap
+of 30**. A hunting-quest system that also awards XP through the same
+`gainExperience` entry point is planned for a later pass; only
+combat-victory XP is wired up so far.
+
+- **Leveling grows max HP and resource pool only** — ability scores stay
+  fixed at their creation-time value (race/class/background identity).
+  `computeMaxHealth`/`computeResourceMax` (stats.ts) gained a required
+  `level` parameter and now add `(level - 1) * HP_PER_LEVEL` (homebrew, 12)
+  and, **only** for the two already ability-scaled "mana-like" pools
+  (Wylde/Arcana), `(level - 1) * RESOURCE_PER_LEVEL` (homebrew, 8). The
+  Class Style Sheet's other five pools (Fury, Expertise, Prayer, Focus,
+  Cunning) are small fixed integers by design and stay exactly as
+  specified, untouched by level.
+- **`gainExperience(character, amount)`** (character.ts) is the single
+  entry point for awarding XP from any source. It advances as many levels
+  as the XP covers, discards overflow past the level cap rather than
+  banking it, recomputes max HP/resource/proficiency bonus per level and
+  **heals by the exact delta** (so leveling up never leaves a character
+  relatively worse off than before), then rebuilds the action list via the
+  same `applyEquipmentEffects` helper `equipItem`/`unequipItem` already use
+  — so an ability unlocked by the new level (`unlockLevel` on
+  `CombatActionDef`, from the Class Style Sheet reforge) is available
+  immediately, and is reported back as `newlyUnlockedActions` for a "New
+  ability learned!" UI moment.
+- **Human's Many Roads trait is real.** It was authored as flavor text
+  during the Race system build (`races.ts`), before any XP system existed
+  to hook it into — `gainExperience` now applies its "+10% experience from
+  every source" (rounded) the same way Elf's Silverleaf Step is checked in
+  combat.ts: a direct `raceId === "human"` gate, since `RaceTrait` carries
+  no structured effect data. The boosted amount (not the raw monster XP
+  sum) is what `ExperienceGainResult.xpAwarded` reports, so the client's
+  "+N XP" always shows what was actually applied.
+- **Client wiring**: `apps/client/src/game/setup.ts`'s
+  `applyCombatResults` only awards XP on a clean `party_won` (not a flee or
+  a loss), summed from every defeated enemy's `MonsterTemplate.xpValue`
+  (hand-tuned per template, same curated-stat-block precedent as their
+  HP — 35 to 90 per monster in the three starting encounters).
+  `ResultScreen.tsx` shows the XP gained and, on a level-up, a callout with
+  the new level and any newly unlocked abilities. `HomeScreen.tsx` and
+  `CharacterScreen.tsx` both got a third, thinner XP bar (reusing the
+  handoff's existing gold gradient) alongside their HP/resource bars.
+
+### Critical files
+`packages/engine/src/stats.ts`, `character.ts`, `monsters.ts`, `combat.ts`;
+`apps/client/src/game/setup.ts`, `App.tsx`; `apps/client/src/screens/
+ResultScreen.tsx`, `CharacterScreen.tsx`, `HomeScreen.tsx`;
+`apps/client/src/components/combat/CombatHud.tsx`, `GameShell.tsx`.
 
 ## Lore
 

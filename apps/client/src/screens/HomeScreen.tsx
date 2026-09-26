@@ -2,9 +2,11 @@ import {
   ABILITY_KEYS,
   ABILITY_NAMES,
   CLASSES,
+  LEVEL_CAP,
   RACES,
   computeResourceMax,
   getClassResource,
+  xpToNextLevel,
   type Character,
 } from "@eridan/engine";
 import { ItemIcon } from "../components/ItemIcon";
@@ -34,13 +36,17 @@ export function HomeScreen({
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
   const resourceConfig = getClassResource(character.classId);
-  const resourceMax = computeResourceMax(character.abilityScores, character.classId);
+  const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
   const canVenture = character.hp > 0;
   const canRest = character.hp < character.maxHp;
 
   const hpPct = Math.max(0, Math.min(100, (character.hp / character.maxHp) * 100));
   const resourcePct =
     resourceConfig && resourceMax ? Math.max(0, Math.min(100, ((character.resource ?? 0) / resourceMax) * 100)) : 0;
+
+  const atLevelCap = character.level >= LEVEL_CAP;
+  const xpNeeded = atLevelCap ? 0 : xpToNextLevel(character.level);
+  const xpPct = atLevelCap ? 100 : Math.max(0, Math.min(100, (character.xp / xpNeeded) * 100));
 
   const equippedSlots = (["meleeWeapon", "rangedWeapon", "armor", "accessory"] as const).filter(
     (slot) => character.equipment[slot]
@@ -98,6 +104,14 @@ export function HomeScreen({
                 </div>
               </>
             )}
+
+            <div className="aow-bar-label" style={{ marginTop: 8 }}>
+              <span>EXPERIENCE</span>
+              <span>{atLevelCap ? "Max Level" : `${character.xp.toLocaleString()} / ${xpNeeded.toLocaleString()}`}</span>
+            </div>
+            <div className="aow-bar-track aow-bar-track-xp">
+              <div className="aow-bar-fill gold" style={{ width: `${xpPct}%` }} />
+            </div>
 
             <div className="aow-attr-grid">
               {ABILITY_KEYS.map((key) => (

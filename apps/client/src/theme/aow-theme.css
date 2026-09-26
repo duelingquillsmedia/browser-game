@@ -170,6 +170,11 @@
   background: linear-gradient(90deg, var(--aow-gold-deep), var(--aow-gold));
 }
 
+/* Thinner than the HP/resource bars -- XP is a slower-moving, secondary meter. */
+.aow-bar-track-xp {
+  height: 6px;
+}
+
 .aow-bar-label {
   display: flex;
   justify-content: space-between;
