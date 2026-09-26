@@ -10,6 +10,8 @@ import {
   type Character,
 } from "@eridan/engine";
 import { restCharacter } from "../game/setup";
+import { ItemTooltipContent } from "./ItemTooltipContent";
+import { Tooltip } from "./Tooltip";
 
 export interface TownHubPanelProps {
   townName: string;
@@ -99,10 +101,12 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
           <div className="aow-town-hub-section">
             {CONSUMABLE_ITEMS.map((item) => (
               <div key={item.id} className="aow-town-hub-row">
-                <div>
-                  <div className="aow-town-hub-row-name">{item.name}</div>
-                  <div className="aow-town-hub-row-desc">{item.description}</div>
-                </div>
+                <Tooltip content={<ItemTooltipContent item={item} character={character} />}>
+                  <div>
+                    <div className="aow-town-hub-row-name">{item.name}</div>
+                    <div className="aow-town-hub-row-desc">{item.description}</div>
+                  </div>
+                </Tooltip>
                 <button
                   type="button"
                   className="aow-button-ghost"
@@ -121,10 +125,12 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
             <div className="aow-town-hub-subheader">FOR SALE</div>
             {GEAR_ITEMS.map((item) => (
               <div key={item.id} className="aow-town-hub-row">
-                <div>
-                  <div className="aow-town-hub-row-name">{item.name}</div>
-                  <div className="aow-town-hub-row-desc">{item.description}</div>
-                </div>
+                <Tooltip content={<ItemTooltipContent item={item} character={character} />}>
+                  <div>
+                    <div className="aow-town-hub-row-name">{item.name}</div>
+                    <div className="aow-town-hub-row-desc">{item.description}</div>
+                  </div>
+                </Tooltip>
                 <button
                   type="button"
                   className="aow-button-ghost"
@@ -142,10 +148,21 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
             ) : (
               sellableStacks.map(({ stack, item }) => (
                 <div key={item.id} className="aow-town-hub-row">
-                  <div className="aow-town-hub-row-name">
-                    {item.name}
-                    {stack.quantity > 1 ? ` ×${stack.quantity}` : ""}
-                  </div>
+                  <Tooltip
+                    content={
+                      <ItemTooltipContent
+                        item={item}
+                        character={character}
+                        quantity={stack.quantity}
+                        priceOverride={`Sells for ${Math.round(item.value * SELL_PRICE_RATIO)} gold`}
+                      />
+                    }
+                  >
+                    <div className="aow-town-hub-row-name">
+                      {item.name}
+                      {stack.quantity > 1 ? ` ×${stack.quantity}` : ""}
+                    </div>
+                  </Tooltip>
                   <button type="button" className="aow-button-ghost" onClick={() => onUpdateCharacter(sellItem(character, item.id))}>
                     Sell · {Math.round(item.value * SELL_PRICE_RATIO)}G
                   </button>

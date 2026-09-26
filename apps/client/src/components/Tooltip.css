@@ -1,0 +1,15 @@
+.aow-tooltip-trigger {
+  display: contents;
+}
+
+.aow-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 260px;
+  padding: 12px 14px;
+  background: var(--aow-panel);
+  border: 1px solid rgba(232, 200, 170, 0.14);
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}

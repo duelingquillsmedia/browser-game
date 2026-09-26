@@ -1,15 +1,9 @@
 import { useState } from "react";
-import {
-  ABILITY_NAMES,
-  equipItem,
-  getItem,
-  unequipItem,
-  useConsumable,
-  type Character,
-  type ItemSlot,
-  type ItemTemplate,
-} from "@eridan/engine";
+import { equipItem, getItem, unequipItem, useConsumable, type Character, type ItemSlot, type ItemTemplate } from "@eridan/engine";
 import { ItemIcon } from "../components/ItemIcon";
+import { ItemTooltipContent } from "../components/ItemTooltipContent";
+import { Tooltip } from "../components/Tooltip";
+import { compareToEquipped, formatItemStats, slotLabel } from "../game/itemDisplay";
 import "./InventoryScreen.css";
 
 export interface InventoryScreenProps {
@@ -34,34 +28,6 @@ const FILTERS: { id: FilterId; label: string }[] = [
 /** An item's own slot, or "consumable" for a slot-less potion -- used to bucket it under a filter tab. */
 function filterBucket(item: ItemTemplate): FilterId {
   return item.slot ?? "consumable";
-}
-
-function capitalize(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatItemStats(item: ItemTemplate): string | null {
-  const parts: string[] = [];
-  if (item.damageMin !== undefined && item.damageMax !== undefined) {
-    const ability = item.ability ?? "str";
-    const damageType = item.damageType ?? "slashing";
-    parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
-  }
-  if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
-
-/** What changes if `candidate` replaced whatever's currently equipped in its slot, if anything's there. Consumables have no slot, so nothing to compare. */
-function compareToEquipped(character: Character, candidate: ItemTemplate) {
-  if (!candidate.slot) return null;
-  const equippedId = character.equipment[candidate.slot];
-  if (!equippedId || equippedId === candidate.id) return null;
-  const equipped = getItem(equippedId);
-  if (candidate.slot === "meleeWeapon" || candidate.slot === "rangedWeapon") {
-    return { kind: "weapon" as const, from: formatItemStats(equipped), to: formatItemStats(candidate) };
-  }
-  const delta = (candidate.evasionBonus ?? 0) - (equipped.evasionBonus ?? 0);
-  return { kind: "evasion" as const, delta };
 }
 
 export function InventoryScreen({ character, onUpdateCharacter }: InventoryScreenProps) {
@@ -118,18 +84,21 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                 const matches = filter === "all" || filterBucket(item) === filter;
                 const isSelected = selectedItemId === stack.itemId;
                 return (
-                  <button
+                  <Tooltip
                     key={stack.itemId}
-                    type="button"
-                    className={`aow-bag-cell filled${isSelected ? " selected" : ""}`}
-                    style={{ opacity: matches ? 1 : 0.22 }}
-                    title={`${item.name}${formatItemStats(item) ? ` — ${formatItemStats(item)}` : ""}`}
-                    onClick={() => setSelectedItemId(isSelected ? null : stack.itemId)}
+                    content={<ItemTooltipContent item={item} character={character} quantity={stack.quantity} />}
                   >
-                    <ItemIcon itemId={item.id} slot={item.slot} />
-                    {equippedIds.has(item.id) && <span className="aow-bag-equipped-dot" />}
-                    {stack.quantity > 1 && <span className="aow-bag-qty">×{stack.quantity}</span>}
-                  </button>
+                    <button
+                      type="button"
+                      className={`aow-bag-cell filled${isSelected ? " selected" : ""}`}
+                      style={{ opacity: matches ? 1 : 0.22 }}
+                      onClick={() => setSelectedItemId(isSelected ? null : stack.itemId)}
+                    >
+                      <ItemIcon itemId={item.id} slot={item.slot} />
+                      {equippedIds.has(item.id) && <span className="aow-bag-equipped-dot" />}
+                      {stack.quantity > 1 && <span className="aow-bag-qty">×{stack.quantity}</span>}
+                    </button>
+                  </Tooltip>
                 );
               })}
             </div>
@@ -150,7 +119,7 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                   <div>
                     <div className="aow-item-name">{selectedItem.name}</div>
                     <div className="aow-item-type-line">
-                      {selectedItem.slot ? capitalize(selectedItem.slot) : "Potion"}
+                      {slotLabel(selectedItem.slot)}
                       {selectedStack.quantity > 1 ? ` · ×${selectedStack.quantity}` : ""}
                       {equippedIds.has(selectedItem.id) ? " · Equipped" : ""}
                     </div>

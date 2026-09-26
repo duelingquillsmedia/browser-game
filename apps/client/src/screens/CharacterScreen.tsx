@@ -14,11 +14,12 @@ import {
   type AbilityKey,
   type Character,
   type ItemSlot,
-  type ItemTemplate,
 } from "@eridan/engine";
 import { combatStatGroups, equipmentTileStyle, resistanceRows } from "../game/characterDisplay";
 import { ItemIcon } from "../components/ItemIcon";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
+import { ItemTooltipContent } from "../components/ItemTooltipContent";
+import { Tooltip } from "../components/Tooltip";
 import "./CharacterScreen.css";
 
 export interface CharacterScreenProps {
@@ -60,21 +61,6 @@ const RIGHT_SLOTS: { id: string; label: string; real?: ItemSlot }[] = [
   { id: "trinket", label: "Trinket", real: "accessory" },
 ];
 
-function capitalize(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatItemStats(item: ItemTemplate): string | null {
-  const parts: string[] = [];
-  if (item.damageMin !== undefined && item.damageMax !== undefined) {
-    const ability = item.ability ?? "str";
-    const damageType = item.damageType ?? "slashing";
-    parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
-  }
-  if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
-
 function EquipmentSlot({
   label,
   real,
@@ -97,20 +83,31 @@ function EquipmentSlot({
   const size = side === "weapon" ? 52 : 44;
 
   const tileEl = (
-    <div
-      className="aow-eq-tile"
-      style={{
-        width: size,
-        height: size,
-        borderColor: tile.borderColor,
-        background: tile.background,
-        boxShadow: tile.boxShadow,
-        color: tile.color,
-      }}
-      title={item ? `${item.name}${formatItemStats(item) ? ` — ${formatItemStats(item)}` : ""}` : real ? `Nothing in ${label}` : `${label} — not available yet`}
+    <Tooltip
+      content={
+        item ? (
+          <ItemTooltipContent item={item} character={character} />
+        ) : (
+          <p className="aow-item-flavor" style={{ margin: 0 }}>
+            {real ? `Nothing equipped in ${label}.` : `${label} — not available yet.`}
+          </p>
+        )
+      }
     >
-      {item ? <ItemIcon itemId={item.id} slot={real!} /> : real ? <ItemSlotIcon slot={real} /> : <span className="aow-eq-tile-abbr">{label.slice(0, 3).toUpperCase()}</span>}
-    </div>
+      <div
+        className="aow-eq-tile"
+        style={{
+          width: size,
+          height: size,
+          borderColor: tile.borderColor,
+          background: tile.background,
+          boxShadow: tile.boxShadow,
+          color: tile.color,
+        }}
+      >
+        {item ? <ItemIcon itemId={item.id} slot={real!} /> : real ? <ItemSlotIcon slot={real} /> : <span className="aow-eq-tile-abbr">{label.slice(0, 3).toUpperCase()}</span>}
+      </div>
+    </Tooltip>
   );
 
   const infoEl = (

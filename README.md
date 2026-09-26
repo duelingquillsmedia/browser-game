@@ -1332,6 +1332,51 @@ doesn't show up while merely previewing a distant encounter.
 ### Critical files
 `apps/client/src/screens/WorldMapScreen.tsx`.
 
+## Item Hover Tooltips (Inventory, Character, Shops)
+
+Items previously only surfaced their name/stats via a plain browser `title`
+attribute (Inventory bag cells, Character screen equipment tiles) or not at
+all (Town Hub shop rows, which showed just a name and flavor line — no
+stats). Hovering any item now shows a styled popup with its icon, name,
+slot, stats (damage range/ability, or evasion bonus), full description,
+a "vs. equipped" comparison when relevant, and its value — styled to match
+the end-of-battle result popup (`CombatResultOverlay`'s `cbt-result-panel`:
+dark panel, subtle border, heavy drop shadow).
+
+A new generic `Tooltip` component (`components/Tooltip.tsx`) wraps any
+hoverable element and portals the popup to `document.body` via
+`createPortal`, so it's never clipped by a panel's `overflow` and always
+renders above everything else. It positions itself above the hovered
+element by default (flipping below if there's no room) and clamps to the
+viewport; the wrapper itself uses `display: contents` so it never disturbs
+the grid/flex layout of what it wraps (the Inventory bag grid, in
+particular, depends on this). The tooltip panel itself is
+`pointer-events: none`, so moving the mouse onto it can't flicker the
+hover state of the element underneath.
+
+`ItemTooltipContent` (`components/ItemTooltipContent.tsx`) renders the
+actual item info, reusing the same `.aow-item-name`/`.aow-item-stats`/
+`.aow-item-flavor`/`.aow-item-compare`/`.aow-item-value` classes the
+Inventory's existing item-detail panel already used, so the tooltip and
+that panel stay visually consistent. `formatItemStats`/`compareToEquipped`
+(previously duplicated verbatim in both `InventoryScreen.tsx` and
+`CharacterScreen.tsx`) and a new `slotLabel` helper (fixing a latent
+"MeleeWeapon"-with-no-space display bug along the way) moved into a shared
+`game/itemDisplay.ts` module both screens — and the new tooltip — import
+from.
+
+Wired in everywhere the game shows an item: Inventory's bag cells, the
+Character screen's equipment slots (including a plain-text hint for an
+empty or not-yet-real slot), and every Town Hub shop row (General Store
+potions, Blacksmith gear for sale, and your own gear up for sale, the last
+showing its discounted sell price instead of full value).
+
+### Critical files
+`apps/client/src/components/Tooltip.tsx` (+ `.css`), `ItemTooltipContent.tsx`;
+`apps/client/src/game/itemDisplay.ts`;
+`apps/client/src/screens/InventoryScreen.tsx`, `CharacterScreen.tsx`;
+`apps/client/src/components/TownHubPanel.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
