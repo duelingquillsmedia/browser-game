@@ -45,8 +45,8 @@ describe("createCharacter", () => {
     expect(character.maxHp).toBe(240);
     expect(character.hp).toBe(character.maxHp);
 
-    // Starting gear: Hunter's Shortbow (no evasion bonus) + Leather Armor (+3)
-    expect(character.gearEvasionBonus).toBe(3);
+    // Starting gear: Hunter's Shortbow (no armor rating) + Leather Armor (+60)
+    expect(character.armorRating).toBe(60);
 
     expect(character.proficiencyBonus).toBe(2);
     // At level 1, only the generated Basic Attack (Rogue's own leveled abilities start at lvl 2) plus Defend/Flee are known.
@@ -163,7 +163,7 @@ describe("createCharacter", () => {
           baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
         });
         expect(character.maxHp).toBeGreaterThan(0);
-        expect(character.gearEvasionBonus).toBeGreaterThan(0);
+        expect(character.armorRating).toBeGreaterThan(0);
         expect(character.actions.length).toBeGreaterThan(0);
       }
     }
@@ -181,22 +181,22 @@ describe("equipItem / unequipItem", () => {
     });
   }
 
-  it("equips an owned accessory and applies its evasion bonus", () => {
+  it("equips an owned accessory and applies its armor rating", () => {
     const before = warrior();
     const after = equipItem(before, "luckyCharm");
 
     expect(after.equipment.accessory).toBe("luckyCharm");
-    expect(after.gearEvasionBonus).toBe(before.gearEvasionBonus + 3);
+    expect(after.armorRating).toBe(before.armorRating + 60);
     // Equipping doesn't consume the item from inventory.
     expect(ownsItem(after, "luckyCharm")).toBe(true);
   });
 
-  it("unequips a slot and removes its evasion bonus", () => {
+  it("unequips a slot and removes its armor rating", () => {
     const equipped = equipItem(warrior(), "luckyCharm");
     const unequipped = unequipItem(equipped, "accessory");
 
     expect(unequipped.equipment.accessory).toBeUndefined();
-    expect(unequipped.gearEvasionBonus).toBe(equipped.gearEvasionBonus - 3);
+    expect(unequipped.armorRating).toBe(equipped.armorRating - 60);
   });
 
   it("names and scales each Basic Attack variant from the class's own definition, and reverts when unequipped", () => {
@@ -344,7 +344,7 @@ describe("withStartingGearIfMissing", () => {
     expect(migrated.equipment.meleeWeapon).toBe("ironLongsword");
     expect(migrated.equipment.armor).toBe("chainShirt");
     expect(migrated.inventory.length).toBeGreaterThan(0);
-    expect(migrated.gearEvasionBonus).toBe(legacy.gearEvasionBonus);
+    expect(migrated.armorRating).toBe(legacy.armorRating);
   });
 
   it("is a no-op for a character that already has inventory and equipment", () => {

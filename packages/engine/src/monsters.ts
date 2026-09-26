@@ -10,8 +10,8 @@ export interface MonsterTemplate {
   abilityScores: AbilityScores;
   /** A curated stat-block number, sized to the same Vitality-scaled economy as player characters (see stats.ts). */
   maxHp: number;
-  /** Flat evasion-percentage bonus from natural armor/hide; monsters carry no gear. */
-  evasionBonus: number;
+  /** Armor rating from natural hide/scales; monsters carry no gear. 5% of it becomes Evasion (see stats.ts's ARMOR_EVASION_RATIO). */
+  armorRating: number;
   /** XP awarded to the party on defeating one of these, hand-tuned against its relative HP/threat -- same curated-stat-block precedent as maxHp. */
   xpValue: number;
   /** Gold awarded to the party on defeating one of these -- 0 for a wild animal that carries no coin (see direWolf). */
@@ -32,7 +32,7 @@ export interface Monster {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  evasionBonus: number;
+  armorRating: number;
   actions: CombatActionDef[];
   actionUses: Record<string, number>;
   damageResistances: DamageType[];
@@ -55,7 +55,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     description: "A wiry raider out of the goblin port towns of Claw Bay, preying on travelers along the Tameless Shore.",
     abilityScores: { str: 8, dex: 14, vit: 10, int: 10, wis: 8 },
     maxHp: 75,
-    evasionBonus: 0,
+    armorRating: 0,
     xpValue: 45,
     goldValue: 12,
     actions: [
@@ -79,7 +79,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     description: "A pack hunter grown huge on the game trails of Tiuv Forest.",
     abilityScores: { str: 15, dex: 15, vit: 13, int: 3, wis: 12 },
     maxHp: 120,
-    evasionBonus: 0,
+    armorRating: 0,
     xpValue: 70,
     goldValue: 0,
     actions: [
@@ -111,7 +111,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     description: "A blooded warrior out of Collmhor Wood, where orcs and bugbears have fought over the old ruins for generations.",
     abilityScores: { str: 16, dex: 12, vit: 14, int: 9, wis: 9 },
     maxHp: 160,
-    evasionBonus: 0,
+    armorRating: 0,
     xpValue: 90,
     goldValue: 25,
     actions: [
@@ -135,7 +135,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     description: "A goblin skirmisher lobbing stones from behind its kin's shields, out of Claw Bay.",
     abilityScores: { str: 7, dex: 15, vit: 8, int: 9, wis: 9 },
     maxHp: 55,
-    evasionBonus: 5,
+    armorRating: 100,
     xpValue: 35,
     goldValue: 8,
     rank: "back",
@@ -158,7 +158,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     description: "A bone-adorned spellcaster chanting curses from behind Collmhor Wood's warbands.",
     abilityScores: { str: 9, dex: 10, vit: 11, int: 10, wis: 15 },
     maxHp: 110,
-    evasionBonus: 0,
+    armorRating: 0,
     xpValue: 65,
     goldValue: 18,
     rank: "back",
@@ -197,7 +197,7 @@ export function createMonster(templateId: string, instanceId: string, rankOverri
     abilityScores: template.abilityScores,
     maxHp: template.maxHp,
     hp: template.maxHp,
-    evasionBonus: template.evasionBonus,
+    armorRating: template.armorRating,
     actions: template.actions,
     actionUses: Object.fromEntries(
       template.actions.filter((a) => a.usesPerCombat).map((a) => [a.id, a.usesPerCombat!])

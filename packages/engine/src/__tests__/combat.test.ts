@@ -27,7 +27,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     abilityScores: { str: 16, dex: 14, vit: 14, int: 10, wis: 10 },
     maxHp: 20,
     hp: 20,
-    evasionBonus: 0,
+    armorRating: 0,
     proficiencyBonus: 2,
     actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
     actionUses: {},
@@ -62,7 +62,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     maxHp: 7,
     hp: 7,
-    evasionBonus: 0,
+    armorRating: 0,
     actions: [
       {
         id: "claw",
@@ -130,9 +130,9 @@ describe("combat engine", () => {
     expect(heroAfterHit.hp).toBe(10);
 
     // Hero defends, gaining +25 evasion until their next turn. Foe's hit chance against
-    // hero is normally 90 - 21 (dex-based evasion) = 69%, so a roll of 50 would connect --
-    // but Defend drops it to 90 - 46 = 44%, so that same roll of 50 now misses.
-    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forPercentRoll(50)]));
+    // hero is normally 90 - 7 (dex-based evasion) = 83%, so a roll of 70 would connect --
+    // but Defend drops it to 90 - 32 = 58%, so that same roll of 70 now misses.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forPercentRoll(70)]));
     const heroAfterDefend = state.combatants.find((c) => c.id === "hero")!;
     expect(heroAfterDefend.hp).toBe(10); // unchanged: the follow-up attack missed
     expect(state.round).toBe(2);
@@ -776,13 +776,14 @@ describe("multi-enemy ranks", () => {
 describe("previewAttack", () => {
   it("computes hit/crit chance and a damage range matching resolveAttack's own formulas", () => {
     // Hero STR 16 (mod +3) x BASIC_ATTACK power 1 -> ability-scaled range round(16*0.85)-round(16*1.15) = 14-18.
-    // Foe DEX 10 -> evasion 15, so hit chance is 90-15=75; hero DEX 14 -> crit chance 5+14*1.2=21.8.
+    // Foe DEX 10 -> evasion 5, so hit chance is 90-5=85; BASIC_ATTACK is a physical (str) action,
+    // so crit chance keys off hero's own DEX 14 -> 5+14*0.1=6.4.
     const hero = makeHero();
     const foe = makeFoe({ maxHp: 7, hp: 7 });
     const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
     const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
-    expect(preview.hitChance).toBe(75);
-    expect(preview.critChance).toBeCloseTo(21.8);
+    expect(preview.hitChance).toBe(85);
+    expect(preview.critChance).toBeCloseTo(6.4);
     expect(preview.minDamage).toBe(14);
     expect(preview.maxDamage).toBe(18);
     expect(preview.hitsCount).toBe(1);
@@ -860,12 +861,12 @@ describe("Class Style Sheet mechanics", () => {
     const foe = { ...makeFoe(), statusEffects: [{ defId: "readied" as const, turnsRemaining: 99, stacksRemaining: 2 }] };
     const state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // Foe evasion (dex 10 -> 15%) alone gives a 75% hit chance; Readied's flat -50 knocks it to 25%.
-    // A roll of 30 would hit at 75% but misses at 25%.
+    // Foe evasion (dex 10 -> 5%) alone gives an 85% hit chance; Readied's flat -50 knocks it to 35%.
+    // A roll of 50 would hit at 85% but misses at 35%.
     const after = submitPlayerAction(
       state,
       { actorId: hero.id, actionId: "strike", targetId: "foe" },
-      sequenceRng([forPercentRoll(30)])
+      sequenceRng([forPercentRoll(50)])
     );
     const foeAfter = after.combatants.find((c) => c.id === "foe")!;
     expect(foeAfter.hp).toBe(foe.hp); // missed
@@ -878,11 +879,11 @@ describe("Class Style Sheet mechanics", () => {
     const foe = { ...makeFoe(), statusEffects: [{ defId: "fortified" as const, turnsRemaining: 3, amount: 30 }] };
     const state = startCombat([hero], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // Foe evasion 15% + Fortified's +30 = 45% -> hit chance 55%. A roll of 50 would hit at 75% (no buff) but misses at 55%.
+    // Foe evasion 5% + Fortified's +30 = 35% -> hit chance 55%. A roll of 60 would hit at 85% (no buff) but misses at 55%.
     const after = submitPlayerAction(
       state,
       { actorId: hero.id, actionId: "strike", targetId: "foe" },
-      sequenceRng([forPercentRoll(50)])
+      sequenceRng([forPercentRoll(60)])
     );
     expect(after.combatants.find((c) => c.id === "foe")!.hp).toBe(foe.hp); // missed
   });

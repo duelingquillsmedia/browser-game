@@ -1,4 +1,4 @@
-import type { AbilityKey } from "./abilities.js";
+import { isMagicalAbility, type AbilityKey } from "./abilities.js";
 import type { CombatActionDef } from "./actions.js";
 import type { ItemSlot } from "./items.js";
 
@@ -56,8 +56,8 @@ export interface CharacterClass {
   actions: CombatActionDef[];
   /** This class's own Class Style Sheet passive(s), for the Character screen's Traits panel. Empty for Rogue, whose passive the sheet itself still just calls "Placeholder". */
   passives: ClassPassive[];
-  /** Soldier's "Experience with a blade" passive (+5% parry chance) — modeled as flat evasion, since this engine has no separate parry/riposte roll to hang it on (see README). */
-  passiveEvasionBonus?: number;
+  /** Soldier's "Experience with a blade" passive (+5% parry chance) — modeled as flat Armor Rating, since this engine has no separate parry/riposte roll to hang it on (see README). */
+  passiveArmorRating?: number;
   /** Ranger's Sharpshooter passive: flat hit/crit bonus while their ranged weapon is the one swinging. */
   rangedAttackHitBonus?: number;
   rangedAttackCritBonus?: number;
@@ -82,7 +82,7 @@ export interface CharacterClass {
  *
  * A few mechanics don't have a real equivalent in this engine and are
  * deliberately reinterpreted rather than fabricated wholesale — see
- * `passiveEvasionBonus`/`rangedAttackHitBonus`'s own comments above, and
+ * `passiveArmorRating`/`rangedAttackHitBonus`'s own comments above, and
  * README's "Class Style Sheet reforge" section for the full list
  * (parry-as-evasion, armor-as-evasion, the flat+percent heal/damage
  * formula, and Rogue's still-"Placeholder" passive, left unimplemented
@@ -199,8 +199,8 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
     ],
     passives: [{ name: "Experience with a Blade", description: "Parry chance increased by 5%." }],
-    // "Experience with a blade": +5% parry chance -- see passiveEvasionBonus's own doc comment.
-    passiveEvasionBonus: 5,
+    // "Experience with a blade": +5% parry chance -- see passiveArmorRating's own doc comment.
+    passiveArmorRating: 100,
     startingEquipmentOptions: [
       { id: "sword-and-mail", label: "Shortsword & Chain Shirt", equipment: { meleeWeapon: "shortsword", armor: "chainShirt" } },
       { id: "sword-and-leather", label: "Shortsword & Studded Leather", equipment: { meleeWeapon: "shortsword", armor: "studdedLeather" } },
@@ -473,4 +473,21 @@ export function getClass(id: string): CharacterClass {
   const cls = CLASSES[id];
   if (!cls) throw new Error(`Unknown class: "${id}"`);
   return cls;
+}
+
+/**
+ * The ability governing this class's magical attacks (its basic ranged
+ * attack, or any damaging spell), or undefined if it has none -- Cleric and
+ * Druid (Wisdom) and Wizard (Intellect) today. Used to decide whether the
+ * Character screen's Magical Offense section applies, and which score
+ * powers it (Character Stats Style Sheet's Magic Power/Magical Critical
+ * Chance/Magical Critical Damage).
+ */
+export function magicalAttackAbility(cls: CharacterClass): AbilityKey | undefined {
+  const candidates: AbilityKey[] = [
+    cls.basicAttackMelee.ability,
+    cls.basicAttackRanged.ability,
+    ...cls.actions.filter((a) => a.kind === "attack").map((a) => a.ability),
+  ];
+  return candidates.find(isMagicalAbility);
 }

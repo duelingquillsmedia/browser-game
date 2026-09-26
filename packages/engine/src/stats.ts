@@ -89,14 +89,28 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-/** Percent chance an incoming hit is dodged outright, from the defender's own Dexterity (per "DEX: Evasion and critical strikes"). */
+/**
+ * Percent chance an incoming hit is dodged outright, from the defender's own
+ * Dexterity (per the Character Stats Style Sheet's "Evasion: 50% of
+ * Dexterity + 5% of armor rating" -- the armor half is added on top of this
+ * by the caller via `ARMOR_EVASION_RATIO`, since armor rating lives on the
+ * combatant/character, not passed in here).
+ */
 export function computeEvasion(dexScore: number): number {
-  return clampPercent(dexScore * 1.5);
+  return clampPercent(dexScore * 0.5);
 }
 
-/** Percent chance an attacker's hit lands as a critical, from their own Dexterity. */
-export function computeCritChance(dexScore: number): number {
-  return clampPercent(5 + dexScore * 1.2);
+/** How much of a point of gear/passive Armor Rating becomes a point of Evasion percentage (Character Stats Style Sheet: "5% of armor rating"). */
+export const ARMOR_EVASION_RATIO = 0.05;
+
+/**
+ * Percent chance an attack lands as a critical, from the relevant ability
+ * score: the attacker's own Dexterity for a physical attack, or their
+ * spellcasting ability for a magical one (Character Stats Style Sheet:
+ * "5% base + 10% of Dexterity" / "...of spellcasting modifier").
+ */
+export function computeCritChance(score: number): number {
+  return clampPercent(5 + score * 0.1);
 }
 
 /** Baseline chance an attack connects before the defender's evasion is subtracted. */
@@ -106,8 +120,18 @@ export const BASE_HIT_CHANCE = 90;
 export const MIN_HIT_CHANCE = 10;
 export const MAX_HIT_CHANCE = 99;
 
-/** Damage/healing multiplier on a critical hit (per the Combat handoff: "×1.5 on a crit"). */
-export const CRIT_MULTIPLIER = 1.5;
+/**
+ * Damage multiplier on a critical hit: 150% base + 20% of the relevant
+ * ability score, per the Character Stats Style Sheet -- Strength for a
+ * physical attack, the attacker's spellcasting ability for a magical one
+ * (replaces the old flat ×1.5 every character used to share).
+ */
+export const CRIT_DAMAGE_BASE_PERCENT = 150;
+export const CRIT_DAMAGE_PERCENT_PER_POINT = 0.2;
+
+export function computeCritDamageMultiplier(score: number): number {
+  return (CRIT_DAMAGE_BASE_PERCENT + score * CRIT_DAMAGE_PERCENT_PER_POINT) / 100;
+}
 
 /** Random variance band applied to every damage/heal roll, replacing dice: 85%-115% of the ability-scaled base. */
 export function randomVariance(rng: () => number): number {

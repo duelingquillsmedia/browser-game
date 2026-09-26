@@ -31,7 +31,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     maxHp: 20,
     hp: 20,
-    evasionBonus: 0,
+    armorRating: 0,
     actions: [
       { id: "claw", name: "Claw", description: "", kind: "attack", target: "enemy", ability: "str", power: 1, damageType: "slashing" },
     ],

@@ -23,13 +23,13 @@ export function formatItemStats(item: ItemTemplate): string | null {
     const damageType = item.damageType ?? "slashing";
     parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
   }
-  if (item.evasionBonus) parts.push(`+${item.evasionBonus} Evasion`);
+  if (item.armorRating) parts.push(`+${item.armorRating} Armor`);
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 export type ItemComparison =
   | { kind: "weapon"; from: string | null; to: string | null }
-  | { kind: "evasion"; delta: number };
+  | { kind: "armor"; delta: number };
 
 /** What changes if `candidate` replaced whatever's currently equipped in its slot, if anything's there. Consumables have no slot, so nothing to compare. */
 export function compareToEquipped(character: Character, candidate: ItemTemplate): ItemComparison | null {
@@ -40,6 +40,6 @@ export function compareToEquipped(character: Character, candidate: ItemTemplate)
   if (candidate.slot === "meleeWeapon" || candidate.slot === "rangedWeapon") {
     return { kind: "weapon", from: formatItemStats(equipped), to: formatItemStats(candidate) };
   }
-  const delta = (candidate.evasionBonus ?? 0) - (equipped.evasionBonus ?? 0);
-  return { kind: "evasion", delta };
+  const delta = (candidate.armorRating ?? 0) - (equipped.armorRating ?? 0);
+  return { kind: "armor", delta };
 }

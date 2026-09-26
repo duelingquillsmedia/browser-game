@@ -12,6 +12,13 @@ export type AbilityKey = (typeof ABILITY_KEYS)[number];
 
 export type AbilityScores = Record<AbilityKey, number>;
 
+/** Abilities that govern magical offense (spells) -- the rest (str, dex) govern physical offense. See stats.ts's physical/magical Attack Power, Critical Chance, and Critical Damage split (Character Stats Style Sheet). */
+export const MAGICAL_ABILITIES: readonly AbilityKey[] = ["int", "wis"];
+
+export function isMagicalAbility(key: AbilityKey): boolean {
+  return (MAGICAL_ABILITIES as readonly AbilityKey[]).includes(key);
+}
+
 export const ABILITY_NAMES: Record<AbilityKey, string> = {
   str: "Strength",
   dex: "Dexterity",

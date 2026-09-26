@@ -1413,6 +1413,91 @@ highlight + `cursor: help` on hover as a "there's more here" affordance.
 `apps/client/src/components/StatBreakdownTooltipContent.tsx`;
 `apps/client/src/screens/CharacterScreen.tsx` (+ `.css`).
 
+## Character Stats Style Sheet: Physical/Magical Offense Split
+
+The user added a **Character Stats Style Sheet** to the Google Drive
+(`Statistics Information/Character Stats Style Sheet`), splitting the
+Character screen's Offense into distinct Physical and Magical halves and
+giving each its own formulas. This pass wires those formulas into the
+actual game, not just the character sheet — confirmed with the user first,
+since it changes real combat math for every fight, and that rescaling
+armor's numbers (see below) was the right way to do it.
+
+**New/changed formulas (all in `packages/engine/src/stats.ts`):**
+- **Evasion**: `(Dexterity × 50%) + (Armor Rating × 5%)` — was `Dexterity × 1.5`
+  with armor added at full value. `ARMOR_EVASION_RATIO = 0.05` is the new
+  armor-to-evasion conversion.
+- **Critical Chance**: `5% base + (ability × 10%)` — was `5 + dex × 1.2`.
+  Physical keys off Dexterity as before; a new **Magical Critical Chance**
+  keys off the caster's own spellcasting ability instead.
+- **Critical Damage**: `150% base + (ability × 20%)` — replaces the flat
+  `CRIT_MULTIPLIER = 1.5` every character used to share. Physical scales
+  with Strength; a new **Magical Critical Damage** scales with the caster's
+  spellcasting ability. `computeCritDamageMultiplier` replaces the old
+  constant.
+- **Attack Power** (`score × 2`) is unchanged in formula, but the Character
+  screen's headline number is now read off the character's own *resolved*
+  Basic Attack action (`character.actions.find(a => a.id === "strike-melee"
+  | "strike-ranged")`) instead of re-deriving it from the equipped weapon's
+  `ability` field — this automatically gets Soldier's "whichever of STR/DEX
+  is higher" rule right without duplicating that logic, since the resolved
+  action already has it baked in (see `generateBasicAttacks`'s
+  `variantAbility`). A new **Magic Power** (same formula, INT for Wizard,
+  WIS for Cleric/Druid) covers magical offense.
+
+**Which classes get a Magical Offense section**: a new `magicalAttackAbility`
+export (`classes.ts`) scans a class's Basic Attack variants and damaging
+actions for a magical (INT/WIS) one; only Cleric, Druid, and Wizard have
+one today (their ranged Basic Attack — Radiance/Nature's Blast/Arcane
+Bolt — plus one leveled spell). Warrior/Soldier/Ranger/Rogue simply have no
+Magical subsection at all, rather than showing one full of zeros.
+
+**Real combat is now aware of physical vs. magical**: `combat.ts` picks the
+crit-chance/crit-damage ability per action — a magical action (INT/WIS
+`ability`) uses the caster's own matching score; every physical action uses
+a fixed stat (Dexterity for chance, Strength for damage) regardless of
+which ability its own base damage scales off of. This is a live gameplay
+change: a Cleric's Radiant Beam now crits based on Wisdom, not Dexterity.
+
+**Armor Rating rename + rescale**: since 5% of a small `evasionBonus` value
+(e.g. Chain Shirt's old `+9`) would round to almost nothing, every such
+field was renamed to `armorRating` *and* multiplied ~20× (Chain Shirt is
+now `180`; Soldier's parry passive `5 → 100`) so gear still feels roughly
+as impactful as before under the new 5% conversion. Renamed throughout:
+`ItemTemplate.evasionBonus`, `CharacterClass.passiveEvasionBonus`,
+`MonsterTemplate`/`Monster.evasionBonus`, `Character.gearEvasionBonus`, and
+`Combatant.evasionBonus` all became `armorRating`/`passiveArmorRating`. No
+migration was needed for existing saved characters — `armorRating` is
+always recomputed from scratch on load by `withStartingGearIfMissing`
+(→ `applyEquipmentEffects`), never read from the old stored field name.
+Item tooltips and the Inventory/Blacksmith "vs. equipped" comparison line
+now read "+N Armor" instead of "+N Evasion".
+
+**Character screen layout**: the COMBAT panel's OFFENSE group now has
+"PHYSICAL" and "MAGICAL" subheadings (the latter omitted for non-casters),
+each with its own hover tooltip breakdown (reusing the existing
+`StatBreakdownTooltipContent`/`Tooltip` from the prior pass) showing the
+formula, the governing ability's score, and a hint on what to raise.
+DEFENSE's "Armor Bonus" row was renamed "Armor" to match the sheet.
+
+Verified with all 147 engine tests (several rewritten for the new
+evasion/crit numbers, since the old ones encoded the previous formulas'
+exact math), a clean build, and a live Playwright pass: a Warrior's sheet
+shows only a Physical subsection while a Wizard's shows both, tooltip
+breakdowns compute correctly (e.g. Wizard's Magic Power 22 = Intellect 11
+× 2), item tooltips show the rescaled Armor values, and a real fight
+(Warrior vs. goblins) resolves hits/misses/crits/damage without error under
+the new math.
+
+### Critical files
+`packages/engine/src/stats.ts`, `abilities.ts`, `classes.ts`, `items.ts`,
+`monsters.ts`, `character.ts`, `combat.ts`;
+`packages/engine/src/__tests__/character.test.ts`, `combat.test.ts`,
+`resources.test.ts`;
+`apps/client/src/game/characterDisplay.ts`, `itemDisplay.ts`;
+`apps/client/src/screens/CharacterScreen.tsx` (+ `.css`);
+`apps/client/src/components/ItemTooltipContent.tsx`, `InventoryScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

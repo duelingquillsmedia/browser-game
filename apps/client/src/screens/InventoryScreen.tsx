@@ -129,10 +129,10 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                 {formatItemStats(selectedItem) && <p className="aow-item-stats">{formatItemStats(selectedItem)}</p>}
                 <p className="aow-item-flavor">{selectedItem.description}</p>
 
-                {comparison && comparison.kind === "evasion" && comparison.delta !== 0 && (
+                {comparison && comparison.kind === "armor" && comparison.delta !== 0 && (
                   <div className={`aow-item-compare ${comparison.delta > 0 ? "aow-resist-good" : "aow-resist-bad"}`}>
                     vs. equipped: {comparison.delta > 0 ? "+" : ""}
-                    {comparison.delta} Evasion
+                    {comparison.delta} Armor
                   </div>
                 )}
                 {comparison && comparison.kind === "weapon" && (

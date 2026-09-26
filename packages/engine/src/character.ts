@@ -31,8 +31,8 @@ export interface Character {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  /** Flat evasion-percentage bonus from equipped armor/accessories and any class passive (e.g. a Soldier's Parry) (see stats.ts's computeEvasion for the Dexterity-based base). */
-  gearEvasionBonus: number;
+  /** Armor rating from equipped armor/accessories and any class passive (e.g. a Soldier's Parry) -- 5% of it becomes Evasion, on top of computeEvasion's Dexterity-based base (see stats.ts's ARMOR_EVASION_RATIO). */
+  armorRating: number;
   /** The equipped melee/ranged weapon's own min-max damage range for the Basic Attack (see items.ts); undefined when that slot is empty. An empty melee slot falls back to an unarmed, ability-scaled strike; an empty ranged slot simply offers no ranged Basic Attack variant. */
   meleeWeaponDamageMin?: number;
   meleeWeaponDamageMax?: number;
@@ -182,7 +182,7 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
   const meleeWeapon = character.equipment.meleeWeapon ? getItem(character.equipment.meleeWeapon) : undefined;
   const rangedWeapon = character.equipment.rangedWeapon ? getItem(character.equipment.rangedWeapon) : undefined;
 
-  const gearEvasionBonus = (armor?.evasionBonus ?? 0) + (accessory?.evasionBonus ?? 0) + (cls.passiveEvasionBonus ?? 0);
+  const armorRating = (armor?.armorRating ?? 0) + (accessory?.armorRating ?? 0) + (cls.passiveArmorRating ?? 0);
 
   const basicAttacks = generateBasicAttacks(character, cls);
   // Enforces each ability's Class Style Sheet unlock level; a character below it simply
@@ -197,7 +197,7 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
 
   return {
     ...character,
-    gearEvasionBonus,
+    armorRating,
     actions,
     meleeWeaponDamageMin: meleeWeapon?.damageMin,
     meleeWeaponDamageMax: meleeWeapon?.damageMax,
@@ -629,7 +629,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     abilityScores,
     maxHp,
     hp: maxHp,
-    gearEvasionBonus: 0,
+    armorRating: 0,
     proficiencyBonus: 2 + Math.floor((level - 1) / 4),
     actions: [],
     actionUses: {},

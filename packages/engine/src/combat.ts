@@ -1,4 +1,4 @@
-import type { AbilityKey, AbilityScores } from "./abilities.js";
+import { isMagicalAbility, type AbilityKey, type AbilityScores } from "./abilities.js";
 import type { RacePassiveId } from "./races.js";
 import { abilityModifier, rollD20, rollD20WithEdge, type RNG } from "./dice.js";
 import { DEFEND_ACTION, type CombatActionDef } from "./actions.js";
@@ -8,13 +8,14 @@ import type { Monster } from "./monsters.js";
 import { applyDamageModifiers, type DamageType } from "./damage.js";
 import { getClassResource } from "./resources.js";
 import {
+  ARMOR_EVASION_RATIO,
   BASE_HIT_CHANCE,
-  CRIT_MULTIPLIER,
   MAX_HIT_CHANCE,
   MIN_HIT_CHANCE,
   computeAttackPower,
   computeAttackPowerBonusDamage,
   computeCritChance,
+  computeCritDamageMultiplier,
   computeEvasion,
   computeResourceMax,
   computeResourceStart,
@@ -60,8 +61,8 @@ export interface Combatant {
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
-  /** Flat evasion-percentage bonus from gear (party) or natural armor (monsters), plus any class passive (e.g. a Soldier's Parry), on top of the Dexterity-based base (see stats.ts). */
-  evasionBonus: number;
+  /** Armor rating from gear (party) or natural hide (monsters), plus any class passive (e.g. a Soldier's Parry) -- 5% of it becomes Evasion, on top of the Dexterity-based base (see stats.ts's ARMOR_EVASION_RATIO). */
+  armorRating: number;
   /** The equipped melee/ranged weapon's own min-max damage range, rolled for whichever Basic Attack variant (or `weaponDamageSource` ability) uses it; monsters and an unarmed party member have neither, falling back to an ability-scaled default. */
   meleeWeaponDamageMin?: number;
   meleeWeaponDamageMax?: number;
@@ -115,7 +116,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,
     hp: source.hp,
-    evasionBonus: "gearEvasionBonus" in source ? source.gearEvasionBonus : source.evasionBonus,
+    armorRating: source.armorRating,
     meleeWeaponDamageMin: "meleeWeaponDamageMin" in source ? source.meleeWeaponDamageMin : undefined,
     meleeWeaponDamageMax: "meleeWeaponDamageMax" in source ? source.meleeWeaponDamageMax : undefined,
     rangedWeaponDamageMin: "rangedWeaponDamageMin" in source ? source.rangedWeaponDamageMin : undefined,
@@ -239,9 +240,25 @@ function weaponDamageRange(actor: Combatant, source: "melee" | "ranged" | undefi
   return { min: actor.meleeWeaponDamageMin, max: actor.meleeWeaponDamageMax };
 }
 
-/** Total flat evasion: gear/passives, Defend's temporary bonus, and any active "buff"-kind status (Enrage, Arcane Barrier). */
+/** Total flat evasion beyond the Dexterity-based base: gear/passive Armor Rating (diluted at ARMOR_EVASION_RATIO), Defend's temporary bonus, and any active "buff"-kind status (Enrage, Arcane Barrier). */
 function effectiveEvasionBonus(c: Combatant): number {
-  return c.evasionBonus + c.tempEvasionBonus + activeBuffAmount(c);
+  return c.armorRating * ARMOR_EVASION_RATIO + c.tempEvasionBonus + activeBuffAmount(c);
+}
+
+/**
+ * Which ability score governs crit chance/damage for `action`: a magical
+ * attack (int/wis) uses the actor's own matching ability (their spellcasting
+ * modifier); every physical attack (str/dex) uses a fixed stat per the
+ * Character Stats Style Sheet -- Dexterity for Critical Chance, Strength for
+ * Critical Damage -- regardless of which ability the attack itself scales
+ * its base damage off of.
+ */
+function critChanceAbilityScore(actor: Combatant, action: CombatActionDef): number {
+  return isMagicalAbility(action.ability) ? actor.abilityScores[action.ability] : actor.abilityScores.dex;
+}
+
+function critDamageAbilityScore(actor: Combatant, action: CombatActionDef): number {
+  return isMagicalAbility(action.ability) ? actor.abilityScores[action.ability] : actor.abilityScores.str;
 }
 
 /** Ranger's Sharpshooter-style flat hit/crit bonus while swinging their ranged weapon (see classes.ts's `rangedAttackHitBonus`/`rangedAttackCritBonus`). This engine only tracks melee-vs-ranged, not weapon sub-types, so it applies to any ranged Basic Attack or weapon-scaled ability. */
@@ -429,7 +446,7 @@ export function previewAttack(
     : Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion - guardReduction + rangedBonus.hit));
   const critChance = target.unconscious
     ? 100
-    : Math.max(0, Math.min(100, computeCritChance(actor.abilityScores.dex) + rangedBonus.crit));
+    : Math.max(0, Math.min(100, computeCritChance(critChanceAbilityScore(actor, action)) + rangedBonus.crit));
 
   const { min: rawMin, max: rawMax } = previewBaseDamageRange(actor, action);
 
@@ -439,6 +456,7 @@ export function previewAttack(
   const minDamage = applyDamageModifiers(rawMin, damageType, target);
   const maxDamage = applyDamageModifiers(rawMax, damageType, target);
   const hitsCount = resolveTargetsForShape(state, target, action).length;
+  const critDamageMultiplier = computeCritDamageMultiplier(critDamageAbilityScore(actor, action));
 
   return {
     hitChance,
@@ -447,7 +465,7 @@ export function previewAttack(
     maxDamage,
     isLethal: minDamage >= target.hp,
     canKill: maxDamage >= target.hp,
-    killsOnCrit: maxDamage < target.hp && Math.round(maxDamage * CRIT_MULTIPLIER) >= target.hp,
+    killsOnCrit: maxDamage < target.hp && Math.round(maxDamage * critDamageMultiplier) >= target.hp,
     hitsCount,
     statusName: action.applyStatus ? STATUS_EFFECT_DEFS[action.applyStatus.defId].name : undefined,
     statusTurns: action.applyStatus?.turns,
@@ -601,12 +619,12 @@ function resolveAttack(
       });
       return { hit: false, crit: false };
     }
-    const critChance = Math.max(0, Math.min(100, computeCritChance(actor.abilityScores.dex) + rangedBonus.crit));
+    const critChance = Math.max(0, Math.min(100, computeCritChance(critChanceAbilityScore(actor, action)) + rangedBonus.crit));
     isCrit = rng() * 100 < critChance;
   }
 
   let damage = computeBaseDamage(actor, action, rng);
-  if (isCrit) damage = Math.round(damage * CRIT_MULTIPLIER);
+  if (isCrit) damage = Math.round(damage * computeCritDamageMultiplier(critDamageAbilityScore(actor, action)));
   const damageType = action.randomDamageTypes
     ? action.randomDamageTypes[Math.floor(rng() * action.randomDamageTypes.length)]
     : (action.damageType ?? "bludgeoning");

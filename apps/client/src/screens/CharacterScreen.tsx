@@ -15,7 +15,7 @@ import {
   type Character,
   type ItemSlot,
 } from "@eridan/engine";
-import { combatStatGroups, equipmentTileStyle, resistanceRows } from "../game/characterDisplay";
+import { combatStatGroups, equipmentTileStyle, resistanceRows, type CombatStatRow } from "../game/characterDisplay";
 import { ItemIcon } from "../components/ItemIcon";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
 import { ItemTooltipContent } from "../components/ItemTooltipContent";
@@ -61,6 +61,17 @@ const RIGHT_SLOTS: { id: string; label: string; real?: ItemSlot }[] = [
   { id: "ring2", label: "Ring" },
   { id: "trinket", label: "Trinket", real: "accessory" },
 ];
+
+function CombatStatRowView({ row }: { row: CombatStatRow }) {
+  return (
+    <Tooltip content={<StatBreakdownTooltipContent label={row.label} breakdown={row.breakdown} />}>
+      <div className="aow-stat-row aow-stat-row-hoverable">
+        <span>{row.label}</span>
+        <span>{row.value}</span>
+      </div>
+    </Tooltip>
+  );
+}
 
 function EquipmentSlot({
   label,
@@ -307,14 +318,16 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
               {groups.map((group) => (
                 <div key={group.title} className="aow-combat-group">
                   <div className="aow-combat-group-title">{group.title.toUpperCase()}</div>
-                  {group.rows.map((row) => (
-                    <Tooltip key={row.label} content={<StatBreakdownTooltipContent label={row.label} breakdown={row.breakdown} />}>
-                      <div className="aow-stat-row aow-stat-row-hoverable">
-                        <span>{row.label}</span>
-                        <span>{row.value}</span>
-                      </div>
-                    </Tooltip>
-                  ))}
+                  {group.subgroups
+                    ? group.subgroups.map((subgroup) => (
+                        <div key={subgroup.title} className="aow-combat-subgroup">
+                          <div className="aow-combat-subgroup-title">{subgroup.title.toUpperCase()}</div>
+                          {subgroup.rows.map((row) => (
+                            <CombatStatRowView key={row.label} row={row} />
+                          ))}
+                        </div>
+                      ))
+                    : group.rows!.map((row) => <CombatStatRowView key={row.label} row={row} />)}
                 </div>
               ))}
             </div>

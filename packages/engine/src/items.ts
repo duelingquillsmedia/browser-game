@@ -9,8 +9,8 @@ export interface ItemTemplate {
   description: string;
   /** Absent for a consumable (see `consumable` below) -- it occupies no equipment slot. */
   slot?: ItemSlot;
-  /** Flat evasion-percentage bonus while equipped (armor and accessory slots). */
-  evasionBonus?: number;
+  /** Armor rating contributed while equipped (armor and accessory slots) -- 5% of it becomes Evasion (see stats.ts's ARMOR_EVASION_RATIO). */
+  armorRating?: number;
   /**
    * The weapon's own intrinsic damage range for Strike (e.g. a Hunter's
    * Shortbow's 7-10), MMO-tooltip style -- rolled directly rather than
@@ -128,7 +128,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Leather Armor",
     description: "Boiled leather, light enough not to slow a rogue down.",
     slot: "armor",
-    evasionBonus: 3,
+    armorRating: 60,
     value: 10,
   },
   studdedLeather: {
@@ -136,7 +136,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Studded Leather",
     description: "Leather reinforced with iron studs at the joints.",
     slot: "armor",
-    evasionBonus: 6,
+    armorRating: 120,
     value: 20,
   },
   chainShirt: {
@@ -144,7 +144,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Chain Shirt",
     description: "A shirt of fine riveted mail, heavier but reliable.",
     slot: "armor",
-    evasionBonus: 9,
+    armorRating: 180,
     value: 35,
   },
   travelersRobe: {
@@ -152,7 +152,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Traveler's Robe",
     description: "Warded cloth that turns a glancing blow without hampering spellcraft.",
     slot: "armor",
-    evasionBonus: 3,
+    armorRating: 60,
     value: 8,
   },
   luckyCharm: {
@@ -160,7 +160,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Lucky Charm",
     description: "A worn coin on a leather cord — probably does nothing. Probably.",
     slot: "accessory",
-    evasionBonus: 3,
+    armorRating: 60,
     value: 8,
   },
   ringOfWarding: {
@@ -168,7 +168,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Ring of Warding",
     description: "A plain silver band, faintly warm to the touch.",
     slot: "accessory",
-    evasionBonus: 6,
+    armorRating: 120,
     value: 25,
   },
   minorHealingPotion: {

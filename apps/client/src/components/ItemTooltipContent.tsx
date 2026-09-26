@@ -36,10 +36,10 @@ export function ItemTooltipContent({ item, character, quantity, priceOverride }:
       {stats && <p className="aow-item-stats">{stats}</p>}
       <p className="aow-item-flavor">{item.description}</p>
 
-      {comparison && comparison.kind === "evasion" && comparison.delta !== 0 && (
+      {comparison && comparison.kind === "armor" && comparison.delta !== 0 && (
         <div className={`aow-item-compare ${comparison.delta > 0 ? "aow-resist-good" : "aow-resist-bad"}`}>
           vs. equipped: {comparison.delta > 0 ? "+" : ""}
-          {comparison.delta} Evasion
+          {comparison.delta} Armor
         </div>
       )}
       {comparison && comparison.kind === "weapon" && (
