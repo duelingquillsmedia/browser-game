@@ -5,16 +5,17 @@ export interface Background {
   name: string;
   description: string;
   /**
-   * The three abilities this background grants +1 to. Loosely descended
-   * from the SRD 5.2.1's Background ability-score-increase rule (the
-   * "increase all three by 1" option), kept as a small flavor-tied stat
-   * bonus after the Origin feat system it came bundled with was removed.
+   * The abilities this background grants +1 to (three, except Acolyte's two
+   * -- one of its three named Spirit before that attribute was removed).
+   * Loosely descended from the SRD 5.2.1's Background ability-score-increase
+   * rule (the "increase all three by 1" option), kept as a small flavor-tied
+   * stat bonus after the Origin feat system it came bundled with was removed.
    */
-  abilityScores: [AbilityKey, AbilityKey, AbilityKey];
+  abilityScores: AbilityKey[];
 }
 
 /**
- * A small set of backgrounds, each granting a flat +1 to three named
+ * A small set of backgrounds, each granting a flat +1 to a few named
  * abilities. Every class auto-picks a thematically fitting one at creation
  * (see game/appearance.ts's DEFAULT_BACKGROUND_BY_CLASS) purely for that
  * stat bonus; there's no player-facing choice or other mechanical effect.
@@ -26,7 +27,7 @@ export const BACKGROUNDS: Record<string, Background> = {
     description:
       "Raised in temple service, more comfortable with scripture and ritual than with a blade — though " +
       "Eridan's frontier has a way of putting both to use.",
-    abilityScores: ["int", "wis", "spi"],
+    abilityScores: ["int", "wis"],
   },
   criminal: {
     id: "criminal",

@@ -33,7 +33,6 @@ const ABILITY_HINTS: Record<AbilityKey, string> = {
   vit: "Maximum HP and Second Wind-style healing.",
   int: "Mage spellcasting and Intellect saves.",
   wis: "Cleric and Druid spellcasting; Wisdom saves.",
-  spi: "Spirit saves and resource regeneration.",
 };
 
 /** Slot layout matching the design handoff's paper-doll grouping. Only weapon/armor/accessory are real today. */

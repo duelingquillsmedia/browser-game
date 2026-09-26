@@ -49,7 +49,7 @@ export const RACES: Record<string, Race> = {
     description:
       "The most numerous folk of Eridan, found in every port and hill-town from Ashvale to Praldosta.",
     speed: 30,
-    abilityScoreBonuses: { str: 1, dex: 1, int: 1, wis: 1, vit: 1, spi: 1 },
+    abilityScoreBonuses: { str: 1, dex: 1, int: 1, wis: 1, vit: 1 },
     traits: [
       {
         name: "Many Roads",

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  ABILITY_KEYS,
   ABILITY_NAMES,
   BACKGROUNDS,
   CLASSES,
@@ -75,8 +76,6 @@ function sign(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }
 
-const ABILITY_KEY_LIST: AbilityKey[] = ["str", "dex", "vit", "int", "wis", "spi"];
-
 /**
  * This flow doesn't ask for a Background (the design has no such step), but
  * `createCharacter` still auto-assigns one per class (see
@@ -102,7 +101,7 @@ function classBonusWithBackground(cls: CharacterClass): Partial<Record<AbilityKe
 function totalAbilityScores(race: Race, cls: CharacterClass): Record<AbilityKey, number> {
   const classBonus = classBonusWithBackground(cls);
   const totals = {} as Record<AbilityKey, number>;
-  for (const key of ABILITY_KEY_LIST) {
+  for (const key of ABILITY_KEYS) {
     const afterRace = Math.min(20, 10 + (race.abilityScoreBonuses[key] ?? 0));
     totals[key] = Math.min(20, afterRace + (classBonus[key] ?? 0));
   }
@@ -167,7 +166,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
         raceId: race.id,
         classId: cls.id,
         backgroundId: DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier",
-        baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+        baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
         appearance: chosenLook,
       });
       await onComplete(character);
@@ -339,7 +338,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                   ATTRIBUTES · {race.name.toUpperCase()} {cls.name.toUpperCase()}
                 </div>
                 <div className="aow-card-body aow-creation-attr-table">
-                  {(["str", "dex", "vit", "int", "wis", "spi"] as AbilityKey[]).map((key) => (
+                  {ABILITY_KEYS.map((key) => (
                     <div key={key} className="aow-creation-attr-row">
                       <span className="aow-creation-attr-name">{ABILITY_NAMES[key]}</span>
                       <span className="aow-creation-attr-base">10</span>

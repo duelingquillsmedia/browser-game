@@ -195,7 +195,11 @@ client-server milestone (combat is still resolved in the browser for now).
   Druid) -- and its deterministic "10 + race bonus + class bonus" attribute
   model, in place of the old SRD point-buy/rolled-stats step. The six
   ability scores are renamed to match (Constitution → Vitality, Charisma →
-  Spirit; Strength/Dexterity/Intellect/Wisdom keep their names), and Fighter
+  Spirit; Strength/Dexterity/Intellect/Wisdom keep their names) -- **Spirit
+  was later removed entirely** (see the Attribute-Driven Stats section
+  below): it never fed any formula, save, or resource, just a flat stat
+  with nothing attached, so the game now runs on five abilities, not six.
+  Fighter
   and Wizard are renamed Warrior and Mage while keeping their existing
   actions and gear. Warrior's resource pool switched from the retired
   Prowess to Rage (gained on dealing *or taking* blows, matching the
@@ -400,7 +404,9 @@ Adopted directly from the design handoffs:
 - **Caster resource max** (Mage/Cleric/Druid) = `80 + SPI×8 + INT×4`.
   Warrior's Rage is a flat 100-point pool instead (per the handoff's own
   flat placeholder), starting empty and filling from combat actions rather
-  than regenerating each turn.
+  than regenerating each turn. (Superseded by the Class Style Sheet Reforge,
+  below: every class's resource pool now uses its own formula, none of them
+  reading SPI — see that section and Spirit's removal, further down.)
 - **Critical hits deal ×1.5 damage**, per the Combat handoff.
 
 Everything else numeric was invented for this pass, since the handoffs'
@@ -434,6 +440,8 @@ to class signature abilities); `CombatActionDef.dice` → `power`; classes'
 `hitDie` was removed outright (Health no longer derives from it).
 `proficiencyBonus` survives only for the Alert feat's initiative bonus and
 the Flee saving throw — both still plain d20 rolls, untouched by this pass.
+(Superseded further down: Origin feats, Alert included, were later removed
+entirely, leaving `proficiencyBonus` feeding only the Flee saving throw.)
 
 (Action Points, front/back ranks, skill schools, and status effects were
 deferred at the time this section was written — see "AP-Economy Combat
@@ -950,6 +958,37 @@ real price.
 `apps/client/src/screens/WorldMapScreen.tsx` (+ `.css`), `CharacterScreen.tsx`,
 `InventoryScreen.tsx`; `apps/client/src/components/TownHubPanel.tsx`,
 `ItemIcon.tsx`, `combat/CombatResultOverlay.tsx`.
+
+## Spirit Attribute Removed
+
+The game now runs on **five ability scores, not six** — Strength, Dexterity,
+Vitality, Intellect, Wisdom. Spirit (originally Charisma, renamed during the
+Character Creation rewrite — see above) was audited and confirmed to feed
+no formula, save, or resource pool anywhere in the engine: a flat stat with
+nothing mechanically attached to it, safe to remove outright rather than
+needing a replacement mechanic.
+
+- **`abilities.ts`**: `ABILITY_KEYS`/`ABILITY_NAMES`/`baseAbilityScores`
+  drop Spirit; `STANDARD_ARRAY` (used for companion stat rolls) shrinks from
+  six values to five (`[15, 14, 13, 12, 10]`, dropping the lowest).
+- **Races/classes/backgrounds**: every `spi` entry in a race's, class's, or
+  background's ability-score bonuses is gone, not replaced with a
+  substitute stat — Human, Cleric, Druid, Wizard, and the Acolyte
+  background each lose exactly the bonus points they used to grant to
+  Spirit (no rebalancing pass; a straight removal, per the request).
+  Cleric's `savingThrowProficiencies` drops from `["wis", "spi"]` to just
+  `["wis"]` for the same reason — its Spirit entry never actually triggered
+  a save anyway, since no action in the game rolls a Spirit save.
+  `Background.abilityScores` changed from a fixed 3-ability tuple to a
+  variable-length array so Acolyte (Spirit's only background user) can
+  drop to two bonus abilities instead of needing a third invented in its
+  place.
+- **Monsters**: all 5 `MonsterTemplate`s drop their `spi` ability score.
+
+### Critical files
+`packages/engine/src/abilities.ts`, `races.ts`, `classes.ts`,
+`backgrounds.ts`, `monsters.ts`; `apps/client/src/screens/
+CharacterCreationScreen.tsx`, `CharacterScreen.tsx`.
 
 ## Lore
 

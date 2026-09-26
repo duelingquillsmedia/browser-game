@@ -18,7 +18,7 @@ function makeCharacter(classId: string, raceId = "human", level = 4) {
     raceId,
     classId,
     backgroundId: "soldier",
-    baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+    baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     level,
   });
 }
@@ -28,7 +28,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     id: "foe",
     name: "Foe",
     side: "enemy",
-    abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+    abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     maxHp: 20,
     hp: 20,
     evasionBonus: 0,

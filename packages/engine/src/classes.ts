@@ -176,8 +176,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     name: "Cleric",
     description: "A vessel of the dawn. Clerics mend wounds and lash out with radiant judgment, husbanding a slim reserve of Prayer.",
     primaryAbility: "wis",
-    savingThrowProficiencies: ["wis", "spi"],
-    abilityScoreBonuses: { wis: 4, spi: 3, vit: 1 },
+    savingThrowProficiencies: ["wis"],
+    abilityScoreBonuses: { wis: 4, vit: 1 },
     basicAttackName: "Swinging Smite",
     actions: [
       {
@@ -324,7 +324,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "Wardens of root and bloom, drawing on nature's own magic in battle.",
     primaryAbility: "wis",
     savingThrowProficiencies: ["int", "wis"],
-    abilityScoreBonuses: { wis: 3, spi: 2, vit: 2, dex: 1 },
+    abilityScoreBonuses: { wis: 3, vit: 2, dex: 1 },
     basicAttackName: "Nature's Strike",
     actions: [
       {
@@ -370,7 +370,7 @@ export const CLASSES: Record<string, CharacterClass> = {
     description: "Scholars of the arcane, channeling raw magic through years of study.",
     primaryAbility: "int",
     savingThrowProficiencies: ["int", "wis"],
-    abilityScoreBonuses: { int: 5, spi: 3 },
+    abilityScoreBonuses: { int: 5 },
     basicAttackName: "Arcane Bolt",
     actions: [
       {

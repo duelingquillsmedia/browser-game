@@ -24,7 +24,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     id: "hero",
     name: "Hero",
     side: "party",
-    abilityScores: { str: 16, dex: 14, vit: 14, int: 10, wis: 10, spi: 10 },
+    abilityScores: { str: 16, dex: 14, vit: 14, int: 10, wis: 10 },
     maxHp: 20,
     hp: 20,
     evasionBonus: 0,
@@ -60,7 +60,7 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     id: "foe",
     name: "Foe",
     side: "enemy",
-    abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+    abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     maxHp: 7,
     hp: 7,
     evasionBonus: 0,
@@ -240,7 +240,7 @@ describe("combat engine", () => {
       usesPerCombat: 1,
     };
     const caster = makeHero({
-      abilityScores: { str: 10, dex: 10, vit: 10, int: 16, wis: 10, spi: 10 },
+      abilityScores: { str: 10, dex: 10, vit: 10, int: 16, wis: 10 },
       actions: [fireball],
       actionUses: { fireball: 1 },
     });
@@ -388,7 +388,7 @@ describe("toCombatant", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     return hp === undefined ? character : { ...character, hp };
   }
@@ -417,7 +417,7 @@ describe("weapon damage", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     });
   }
 

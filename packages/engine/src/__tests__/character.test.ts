@@ -31,7 +31,7 @@ describe("createCharacter", () => {
       raceId: "elf",
       classId: "rogue",
       backgroundId: "criminal",
-      baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10 },
     });
 
     // Base scores + Criminal background (+1 dex/vit/int) + Elf (dex+2,wis+2,int+1,vit-1) + Rogue (dex+5,int+2,str+1)
@@ -62,7 +62,7 @@ describe("createCharacter", () => {
       raceId: "dwarf",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
 
     expect(character.damageResistances).toContain("poison");
@@ -79,7 +79,7 @@ describe("createCharacter", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
 
     expect(character.equipment.meleeWeapon).toBe("ironLongsword");
@@ -99,7 +99,7 @@ describe("createCharacter", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     expect(defaultGear.equipment.armor).toBe("chainShirt");
 
@@ -109,7 +109,7 @@ describe("createCharacter", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
       equipmentOptionId: "sword-and-leather",
     });
     expect(chosenGear.equipment.meleeWeapon).toBe("ironLongsword");
@@ -123,7 +123,7 @@ describe("createCharacter", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
       equipmentOptionId: "nonexistent",
     });
     expect(unknownOption.equipment).toEqual(defaultGear.equipment);
@@ -139,7 +139,7 @@ describe("createCharacter", () => {
           raceId: "human",
           classId: cls.id,
           backgroundId: "acolyte",
-          baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+          baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
           equipmentOptionId: option.id,
         });
         expect(character.equipment).toEqual(option.equipment);
@@ -151,7 +151,7 @@ describe("createCharacter", () => {
     const base = {
       id: "pc-2",
       name: "Nobody",
-      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     };
     expect(() => createCharacter({ ...base, raceId: "nope", classId: "warrior", backgroundId: "acolyte" })).toThrow();
     expect(() => createCharacter({ ...base, raceId: "human", classId: "nope", backgroundId: "acolyte" })).toThrow();
@@ -168,7 +168,7 @@ describe("createCharacter", () => {
             raceId: race.id,
             classId: cls.id,
             backgroundId: background.id,
-            baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10, spi: 10 },
+            baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
           });
           expect(character.maxHp).toBeGreaterThan(0);
           expect(character.gearEvasionBonus).toBeGreaterThan(0);
@@ -187,7 +187,7 @@ describe("equipItem / unequipItem", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
   }
 
@@ -216,7 +216,7 @@ describe("equipItem / unequipItem", () => {
       raceId: "elf",
       classId: "rogue",
       backgroundId: "criminal",
-      baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 10, dex: 15, vit: 12, int: 10, wis: 10 },
     });
 
     // Rogue starts with a Hunter's Shortbow (dex-based) equipped in the ranged slot, no melee weapon.
@@ -249,7 +249,7 @@ describe("withStartingGearIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     // Simulate a row persisted before inventory/equipment were added.
     const { inventory: _inv, equipment: _equip, ...withoutGear } = legacy;
@@ -270,7 +270,7 @@ describe("withStartingGearIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     const { backgroundId: _bg, ...withoutBackground } = legacy;
     const stripped = withoutBackground as Character;
@@ -287,7 +287,7 @@ describe("withStartingGearIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     expect(withStartingGearIfMissing(character)).toEqual(character);
   });
@@ -299,7 +299,7 @@ describe("withStartingGearIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     const { actionBarIds: _bar, ...withoutBar } = legacy;
     const migrated = withStartingGearIfMissing(withoutBar as Character);
@@ -313,7 +313,7 @@ describe("withStartingGearIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     const { gold: _gold, ...withoutGold } = legacy;
     expect(withStartingGearIfMissing(withoutGold as Character).gold).toBe(0);
@@ -326,7 +326,7 @@ describe("withStartingGearIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     expect(withStartingGearIfMissing(legacy).worldMapState).toBeUndefined();
 
@@ -346,7 +346,7 @@ describe("level-gating (Class Style Sheet reforge)", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
       level,
     });
   }
@@ -380,7 +380,7 @@ describe("gainExperience / xpToNextLevel", () => {
       raceId: "dwarf",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
       level,
     });
   }
@@ -470,7 +470,7 @@ describe("gainExperience / xpToNextLevel", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
       level: 1,
     });
 
@@ -494,7 +494,7 @@ describe("economy: buyItem / sellItem / useConsumable", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
   }
 
@@ -574,7 +574,7 @@ describe("withClassMigrationIfMissing", () => {
       raceId: "human",
       classId: "wizard",
       backgroundId: "sage",
-      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10, spi: 10 },
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10 },
     });
     // Simulate a row persisted before this reforge: classId "mage", a single `weapon` slot.
     const legacy: Character = {
@@ -599,7 +599,7 @@ describe("withClassMigrationIfMissing", () => {
         raceId: "dwarf",
         classId: "wizard",
         backgroundId: "sage",
-        baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10, spi: 10 },
+        baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10 },
       }),
       classId: "mage",
       equipment: { weapon: "ritualDagger" },
@@ -611,7 +611,7 @@ describe("withClassMigrationIfMissing", () => {
       raceId: "human",
       classId: "warrior",
       backgroundId: "soldier",
-      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     const withLegacyCompanion: Character = { ...player, companions: { magnus: companion } };
 
@@ -628,7 +628,7 @@ describe("withClassMigrationIfMissing", () => {
       raceId: "human",
       classId: "wizard",
       backgroundId: "sage",
-      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10, spi: 10 },
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10 },
     });
     expect(withClassMigrationIfMissing(character)).toEqual(character);
   });
@@ -641,7 +641,7 @@ describe("action bar", () => {
     raceId: "human",
     classId: "warrior",
     backgroundId: "soldier",
-    baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
   });
 
   it("starts empty on a freshly created character", () => {

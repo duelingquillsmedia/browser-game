@@ -19,7 +19,7 @@ function samplePlayer() {
     raceId: "human",
     classId: "warrior",
     backgroundId: "soldier",
-    baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
   });
 }
 
