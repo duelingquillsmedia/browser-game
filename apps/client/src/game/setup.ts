@@ -1,4 +1,5 @@
 import {
+  computeResourceMax,
   createMonster,
   gainExperience,
   getMonsterTemplate,
@@ -46,14 +47,15 @@ export function beginEncounter(character: Character, encounter: Encounter): Comb
 export interface CombatResult {
   character: Character;
   xpGained: number;
+  goldGained: number;
   levelsGained: number;
   newlyUnlockedActions: CombatActionDef[];
 }
 
 /**
  * Carries the player's ending HP back onto the persisted character, and on
- * a clean victory (a full party_won, not a flee or defeat) awards XP for
- * every enemy defeated in the fight.
+ * a clean victory (a full party_won, not a flee or defeat) awards XP and
+ * gold for every enemy defeated in the fight.
  */
 export function applyCombatResults(character: Character, combat: CombatState): CombatResult {
   const endingHp = new Map(combat.combatants.map((c) => [c.id, c.hp]));
@@ -63,12 +65,14 @@ export function applyCombatResults(character: Character, combat: CombatState): C
   };
 
   if (combat.status !== "party_won") {
-    return { character: woundedCharacter, xpGained: 0, levelsGained: 0, newlyUnlockedActions: [] };
+    return { character: woundedCharacter, xpGained: 0, goldGained: 0, levelsGained: 0, newlyUnlockedActions: [] };
   }
 
-  const baseXp = combat.combatants
+  const defeated = combat.combatants
     .filter((c) => c.side === "enemy" && c.templateId)
-    .reduce((sum, c) => sum + getMonsterTemplate(c.templateId!).xpValue, 0);
+    .map((c) => getMonsterTemplate(c.templateId!));
+  const baseXp = defeated.reduce((sum, t) => sum + t.xpValue, 0);
+  const goldGained = defeated.reduce((sum, t) => sum + t.goldValue, 0);
 
   const {
     character: leveledCharacter,
@@ -77,13 +81,17 @@ export function applyCombatResults(character: Character, combat: CombatState): C
     newlyUnlockedActions,
   } = gainExperience(woundedCharacter, baseXp);
 
-  return { character: leveledCharacter, xpGained: xpAwarded, levelsGained, newlyUnlockedActions };
+  const rewardedCharacter: Character = { ...leveledCharacter, gold: leveledCharacter.gold + goldGained };
+
+  return { character: rewardedCharacter, xpGained: xpAwarded, goldGained, levelsGained, newlyUnlockedActions };
 }
 
-/** Fully heals the player — used when resting at the town hub. */
+/** Fully restores HP and resource pool — used when resting at a settlement's Inn (see WorldMapScreen's Town Hub) or the Home screen. */
 export function restCharacter(character: Character): Character {
+  const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
   return {
     ...character,
     hp: character.maxHp,
+    resource: resourceMax ?? character.resource,
   };
 }

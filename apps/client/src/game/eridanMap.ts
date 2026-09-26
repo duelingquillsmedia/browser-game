@@ -214,11 +214,15 @@ export const SEAS: SeaDef[] = (
 export interface PointOfInterest {
   name: string;
   type: string;
+  /** "settlement" gets a Town Hub (Inn/General Store/Blacksmith) on the World Map once the party arrives; "landmark" (a shrine, fortress, quest site, ...) doesn't. */
+  kind: "settlement" | "landmark";
   glyph: string;
   color: string;
   description: string;
   key: string;
 }
+
+const SETTLEMENT_TYPES = new Set(["Town", "Village", "Port", "City", "Desert town"]);
 
 const GOLD = "#d9b865";
 const INK = "#f3ece4";
@@ -247,6 +251,7 @@ export const POINTS_OF_INTEREST: PointOfInterest[] = (
 ).map(([name, x, y, type, glyph, color, description]) => ({
   name,
   type,
+  kind: (SETTLEMENT_TYPES.has(type) ? "settlement" : "landmark") as "settlement" | "landmark",
   glyph,
   color,
   description,

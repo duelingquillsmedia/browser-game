@@ -25,6 +25,8 @@ export interface Character {
   level: number;
   /** XP accumulated toward this character's next level; resets to (any overflow past the threshold) on level-up. See `xpToNextLevel`/`gainExperience`. */
   xp: number;
+  /** Currency spent at a settlement's General Store/Blacksmith (see game/setup.ts's Town Hub) and earned from combat victories. */
+  gold: number;
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
@@ -205,6 +207,9 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
 
 export function equipItem(character: Character, itemId: string): Character {
   const item = getItem(itemId);
+  if (!item.slot) {
+    throw new Error(`"${item.name}" can't be equipped.`);
+  }
   if (!ownsItem(character, itemId)) {
     throw new Error(`"${item.name}" is not in ${character.name}'s inventory.`);
   }
@@ -216,6 +221,72 @@ export function unequipItem(character: Character, slot: ItemSlot): Character {
   const equipment = { ...character.equipment };
   delete equipment[slot];
   return applyEquipmentEffects({ ...character, equipment }, getClass(character.classId), getRace(character.raceId));
+}
+
+function addItemToInventory(character: Character, itemId: string, quantity = 1): Character {
+  const existing = character.inventory.find((stack) => stack.itemId === itemId);
+  const inventory = existing
+    ? character.inventory.map((stack) => (stack.itemId === itemId ? { ...stack, quantity: stack.quantity + quantity } : stack))
+    : [...character.inventory, { itemId, quantity }];
+  return { ...character, inventory };
+}
+
+function removeItemFromInventory(character: Character, itemId: string, quantity = 1): Character {
+  const existing = character.inventory.find((stack) => stack.itemId === itemId);
+  if (!existing || existing.quantity < quantity) {
+    throw new Error(`${character.name} doesn't have ${quantity} of "${itemId}".`);
+  }
+  const inventory =
+    existing.quantity === quantity
+      ? character.inventory.filter((stack) => stack.itemId !== itemId)
+      : character.inventory.map((stack) => (stack.itemId === itemId ? { ...stack, quantity: stack.quantity - quantity } : stack));
+  return { ...character, inventory };
+}
+
+/** Buys one of `itemId` from a settlement's General Store/Blacksmith at its full listed `value`. Throws if the character can't afford it. */
+export function buyItem(character: Character, itemId: string): Character {
+  const item = getItem(itemId);
+  if (character.gold < item.value) {
+    throw new Error(`${character.name} can't afford "${item.name}" (needs ${item.value}, has ${character.gold}).`);
+  }
+  return addItemToInventory({ ...character, gold: character.gold - item.value }, itemId);
+}
+
+/** Sell-back price is half an item's listed `value` -- homebrew, the standard RPG sell-for-less convention. */
+export const SELL_PRICE_RATIO = 0.5;
+
+/** Sells one of `itemId` back to a settlement's Blacksmith for `value * SELL_PRICE_RATIO` gold. Throws if not owned, or currently equipped (unequip first). */
+export function sellItem(character: Character, itemId: string): Character {
+  const item = getItem(itemId);
+  if (!ownsItem(character, itemId)) {
+    throw new Error(`"${item.name}" is not in ${character.name}'s inventory.`);
+  }
+  if (Object.values(character.equipment).includes(itemId)) {
+    throw new Error(`Unequip "${item.name}" before selling it.`);
+  }
+  const sellPrice = Math.round(item.value * SELL_PRICE_RATIO);
+  return removeItemFromInventory({ ...character, gold: character.gold + sellPrice }, itemId);
+}
+
+/** Drinks/uses one of `itemId`, applying its `consumable` effect and removing it from inventory. Throws if not owned or not a consumable. */
+export function useConsumable(character: Character, itemId: string): Character {
+  const item = getItem(itemId);
+  if (!item.consumable) {
+    throw new Error(`"${item.name}" can't be used.`);
+  }
+  if (!ownsItem(character, itemId)) {
+    throw new Error(`"${item.name}" is not in ${character.name}'s inventory.`);
+  }
+  const consumed = removeItemFromInventory(character, itemId);
+
+  if (item.consumable.restores === "hp") {
+    return { ...consumed, hp: Math.min(consumed.maxHp, consumed.hp + item.consumable.amount) };
+  }
+  // "resource": a no-op amount-wise for a class with no resource pool (e.g. Rogue) --
+  // there's nothing to top up, so the potion is still spent but restores nothing.
+  const resourceMax = computeResourceMax(consumed.abilityScores, consumed.classId, consumed.level);
+  if (resourceMax === undefined) return consumed;
+  return { ...consumed, resource: Math.min(resourceMax, (consumed.resource ?? 0) + item.consumable.amount) };
 }
 
 /** Highest level a character can reach. */
@@ -388,7 +459,8 @@ export function withClassMigrationIfMissing(character: Character): Character {
   let equipment = character.equipment;
   if (legacy.equipment.weapon) {
     const { weapon, ...rest } = legacy.equipment;
-    equipment = { ...rest, [getItem(weapon).slot]: weapon };
+    // A legacy single equipped weapon is always real gear, never a consumable, so it always has a slot.
+    equipment = { ...rest, [getItem(weapon).slot!]: weapon };
   }
 
   const classId = legacy.classId === "mage" ? "wizard" : character.classId;
@@ -419,9 +491,14 @@ export function withStartingGearIfMissing(character: Character): Character {
     resource: character.resource ?? computeResourceStart(character.abilityScores, cls.id, character.level),
     actionBarIds: character.actionBarIds ?? emptyActionBar(),
     xp: character.xp ?? 0,
+    // No free retroactive gold for old saves -- unlike createCharacter's STARTING_GOLD seed.
+    gold: character.gold ?? 0,
   };
   return applyEquipmentEffects(withGear, cls, race);
 }
+
+/** Seed gold for a brand-new character -- homebrew, enough for a couple of starter potions. */
+export const STARTING_GOLD = 50;
 
 export function createCharacter(options: CreateCharacterOptions): Character {
   const race = getRace(options.raceId);
@@ -452,6 +529,7 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     originFeatId: background.originFeatId,
     level,
     xp: 0,
+    gold: STARTING_GOLD,
     abilityScores,
     maxHp,
     hp: maxHp,

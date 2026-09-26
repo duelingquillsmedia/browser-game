@@ -288,6 +288,7 @@ export function CombatScreen({ combat, encounter, onSubmitAction, combatResult, 
             status={visualState.status}
             round={visualState.round}
             xpGained={combatResult?.xpGained ?? 0}
+            goldGained={combatResult?.goldGained ?? 0}
             levelsGained={combatResult?.levelsGained ?? 0}
             newLevel={combatResult?.character.level ?? 0}
             newlyUnlockedActions={combatResult?.newlyUnlockedActions ?? []}

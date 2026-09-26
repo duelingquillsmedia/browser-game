@@ -1078,7 +1078,13 @@
   max-width: 320px;
 }
 
-.cbt-result-xp {
+.cbt-result-rewards {
+  display: flex;
+  gap: 16px;
+}
+
+.cbt-result-xp,
+.cbt-result-gold {
   font: 700 16px var(--aow-font-display);
   letter-spacing: 0.04em;
   color: var(--aow-gold);

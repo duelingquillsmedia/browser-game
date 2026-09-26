@@ -896,6 +896,57 @@ CharacterScreen.tsx`, `HomeScreen.tsx`, `CombatScreen.tsx`;
 `apps/client/src/components/combat/CombatResultOverlay.tsx`, `CombatHud.tsx`,
 `GameShell.tsx`.
 
+## Town Hub: Gold, Potions, and Shops
+
+A real gold economy, and an Inn/General Store/Blacksmith reachable from any
+settlement on the World Map — not just the Home screen's own free Rest
+button. `ItemTemplate.value` existed on every item from the start but was
+explicitly flavor-only ("there's no wallet/shop yet"); this pass makes it a
+real price.
+
+- **`Character.gold`**: seeded at `STARTING_GOLD` (50, homebrew) for a new
+  character; old saves backfill at 0, not the creation seed (same
+  no-free-retroactive-reward precedent as XP's own backfill). Combat
+  victories award gold alongside XP, summed from each defeated enemy's new
+  `MonsterTemplate.goldValue` — hand-tuned like `xpValue`, with one
+  deliberate exception: a Dire Wolf (a wild animal) carries none, while
+  every humanoid raider does.
+- **`buyItem`/`sellItem`/`useConsumable`** (character.ts) are the engine's
+  new economy primitives: buying spends gold at an item's full `value` and
+  adds it to inventory; selling refunds half that (`SELL_PRICE_RATIO`,
+  homebrew) and throws if the item is currently equipped (unequip first);
+  using a consumable applies its effect and removes it from inventory.
+  `getItem(...)` throws for an unknown id exactly as before — buy/sell just
+  build on top of `addItemToInventory`/`removeItemFromInventory`, new
+  private helpers alongside them.
+- **Potions are a new item shape, not a new slot.** `ItemTemplate.slot`
+  became optional — a potion has none — plus a new `consumable: { restores:
+  "hp" | "resource"; amount }` field. Two ship with this pass: Minor Healing
+  Potion (80 HP) and Minor Resource Draught (40 resource, capped at
+  whatever the class's pool actually holds). They're out-of-combat only —
+  drunk from the General Store or later from the Inventory screen's new
+  "Use" button — no changes to combat's action economy.
+- **`restCharacter`** (game/setup.ts) was HP-only until now — a latent gap
+  once classes got real level-scaled resource pools. It restores both HP
+  and resource pool to full, free, and is shared by the Home screen's Rest
+  button and every settlement's new Inn.
+- **The Town Hub panel** (`apps/client/src/components/TownHubPanel.tsx`)
+  appears on the World Map between the "SELECTED HEX" and "PLACES" panels,
+  once the party has actually arrived at a settlement (`PointOfInterest`
+  gained a `kind: "settlement" | "landmark"` field in `eridanMap.ts`, set
+  from each place's existing free-text `type` — Town/City/Village/Port/
+  Desert town are settlements; a Shrine, Fortress, or quest site isn't).
+  Every settlement offers the same Inn/General Store/Blacksmith — no
+  per-town customization yet. The Blacksmith buys and sells gear; there's
+  no durability/repair system, so nothing ever needs fixing.
+
+### Critical files
+`packages/engine/src/character.ts`, `items.ts`, `monsters.ts`;
+`apps/client/src/game/setup.ts`, `eridanMap.ts`;
+`apps/client/src/screens/WorldMapScreen.tsx` (+ `.css`), `CharacterScreen.tsx`,
+`InventoryScreen.tsx`; `apps/client/src/components/TownHubPanel.tsx`,
+`ItemIcon.tsx`, `combat/CombatResultOverlay.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

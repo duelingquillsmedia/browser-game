@@ -5,6 +5,8 @@ export interface CombatResultOverlayProps {
   round: number;
   /** XP actually awarded (post race-bonus); 0 on a defeat or a flee -- see game/setup.ts's applyCombatResults. */
   xpGained: number;
+  /** Gold from every defeated enemy's goldValue; 0 on a defeat or a flee, or if every foe was a monster that carries none. */
+  goldGained: number;
   levelsGained: number;
   newLevel: number;
   newlyUnlockedActions: CombatActionDef[];
@@ -44,6 +46,7 @@ export function CombatResultOverlay({
   status,
   round,
   xpGained,
+  goldGained,
   levelsGained,
   newLevel,
   newlyUnlockedActions,
@@ -59,7 +62,12 @@ export function CombatResultOverlay({
         </div>
         <div className="cbt-result-sub">{copy.sub}</div>
 
-        {xpGained > 0 && <div className="cbt-result-xp">+{xpGained.toLocaleString()} XP</div>}
+        {(xpGained > 0 || goldGained > 0) && (
+          <div className="cbt-result-rewards">
+            {xpGained > 0 && <span className="cbt-result-xp">+{xpGained.toLocaleString()} XP</span>}
+            {goldGained > 0 && <span className="cbt-result-gold">+{goldGained.toLocaleString()} Gold</span>}
+          </div>
+        )}
 
         {levelsGained > 0 && (
           <div className="cbt-result-levelup">

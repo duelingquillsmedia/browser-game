@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   ACTION_BAR_SLOT_COUNT,
   LEVEL_CAP,
+  STARTING_GOLD,
+  SELL_PRICE_RATIO,
   assignActionBarSlot,
+  buyItem,
   clearActionBarSlot,
   createCharacter,
   equipItem,
   gainExperience,
   ownsItem,
+  sellItem,
   unequipItem,
+  useConsumable,
   withClassMigrationIfMissing,
   withStartingGearIfMissing,
   xpToNextLevel,
@@ -319,6 +324,19 @@ describe("withStartingGearIfMissing", () => {
     expect(migrated.actionBarIds).toEqual(Array(ACTION_BAR_SLOT_COUNT).fill(null));
   });
 
+  it("backfills gold at 0 (not the creation-time seed) for a character saved before it existed", () => {
+    const legacy = createCharacter({
+      id: "pc-gold-backfill",
+      name: "Penniless",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    });
+    const { gold: _gold, ...withoutGold } = legacy;
+    expect(withStartingGearIfMissing(withoutGold as Character).gold).toBe(0);
+  });
+
   it("leaves worldMapState untouched, whether present or absent (its default is built client-side)", () => {
     const legacy = createCharacter({
       id: "pc-worldmap",
@@ -483,6 +501,86 @@ describe("gainExperience / xpToNextLevel", () => {
     expect(exact.levelsGained).toBe(1);
     expect(exact.character.level).toBe(2);
     expect(exact.character.xp).toBe(10); // 110 - 100 threshold, carried over
+  });
+});
+
+describe("economy: buyItem / sellItem / useConsumable", () => {
+  function warrior() {
+    return createCharacter({
+      id: "pc-economy",
+      name: "Bram",
+      raceId: "human",
+      classId: "warrior",
+      backgroundId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10, spi: 8 },
+    });
+  }
+
+  it("starts a new character with STARTING_GOLD", () => {
+    expect(warrior().gold).toBe(STARTING_GOLD);
+  });
+
+  it("buyItem deducts the item's value and adds it to inventory", () => {
+    const before = warrior();
+    const after = buyItem(before, "minorHealingPotion");
+    expect(after.gold).toBe(before.gold - 15);
+    expect(after.inventory.find((s) => s.itemId === "minorHealingPotion")?.quantity).toBe(1);
+  });
+
+  it("buyItem stacks a second purchase of the same item onto the existing quantity", () => {
+    const twice = buyItem(buyItem(warrior(), "minorHealingPotion"), "minorHealingPotion");
+    expect(twice.inventory.find((s) => s.itemId === "minorHealingPotion")?.quantity).toBe(2);
+  });
+
+  it("buyItem throws when the character can't afford it", () => {
+    const poor = { ...warrior(), gold: 0 };
+    expect(() => buyItem(poor, "minorHealingPotion")).toThrow();
+  });
+
+  it("sellItem refunds half the item's value (SELL_PRICE_RATIO) and removes it from inventory", () => {
+    const bought = buyItem(warrior(), "minorHealingPotion");
+    const sold = sellItem(bought, "minorHealingPotion");
+    expect(sold.gold).toBe(bought.gold + Math.round(15 * SELL_PRICE_RATIO));
+    expect(ownsItem(sold, "minorHealingPotion")).toBe(false);
+  });
+
+  it("sellItem throws when the item isn't owned", () => {
+    expect(() => sellItem(warrior(), "ringOfWarding")).toThrow();
+  });
+
+  it("sellItem throws when the item is currently equipped", () => {
+    expect(() => sellItem(warrior(), "ironLongsword")).toThrow(); // Warrior's starting melee weapon
+  });
+
+  it("useConsumable heals HP and consumes the potion", () => {
+    const wounded = { ...buyItem(warrior(), "minorHealingPotion"), hp: 10 };
+    const healed = useConsumable(wounded, "minorHealingPotion");
+    expect(healed.hp).toBe(90); // 10 + 80, well under maxHp
+    expect(ownsItem(healed, "minorHealingPotion")).toBe(false);
+  });
+
+  it("useConsumable never heals past maxHp", () => {
+    const base = warrior();
+    const nearlyFull = { ...buyItem(base, "minorHealingPotion"), hp: base.maxHp - 5 };
+    const healed = useConsumable(nearlyFull, "minorHealingPotion");
+    expect(healed.hp).toBe(base.maxHp);
+  });
+
+  it("useConsumable restores resource, capped at the pool's max", () => {
+    const empty = { ...buyItem(warrior(), "minorResourceDraught"), resource: 0 };
+    const restored = useConsumable(empty, "minorResourceDraught");
+    expect(restored.resource).toBe(40); // Fury's fixed cap is 100, well above the 40 restored
+
+    const almostFull = { ...buyItem(warrior(), "minorResourceDraught"), resource: 90 };
+    expect(useConsumable(almostFull, "minorResourceDraught").resource).toBe(100); // capped, not 130
+  });
+
+  it("useConsumable throws for a non-consumable item", () => {
+    expect(() => useConsumable(warrior(), "ironLongsword")).toThrow();
+  });
+
+  it("useConsumable throws when the potion isn't owned", () => {
+    expect(() => useConsumable(warrior(), "minorHealingPotion")).toThrow();
   });
 });
 

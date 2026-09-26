@@ -269,6 +269,9 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
             EQUIPMENT
             <span className="aow-eq-header-spacer" />
             <span className="aow-eq-header-meta">
+              GOLD <span>{character.gold.toLocaleString()}G</span>
+            </span>
+            <span className="aow-eq-header-meta">
               GEAR VALUE <span>{gearValue}G</span>
             </span>
           </div>

@@ -32,6 +32,7 @@ import {
   type TerrainKey,
 } from "../game/eridanMap";
 import { sampleTerrain, type TerrainSample } from "../game/terrainSampler";
+import { TownHubPanel } from "../components/TownHubPanel";
 import eridanMap from "../assets/world/eridan-map.jpg";
 import "./WorldMapScreen.css";
 
@@ -488,6 +489,10 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
               )}
             </div>
           </div>
+
+          {activePoi?.kind === "settlement" && isPartyHere && (
+            <TownHubPanel townName={activePoi.name} character={character} onUpdateCharacter={onUpdateCharacter} />
+          )}
 
           <div className="aow-panel aow-map-places-panel">
             <div className="aow-panel-header">PLACES</div>

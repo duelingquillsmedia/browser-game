@@ -4,6 +4,7 @@ import {
   equipItem,
   getItem,
   unequipItem,
+  useConsumable,
   type Character,
   type ItemSlot,
   type ItemTemplate,
@@ -19,7 +20,7 @@ export interface InventoryScreenProps {
 /** Bag size for the boxed inventory grid; unused slots render as empty boxes. */
 const BAG_SLOT_COUNT = 20;
 
-type FilterId = "all" | ItemSlot;
+type FilterId = "all" | ItemSlot | "consumable";
 
 const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
@@ -27,7 +28,13 @@ const FILTERS: { id: FilterId; label: string }[] = [
   { id: "rangedWeapon", label: "Ranged" },
   { id: "armor", label: "Armor" },
   { id: "accessory", label: "Accessory" },
+  { id: "consumable", label: "Potions" },
 ];
+
+/** An item's own slot, or "consumable" for a slot-less potion -- used to bucket it under a filter tab. */
+function filterBucket(item: ItemTemplate): FilterId {
+  return item.slot ?? "consumable";
+}
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -44,8 +51,9 @@ function formatItemStats(item: ItemTemplate): string | null {
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-/** What changes if `candidate` replaced whatever's currently equipped in its slot, if anything's there. */
+/** What changes if `candidate` replaced whatever's currently equipped in its slot, if anything's there. Consumables have no slot, so nothing to compare. */
 function compareToEquipped(character: Character, candidate: ItemTemplate) {
+  if (!candidate.slot) return null;
   const equippedId = character.equipment[candidate.slot];
   if (!equippedId || equippedId === candidate.id) return null;
   const equipped = getItem(equippedId);
@@ -67,8 +75,9 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
     rangedWeapon: 0,
     armor: 0,
     accessory: 0,
+    consumable: 0,
   };
-  for (const stack of character.inventory) counts[getItem(stack.itemId).slot]++;
+  for (const stack of character.inventory) counts[filterBucket(getItem(stack.itemId))]++;
 
   const selectedStack = selectedItemId ? character.inventory.find((s) => s.itemId === selectedItemId) : undefined;
   const selectedItem = selectedStack ? getItem(selectedStack.itemId) : undefined;
@@ -106,7 +115,7 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                 const stack = character.inventory[index];
                 if (!stack) return <div key={`empty-${index}`} className="aow-bag-cell" />;
                 const item = getItem(stack.itemId);
-                const matches = filter === "all" || item.slot === filter;
+                const matches = filter === "all" || filterBucket(item) === filter;
                 const isSelected = selectedItemId === stack.itemId;
                 return (
                   <button
@@ -141,7 +150,7 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                   <div>
                     <div className="aow-item-name">{selectedItem.name}</div>
                     <div className="aow-item-type-line">
-                      {capitalize(selectedItem.slot)}
+                      {selectedItem.slot ? capitalize(selectedItem.slot) : "Potion"}
                       {selectedStack.quantity > 1 ? ` · ×${selectedStack.quantity}` : ""}
                       {equippedIds.has(selectedItem.id) ? " · Equipped" : ""}
                     </div>
@@ -165,11 +174,20 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
 
                 <p className="aow-item-value">Value: {selectedItem.value} gp</p>
 
-                {equippedIds.has(selectedItem.id) ? (
+                {selectedItem.consumable ? (
+                  <button
+                    type="button"
+                    className="aow-button-primary"
+                    onClick={() => onUpdateCharacter(useConsumable(character, selectedItem.id))}
+                  >
+                    Use
+                  </button>
+                ) : equippedIds.has(selectedItem.id) ? (
                   <button
                     type="button"
                     className="aow-button-ghost"
-                    onClick={() => onUpdateCharacter(unequipItem(character, selectedItem.slot))}
+                    // Only real equipment is ever "equipped", so `slot` is always defined here.
+                    onClick={() => onUpdateCharacter(unequipItem(character, selectedItem.slot!))}
                   >
                     Unequip
                   </button>

@@ -14,6 +14,8 @@ export interface MonsterTemplate {
   evasionBonus: number;
   /** XP awarded to the party on defeating one of these, hand-tuned against its relative HP/threat -- same curated-stat-block precedent as maxHp. */
   xpValue: number;
+  /** Gold awarded to the party on defeating one of these -- 0 for a wild animal that carries no coin (see direWolf). */
+  goldValue: number;
   actions: CombatActionDef[];
   /** None of Eridan's current frontier threats have any — reserved for future undead/elemental monsters. */
   damageResistances?: DamageType[];
@@ -55,6 +57,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     maxHp: 75,
     evasionBonus: 0,
     xpValue: 45,
+    goldValue: 12,
     actions: [
       {
         id: "shortsword",
@@ -78,6 +81,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     maxHp: 120,
     evasionBonus: 0,
     xpValue: 70,
+    goldValue: 0,
     actions: [
       {
         id: "bite",
@@ -109,6 +113,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     maxHp: 160,
     evasionBonus: 0,
     xpValue: 90,
+    goldValue: 25,
     actions: [
       {
         id: "greataxe",
@@ -132,6 +137,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     maxHp: 55,
     evasionBonus: 5,
     xpValue: 35,
+    goldValue: 8,
     rank: "back",
     actions: [
       {
@@ -154,6 +160,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     maxHp: 110,
     evasionBonus: 0,
     xpValue: 65,
+    goldValue: 18,
     rank: "back",
     actions: [
       {

@@ -3,18 +3,20 @@ import type { ItemSlot } from "@eridan/engine";
 
 export interface ItemIconProps {
   itemId: string;
-  slot: ItemSlot;
+  /** Absent for a consumable (potions have no equipment slot) -- falls back to a generic potion icon. */
+  slot?: ItemSlot;
 }
 
 /**
  * A small filled sprite-style icon per item, drawn to read clearly inside a
  * boxed inventory slot. Falls back to a generic icon for the item's slot
- * type if the item id isn't one of the catalog's known items.
+ * type (or a potion icon, for a slot-less consumable) if the item id isn't
+ * one of the catalog's known items.
  */
 export function ItemIcon({ itemId, slot }: ItemIconProps) {
   const icon = ITEM_ICONS[itemId];
   if (icon) return icon;
-  return FALLBACK_ICONS[slot];
+  return slot ? FALLBACK_ICONS[slot] : Potion("#d0604a", "#8a3a2c");
 }
 
 function Sword() {
@@ -148,6 +150,22 @@ function Charm() {
   );
 }
 
+function Potion(liquidFill: string, stroke: string) {
+  return (
+    <svg viewBox="0 0 48 48" className="item-icon" aria-hidden="true">
+      <rect x="20" y="4" width="8" height="8" rx="1.5" fill="#c9ccd4" stroke="#5b6472" strokeWidth="1" />
+      <path
+        d="M20 12 L20 18 L14 30 C13 38 17 44 24 44 C31 44 35 38 34 30 L28 18 L28 12 Z"
+        fill="#e8eaf0"
+        stroke={stroke}
+        strokeWidth="1.5"
+      />
+      <path d="M15 30 C14 37 17 42 24 42 C31 42 34 37 33 30 Z" fill={liquidFill} />
+      <rect x="18" y="18" width="12" height="3" fill="#ffffff" opacity="0.5" />
+    </svg>
+  );
+}
+
 const ITEM_ICONS: Record<string, ReactElement> = {
   ironLongsword: <Sword />,
   huntersShortbow: <Bow />,
@@ -161,6 +179,8 @@ const ITEM_ICONS: Record<string, ReactElement> = {
   travelersRobe: ArmorVest("#5a5aa8", "#33336b"),
   luckyCharm: <Charm />,
   ringOfWarding: <Ring />,
+  minorHealingPotion: Potion("#d0604a", "#8a3a2c"),
+  minorResourceDraught: Potion("#5fc4d6", "#2f7ba3"),
 };
 
 const FALLBACK_ICONS: Record<ItemSlot, ReactElement> = {
