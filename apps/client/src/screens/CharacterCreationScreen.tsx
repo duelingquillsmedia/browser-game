@@ -381,7 +381,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                       </div>
                       <div className="aow-skill-stat">
                         <span className="aow-skill-stat-label">RESOURCE</span>
-                        <span>{resourceConfig?.name ?? "At-will"}</span>
+                        <span>{resourceConfig?.name ?? "None"}</span>
                       </div>
                       <div className="aow-skill-stat">
                         <span className="aow-skill-stat-label">ARMOR</span>

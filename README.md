@@ -1128,6 +1128,30 @@ Bonus.
 ### Critical files
 `apps/client/src/game/characterDisplay.ts`.
 
+## SRD-Flavored Naming Cleaned Up (Inventory & Skills)
+
+A pass over the Inventory and Skills screens for more of the same kind of
+leftover: no dead *stats* this time (everything numeric on both screens is
+live and functional), but four D&D-flavored labels with no reason to still
+say "D&D":
+
+- **Inventory's "BAG OF HOLDING" panel** (a specific D&D magic item name) →
+  **"BAG"**.
+- **Item value's "gp" suffix** (D&D's gold-piece abbreviation) → **"gold"**,
+  matching the game's own real gold currency.
+- **Skills' "SPELLBOOK" list panel** — labeled that even for non-caster
+  classes (a Warrior's kit isn't a spellbook) → **"ABILITIES"**.
+- **A skill/class with no resource cost showing "At-will"** (a D&D 4e
+  power-frequency term) → **"Free"** on a skill's own cost line (Skills
+  screen), **"None"** on a class's resource-pool preview (Character
+  Creation, the one other place the same fallback appeared).
+
+Display-only renames; no engine or mechanical changes.
+
+### Critical files
+`apps/client/src/screens/InventoryScreen.tsx`, `SkillsScreen.tsx`,
+`CharacterCreationScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

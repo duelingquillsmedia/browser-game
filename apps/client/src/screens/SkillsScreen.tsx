@@ -179,7 +179,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
 
       <div className="aow-skills-grid">
         <div className="aow-panel aow-skills-list-panel">
-          <div className="aow-panel-header">SPELLBOOK</div>
+          <div className="aow-panel-header">ABILITIES</div>
           <div className="aow-card-body">
             <div className="aow-filter-row">
               {FILTERS.map((f) => (
@@ -201,7 +201,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                   const cost =
                     action.resourceCost !== undefined && resourceConfig
                       ? `${action.resourceCost} ${resourceConfig.name}`
-                      : "At-will";
+                      : "Free";
                   const extra = action.cooldown
                     ? `Cooldown ${action.cooldown}`
                     : action.usesPerCombat !== undefined

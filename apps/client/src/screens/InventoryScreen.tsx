@@ -91,7 +91,7 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
       <div className="aow-inventory-grid">
         <div className="aow-panel aow-bag-panel">
           <div className="aow-panel-header">
-            BAG OF HOLDING
+            BAG
             <span className="aow-open">
               {character.inventory.length} / {BAG_SLOT_COUNT}
             </span>
@@ -172,7 +172,7 @@ export function InventoryScreen({ character, onUpdateCharacter }: InventoryScree
                   </div>
                 )}
 
-                <p className="aow-item-value">Value: {selectedItem.value} gp</p>
+                <p className="aow-item-value">Value: {selectedItem.value} gold</p>
 
                 {selectedItem.consumable ? (
                   <button
