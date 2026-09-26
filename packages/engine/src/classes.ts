@@ -51,12 +51,12 @@ export interface CharacterClass {
 /**
  * The seven playable classes from the Class Style Sheet (Google Drive,
  * "Class Information/Age of Broken Wings - Class Style Sheet.docx"): every
- * resource pool, resource cost, and ability description below is
- * transcribed directly from it. AP cost, cooldowns (there are none — the
- * sheet's own resource costs are the limiting factor), damage types where
- * unstated, and each ability's `schoolId` are homebrew, sized to feel right
- * against the existing AP economy and Vitality-scaled HP pools — same
- * precedent as this file's own numbers before this pass.
+ * resource pool, resource cost, AP cost, and ability description below is
+ * transcribed directly from it. Cooldowns (there are none — the sheet's own
+ * resource/AP costs are the limiting factor), damage types where unstated,
+ * and each ability's `schoolId` are homebrew, sized to feel right against
+ * the existing AP economy and Vitality-scaled HP pools — same precedent as
+ * this file's own numbers before this pass.
  *
  * A few mechanics don't have a real equivalent in this engine and are
  * deliberately reinterpreted rather than fabricated wholesale — see
@@ -162,7 +162,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         weaponDamageSource: "melee",
         damageType: "bludgeoning",
         resourceCost: 5,
-        apCost: 2,
+        apCost: 3,
         schoolId: "martial",
         applyStatus: { defId: "knockedDown", turns: 1 },
         unlockLevel: 4,
@@ -212,7 +212,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         flatBase: 100,
         percentOfAbility: 0.2,
         resourceCost: 4,
-        apCost: 2,
+        apCost: 3,
         schoolId: "radiant",
         unlockLevel: 4,
       },
@@ -293,7 +293,7 @@ export const CLASSES: Record<string, CharacterClass> = {
         damageType: "piercing",
         percentOfAbility: 0.2,
         resourceCost: 20,
-        apCost: 2,
+        apCost: 3,
         schoolId: "shadow",
         applySelfStatus: { defId: "readied", turns: 99, stacks: 1 },
         unlockLevel: 2,

@@ -1068,6 +1068,21 @@ first tick of growth; the class's own growth doesn't start until level 2.
 `apps/client/src/screens/CharacterCreationScreen.tsx` (+ `.css`),
 `CharacterScreen.tsx`.
 
+## Class Style Sheet: Official AP Costs
+
+The Class Style Sheet (Google Drive) now states each leveled ability's AP
+cost explicitly (e.g. "Cost 50 Fury & 2 AP"), replacing the homebrew AP
+costs invented for the Class Style Sheet Reforge above. Most of those
+homebrew guesses already matched the sheet's real numbers; three didn't and
+were corrected: **Topple** (Soldier) and **Radiant Beam** (Cleric) are now
+3 AP (were 2), and **Evasive Jab** (Rogue) is now 3 AP (was 2). Every other
+leveled ability's AP cost was already correct and is unchanged. Basic
+Attack, Defend, and Flee aren't covered by the sheet and keep their
+existing default of 1 AP.
+
+### Critical files
+`packages/engine/src/classes.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
