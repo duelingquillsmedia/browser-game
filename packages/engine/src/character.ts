@@ -2,7 +2,6 @@ import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier } from "./dice.js";
 import { getRace, resolveRacePassiveId, type HalfElfChoice, type Race, type RacePassiveId } from "./races.js";
 import { getClass, type CharacterClass } from "./classes.js";
-import { getBackground, type Background } from "./backgrounds.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
@@ -18,14 +17,12 @@ export interface Character {
   name: string;
   raceId: string;
   classId: string;
-  /** The Background chosen at creation — grants a small +1×3 ability score bonus (see backgrounds.ts). */
-  backgroundId: string;
   level: number;
   /** XP accumulated toward this character's next level; resets to (any overflow past the threshold) on level-up. See `xpToNextLevel`/`gainExperience`. */
   xp: number;
   /** Currency spent at a settlement's General Store/Blacksmith (see game/setup.ts's Town Hub) and earned from combat victories. */
   gold: number;
-  /** The raw stat block dealt at creation (standard array/rolled assignment), before the Background's flat +1 or any race/class growth -- the input to `computeAbilityScores`, recomputed into `abilityScores` below on every load and level-up. */
+  /** The raw stat block dealt at creation (standard array/rolled assignment), before any race/class growth -- the input to `computeAbilityScores`, recomputed into `abilityScores` below on every load and level-up. */
   baseAbilityScores: AbilityScores;
   /** Only meaningful for a Half-elf: the player's own pick of which ability doubles its racial growth, which two get the ordinary growth, and which parent race's passive to inherit (see races.ts). */
   raceChoice?: HalfElfChoice;
@@ -198,26 +195,22 @@ function raceAbilityGrowth(race: Race, raceChoice: HalfElfChoice | undefined): P
 
 /**
  * Ability scores at any level, per the Race/Class Style Sheets: `baseAbilityScores`
- * (the raw stat block from creation) plus the Background's flat +1 (one-time,
- * unaffected by level), plus the race's own growth summed over every odd
- * level from 1 to `level`, plus the class's own growth summed over every
- * even level from 2 to `level`. Replaces the old one-time flat "10 + race
- * bonus + class bonus" model -- including its `Math.min(20, ...)` ceiling,
- * which no longer makes sense once ability scores keep growing all the way
- * to `LEVEL_CAP` alongside the rest of this engine's big, MMO-scale numbers.
+ * (the raw stat block from creation) plus the race's own growth summed over
+ * every odd level from 1 to `level`, plus the class's own growth summed over
+ * every even level from 2 to `level`. Replaces the old one-time flat "10 +
+ * race bonus + class bonus" model -- including its `Math.min(20, ...)`
+ * ceiling, which no longer makes sense once ability scores keep growing all
+ * the way to `LEVEL_CAP` alongside the rest of this engine's big, MMO-scale
+ * numbers.
  */
 export function computeAbilityScores(
   baseAbilityScores: AbilityScores,
-  background: Background,
   race: Race,
   raceChoice: HalfElfChoice | undefined,
   cls: CharacterClass,
   level: number
 ): AbilityScores {
   const scores = { ...baseAbilityScores };
-  for (const key of background.abilityScores) {
-    scores[key] += 1;
-  }
   const growth = raceAbilityGrowth(race, raceChoice);
   for (let lv = 1; lv <= level; lv += 2) {
     for (const [key, amount] of Object.entries(growth) as [AbilityKey, number][]) {
@@ -375,9 +368,8 @@ export function gainExperience(character: Character, amount: number): Experience
 
   const cls = getClass(character.classId);
   const race = getRace(character.raceId);
-  const background = getBackground(character.backgroundId);
 
-  const newAbilityScores = computeAbilityScores(character.baseAbilityScores, background, race, character.raceChoice, cls, level);
+  const newAbilityScores = computeAbilityScores(character.baseAbilityScores, race, character.raceChoice, cls, level);
   const oldResourceMax = computeResourceMax(character.abilityScores, cls.id, startLevel);
   const newMaxHp = computeMaxHealth(newAbilityScores, cls.id, level);
   const hpDelta = newMaxHp - character.maxHp;
@@ -437,7 +429,6 @@ export interface CreateCharacterOptions {
   name: string;
   raceId: string;
   classId: string;
-  backgroundId: string;
   baseAbilityScores: AbilityScores;
   /** Required when `raceId` is Half-elf; ignored otherwise. */
   raceChoice?: HalfElfChoice;
@@ -506,6 +497,11 @@ export function withClassMigrationIfMissing(character: Character): Character {
  * Sheets' per-level growth model replaced them -- kept only so
  * `recoverLegacyBaseAbilityScores` can reverse-engineer a legacy character's
  * true creation-time `baseAbilityScores`. Never used for anything else.
+ * Doesn't account for the since-removed Background system's own one-time +1
+ * bonus -- a save old enough to predate both the growth model AND still be
+ * missing `baseAbilityScores` today will recover a spread slightly high on
+ * whichever abilities its background used to bump, same acceptable
+ * imprecision as this function's `Math.min(20, ...)` clamp caveat below.
  */
 const LEGACY_RACE_ABILITY_BONUSES: Record<string, Partial<Record<AbilityKey, number>>> = {
   elf: { dex: 2, wis: 2, int: 1, vit: -1 },
@@ -531,11 +527,8 @@ const LEGACY_CLASS_ABILITY_BONUSES: Record<string, Partial<Record<AbilityKey, nu
  * one-time migration; the result is stored as `baseAbilityScores` afterward,
  * so this only ever runs once per character.
  */
-function recoverLegacyBaseAbilityScores(character: Character, cls: CharacterClass, race: Race, background: Background): AbilityScores {
+function recoverLegacyBaseAbilityScores(character: Character, cls: CharacterClass, race: Race): AbilityScores {
   const scores = { ...character.abilityScores };
-  for (const key of background.abilityScores) {
-    scores[key] -= 1;
-  }
   for (const [key, amount] of Object.entries(LEGACY_RACE_ABILITY_BONUSES[race.id] ?? {}) as [AbilityKey, number][]) {
     scores[key] -= amount;
   }
@@ -547,29 +540,25 @@ function recoverLegacyBaseAbilityScores(character: Character, cls: CharacterClas
 
 /**
  * Backfills fields on a character persisted before this engine version:
- * inventory/equipment (added first), background (added later — defaults to
- * Acolyte since the original data has no equivalent), and `baseAbilityScores`
- * (added by the Race/Class Style Sheet reforge — recovered from the old flat
- * bonus model, see `recoverLegacyBaseAbilityScores`). `abilityScores` and
- * `racePassiveId` are recomputed from scratch every time this runs (a pure
- * function of `baseAbilityScores` + level + race/class/background), so a
- * character always reflects the current growth formulas on load, not just
- * whatever was true the last time it leveled up.
+ * inventory/equipment (added first), and `baseAbilityScores` (added by the
+ * Race/Class Style Sheet reforge — recovered from the old flat bonus model,
+ * see `recoverLegacyBaseAbilityScores`). `abilityScores` and `racePassiveId`
+ * are recomputed from scratch every time this runs (a pure function of
+ * `baseAbilityScores` + level + race/class), so a character always reflects
+ * the current growth formulas on load, not just whatever was true the last
+ * time it leveled up.
  */
 export function withStartingGearIfMissing(character: Character): Character {
   const cls = getClass(character.classId);
   const race = getRace(character.raceId);
-  const backgroundId = character.backgroundId ?? "acolyte";
-  const background = getBackground(backgroundId);
   const defaultEquipment = resolveStartingEquipment(cls);
 
-  const baseAbilityScores = character.baseAbilityScores ?? recoverLegacyBaseAbilityScores(character, cls, race, background);
+  const baseAbilityScores = character.baseAbilityScores ?? recoverLegacyBaseAbilityScores(character, cls, race);
   const racePassiveId = resolveRacePassiveId(race.id, character.raceChoice);
-  const abilityScores = computeAbilityScores(baseAbilityScores, background, race, character.raceChoice, cls, character.level);
+  const abilityScores = computeAbilityScores(baseAbilityScores, race, character.raceChoice, cls, character.level);
 
   const withGear: Character = {
     ...character,
-    backgroundId,
     baseAbilityScores,
     racePassiveId,
     abilityScores,
@@ -590,12 +579,11 @@ export const STARTING_GOLD = 50;
 export function createCharacter(options: CreateCharacterOptions): Character {
   const race = getRace(options.raceId);
   const cls = getClass(options.classId);
-  const background = getBackground(options.backgroundId);
   const level = options.level ?? 1;
   const raceChoice = race.id === "halfElf" ? options.raceChoice : undefined;
 
   const baseAbilityScores = { ...options.baseAbilityScores };
-  const abilityScores = computeAbilityScores(baseAbilityScores, background, race, raceChoice, cls, level);
+  const abilityScores = computeAbilityScores(baseAbilityScores, race, raceChoice, cls, level);
   const racePassiveId = resolveRacePassiveId(race.id, raceChoice);
 
   const maxHp = computeMaxHealth(abilityScores, cls.id, level);
@@ -606,7 +594,6 @@ export function createCharacter(options: CreateCharacterOptions): Character {
     name: options.name,
     raceId: race.id,
     classId: cls.id,
-    backgroundId: background.id,
     level,
     xp: 0,
     gold: STARTING_GOLD,

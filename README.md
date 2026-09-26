@@ -1083,6 +1083,35 @@ existing default of 1 AP.
 ### Critical files
 `packages/engine/src/classes.ts`.
 
+## Background System Removed
+
+The four Backgrounds (Acolyte, Criminal, Sage, Soldier) are gone. They were
+leftover SRD-descended content that never surfaced as a player choice — each
+class silently auto-picked one at creation purely for its flat +1-to-a-few-
+abilities bonus — and added nothing else to the game. Removed outright, no
+replacement mechanic or rebalancing pass, per the request: every class's
+ability scores are now exactly `baseAbilityScores` plus race/class growth,
+with no background bonus folded in anywhere.
+
+- **`backgrounds.ts` deleted** and its export dropped from `index.ts`.
+  `Character` and `CreateCharacterOptions` both lose `backgroundId`;
+  `computeAbilityScores` drops its `background` parameter entirely.
+- **`companions.ts`**: each Misfit Six template drops its `backgroundId`.
+- **Legacy migration**: `recoverLegacyBaseAbilityScores` (used by
+  `withStartingGearIfMissing` to reverse-engineer a pre-reforge character's
+  `baseAbilityScores`) no longer subtracts a background's one-time bonus —
+  an already-acknowledged source of imprecision for that migration path,
+  same as its pre-existing `Math.min(20, ...)` clamp caveat.
+- **Client**: `appearance.ts` drops `DEFAULT_BACKGROUND_BY_CLASS`. Character
+  Creation's Attributes step loses its Background delta column (base/race/
+  total remain); the Character screen's "Background & Traits" panel is now
+  just "Traits" (race passive/traits only).
+
+### Critical files
+`packages/engine/src/character.ts`, `companions.ts`, `index.ts`;
+`apps/client/src/game/appearance.ts`; `apps/client/src/screens/
+CharacterCreationScreen.tsx` (+ `.css`), `CharacterScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -43,14 +43,3 @@ export const NAME_POOLS: Record<string, string[]> = {
   dwarf: ["Thrain", "Dagna", "Borin", "Helga", "Kazrik", "Runa", "Gorrim", "Brenna"],
   halfElf: ["Elyan", "Marisel", "Corentha", "Bevan", "Isolwen", "Tamlin", "Sorcha", "Aldeth"],
 };
-
-/** Which existing Background best fits a class's flavor, since the new creation flow no longer asks for one. */
-export const DEFAULT_BACKGROUND_BY_CLASS: Record<string, string> = {
-  warrior: "soldier",
-  soldier: "soldier",
-  rogue: "criminal",
-  ranger: "criminal",
-  wizard: "sage",
-  cleric: "acolyte",
-  druid: "sage",
-};

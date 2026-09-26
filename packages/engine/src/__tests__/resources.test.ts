@@ -5,12 +5,12 @@ import { GUARANTEED_FAILURE, GUARANTEED_SUCCESS, forD20, forVariance, sequenceRn
 
 /**
  * A character built from flat 10s, so its final ability scores are just
- * "10 + Soldier background (+1 str/dex/vit, one-time) + Human's own growth
- * at every odd level up to `level` (+1 all) + this class's own growth at
- * every even level up to `level`" -- easy to hand-trace for each class.
- * `level` defaults to 4 so every class's lvl-2/lvl-4 abilities (the only
- * ones with a resource cost -- the Basic Attack is always free) are
- * actually present to exercise; see actions.ts's `unlockLevel`.
+ * "10 + Human's own growth at every odd level up to `level` (+1 all) +
+ * this class's own growth at every even level up to `level`" -- easy to
+ * hand-trace for each class. `level` defaults to 4 so every class's
+ * lvl-2/lvl-4 abilities (the only ones with a resource cost -- the Basic
+ * Attack is always free) are actually present to exercise; see actions.ts's
+ * `unlockLevel`.
  */
 function makeCharacter(classId: string, raceId = "human", level = 4) {
   return createCharacter({
@@ -18,7 +18,6 @@ function makeCharacter(classId: string, raceId = "human", level = 4) {
     name: classId,
     raceId,
     classId,
-    backgroundId: "soldier",
     baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     level,
   });
@@ -63,7 +62,7 @@ describe("class resource pools", () => {
     expect(makeCharacter("ranger").resource).toBe(0);
     expect(makeCharacter("rogue").resource).toBe(0);
     // Druid/Wizard: still mana-like -- full at creation, scaling with an ability score and level (default level here is 4).
-    // Wizard: base int 10, no Soldier background bonus, Human's own growth at odd levels 1/3 (+1 each) = +2,
+    // Wizard: base int 10, Human's own growth at odd levels 1/3 (+1 each) = +2,
     // Wizard's own growth at even levels 2/4 (+3 each) = +6 -> int 18 -> 100 + 18*6 + (4-1)*8 = 232.
     expect(makeCharacter("wizard").resource).toBe(232);
     // Druid: base wis 10, Human's own growth at odd levels 1/3 (+1 each) = +2,

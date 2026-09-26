@@ -1,7 +1,6 @@
 import {
   ABILITY_KEYS,
   ABILITY_NAMES,
-  BACKGROUNDS,
   CLASSES,
   LEVEL_CAP,
   RACES,
@@ -169,7 +168,6 @@ function EquipmentSlot({
 export function CharacterScreen({ character, onUpdateCharacter }: CharacterScreenProps) {
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
-  const background = BACKGROUNDS[character.backgroundId];
   const resourceConfig = getClassResource(character.classId);
   const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
 
@@ -209,7 +207,6 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
                   <div className="aow-char-name">{character.name}</div>
                   <div className="aow-char-sub">
                     {race?.name ?? character.raceId} · {cls?.name ?? character.classId}
-                    {background ? ` · ${background.name}` : ""}
                   </div>
                 </div>
               </div>
@@ -349,14 +346,8 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
       </div>
 
       <div className="aow-panel aow-full-width">
-        <div className="aow-panel-header">BACKGROUND &amp; TRAITS</div>
+        <div className="aow-panel-header">TRAITS</div>
         <div className="aow-card-body aow-trait-grid">
-          {background && (
-            <div className="aow-trait-card">
-              <h3>{background.name}</h3>
-              <p>{background.description}</p>
-            </div>
-          )}
           {race?.id === "halfElf" && character.racePassiveId && RACE_PASSIVE_DETAILS[character.racePassiveId] ? (
             <div className="aow-trait-card">
               <h3>{RACE_PASSIVE_DETAILS[character.racePassiveId].name}</h3>

@@ -18,13 +18,12 @@ function samplePlayer() {
     name: "Hero",
     raceId: "human",
     classId: "warrior",
-    backgroundId: "soldier",
     baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
   });
 }
 
 describe("MISFIT_SIX", () => {
-  it("has six distinct companions with valid race/class/background ids", () => {
+  it("has six distinct companions with valid race/class ids", () => {
     expect(MISFIT_SIX).toHaveLength(6);
     const ids = new Set(MISFIT_SIX.map((c) => c.id));
     expect(ids.size).toBe(6);
@@ -42,8 +41,11 @@ describe("createCompanion", () => {
   it("gives the class-default (standard array) stats by default, with the highest score on the primary ability", () => {
     const magnus = createCompanion("magnus");
     const primary = getClass("wizard").primaryAbility;
-    expect(magnus.abilityScores[primary]).toBeGreaterThanOrEqual(
-      Math.max(...Object.values(magnus.abilityScores))
+    // Checked against baseAbilityScores (the raw standard-array assignment), not the final
+    // grown abilityScores -- a Dwarf's own +2 str/vit growth at level 1 can otherwise outpace
+    // a Wizard's +1 (14 vs. 15) primary-ability edge from the array alone.
+    expect(magnus.baseAbilityScores[primary]).toBeGreaterThanOrEqual(
+      Math.max(...Object.values(magnus.baseAbilityScores))
     );
     expect(magnus.name).toBe("Magnus");
     expect(magnus.raceId).toBe("dwarf");
@@ -61,8 +63,9 @@ describe("createCompanion", () => {
     calls = 0;
     const b = createCompanion("magnar", { useRolledStats: true, rng });
     expect(a.abilityScores).toEqual(b.abilityScores);
-    // 4d6-drop-lowest rolls 3-18 before race/class/background bonuses stack on top
-    // (Magnar's Dwarf/Warrior/Soldier combination can add up to +7, or -1 on dex),
+    // 4d6-drop-lowest rolls 3-18 before race/class growth stacks on top
+    // (Magnar's Dwarf grants +2 str/+2 vit at level 1; Warrior's own growth
+    // doesn't apply yet, since it starts at level 2),
     // and every score is clamped to a ceiling of 20.
     for (const score of Object.values(a.abilityScores)) {
       expect(score).toBeGreaterThanOrEqual(2);

@@ -434,7 +434,6 @@ describe("toCombatant", () => {
       name: "Bram",
       raceId: "human",
       classId: "warrior",
-      backgroundId: "soldier",
       baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
     });
     return hp === undefined ? character : { ...character, hp };
@@ -463,7 +462,6 @@ describe("weapon damage", () => {
       name: "Bram",
       raceId: "human",
       classId: "warrior",
-      backgroundId: "soldier",
       baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
     });
   }
@@ -477,15 +475,15 @@ describe("weapon damage", () => {
     const foe = makeFoe({ maxHp: 1000, hp: 1000 });
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // Level 1: str 10 base + Soldier background (+1) + Human's own odd-level growth at level 1 (+1) = 12,
-    // no Warrior class growth yet (starts at level 2) -- Attack Power 24 -> +round(24*0.15) = +4 flat bonus.
+    // Level 1: str 10 base + Human's own odd-level growth at level 1 (+1) = 11, no Warrior class
+    // growth yet (starts at level 2) -- Attack Power 22 -> +round(22*0.15) = +3 flat bonus.
     // Force the weapon roll to its minimum (14 of 14-20).
     state = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18); // 14 + 4
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 17); // 14 + 3
 
     // Force the weapon roll to its maximum (20).
     state = submitPlayerAction(
@@ -493,7 +491,7 @@ describe("weapon damage", () => {
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_FAILURE])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18 - 24); // 20 + 4
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 17 - 23); // 20 + 3
   });
 
   it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {
@@ -508,13 +506,13 @@ describe("weapon damage", () => {
     const foe = makeFoe({ maxHp: 1000, hp: 1000 });
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
-    // str 12 (see the level-1 growth math above) * power 1.8 * exact variance 1.0 = round(21.6) = 22 -- no weapon range or Attack Power involved.
+    // str 11 (see the level-1 growth math above) * power 1.8 * exact variance 1.0 = round(19.8) = 20 -- no weapon range or Attack Power involved.
     state = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "test-power-attack", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, forVariance(1)])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 22);
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 20);
   });
 });
 

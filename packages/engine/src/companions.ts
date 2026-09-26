@@ -8,7 +8,6 @@ export interface CompanionTemplate {
   name: string;
   raceId: string;
   classId: string;
-  backgroundId: string;
   bio: string;
 }
 
@@ -23,7 +22,6 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     name: "Magnus",
     raceId: "dwarf",
     classId: "wizard",
-    backgroundId: "sage",
     bio: "A learned wizard who studied at the Academy Arcanum in Eldrin City, Magnus reasons his way through danger alongside his hot-headed brother Magnar in the Tameless Shore.",
   },
   {
@@ -31,7 +29,6 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     name: "Magnar",
     raceId: "dwarf",
     classId: "warrior",
-    backgroundId: "soldier",
     bio: "A hot-headed dwarf who lives for combat, charging headlong into battle without a thought for consequences. Once of the mercenary company the Rising Suns, he now adventures at his brother Magnus's side.",
   },
   {
@@ -39,7 +36,6 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     name: "Kel'dos",
     raceId: "elf",
     classId: "cleric",
-    backgroundId: "acolyte",
     bio: "An empathetic follower of Sioch, God of Wisdom, who cares for friend and stranger alike. He searches for his missing father, Cassemir, also a Cleric of Sioch.",
   },
   {
@@ -47,7 +43,6 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     name: "Dondalian",
     raceId: "elf",
     classId: "warrior",
-    backgroundId: "soldier",
     bio: "Courageously oblivious, Dondalian believes himself the finest swordsman in Eridan. He's on his Sojourn from the Sea of Obsidian Ice to become a Warden of the Winter Court.",
   },
   {
@@ -55,7 +50,6 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     name: "Telerek",
     raceId: "elf",
     classId: "rogue",
-    backgroundId: "criminal",
     bio: "A cunning, suspicious rogue who trusts only the Misfit Six. He works for his uncle Varloc at Ridgeton's lumber mill, often alongside his cousin Valeriek.",
   },
   {
@@ -63,7 +57,6 @@ export const MISFIT_SIX: CompanionTemplate[] = [
     name: "Valeriek",
     raceId: "elf",
     classId: "druid",
-    backgroundId: "acolyte",
     bio: "Aloof yet powerful, Valeriek hails from the Bastion within the great forest of Graliel's Bulwark. She left home young and found her closest friend and cousin, Telerek.",
   },
 ];
@@ -93,7 +86,6 @@ export function createCompanion(companionId: string, options?: { useRolledStats?
     name: template.name,
     raceId: template.raceId,
     classId: template.classId,
-    backgroundId: template.backgroundId,
     baseAbilityScores: abilityScores,
   });
 }

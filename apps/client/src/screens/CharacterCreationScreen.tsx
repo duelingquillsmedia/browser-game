@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   ABILITY_KEYS,
   ABILITY_NAMES,
-  BACKGROUNDS,
   CLASSES,
   RACES,
   computeAbilityScores,
@@ -17,7 +16,7 @@ import {
   type HalfElfChoice,
   type Race,
 } from "@eridan/engine";
-import { APPEARANCE_PRESETS, DEFAULT_BACKGROUND_BY_CLASS, NAME_POOLS } from "../game/appearance";
+import { APPEARANCE_PRESETS, NAME_POOLS } from "../game/appearance";
 import { HOME_TOWN_NAME } from "../game/lore";
 import "../theme/aow-theme.css";
 import "./CharacterCreationScreen.css";
@@ -83,8 +82,7 @@ const BASE_ABILITY_SCORES: AbilityScores = { str: 10, dex: 10, vit: 10, int: 10,
 
 /** Same growth formula the engine actually applies at creation -- see character.ts's `computeAbilityScores`. */
 function totalAbilityScores(race: Race, cls: CharacterClass, raceChoice: HalfElfChoice | undefined): AbilityScores {
-  const backgroundId = DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier";
-  return computeAbilityScores(BASE_ABILITY_SCORES, BACKGROUNDS[backgroundId], race, raceChoice, cls, 1);
+  return computeAbilityScores(BASE_ABILITY_SCORES, race, raceChoice, cls, 1);
 }
 
 /** A race's own odd-level growth, or a Half-elf's chosen substitute -- see races.ts's `HalfElfChoice`. */
@@ -179,7 +177,6 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
         name: trimmedName,
         raceId: race.id,
         classId: cls.id,
-        backgroundId: DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier",
         baseAbilityScores: BASE_ABILITY_SCORES,
         raceChoice,
         appearance: chosenLook,
@@ -415,14 +412,11 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                 </div>
                 <div className="aow-card-body aow-creation-attr-table">
                   {ABILITY_KEYS.map((key) => {
-                    const backgroundId = DEFAULT_BACKGROUND_BY_CLASS[cls.id] ?? "soldier";
-                    const backgroundDelta = BACKGROUNDS[backgroundId].abilityScores.includes(key) ? 1 : 0;
                     const raceDelta = raceGrowth[key] ?? 0;
                     return (
                       <div key={key} className="aow-creation-attr-row">
                         <span className="aow-creation-attr-name">{ABILITY_NAMES[key]}</span>
                         <span className="aow-creation-attr-base">10</span>
-                        <span className={`aow-creation-attr-delta ${backgroundDelta >= 0 ? "positive" : "negative"}`}>{sign(backgroundDelta)}</span>
                         <span className={`aow-creation-attr-delta ${raceDelta >= 0 ? "positive" : "negative"}`}>{sign(raceDelta)}</span>
                         <span className="aow-creation-attr-total">{totals[key]}</span>
                       </div>
