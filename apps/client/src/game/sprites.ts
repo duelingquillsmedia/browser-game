@@ -83,51 +83,6 @@ export function getAvatarSprite(avatarId?: string): SpriteAnimationSet | undefin
   return { idle: frame, attack: frame, hurt: frame, die: frame };
 }
 
-// import.meta.glob patterns must be static string literals (wildcards are fine, JS
-// variables aren't), so each monster's frames are globbed together across every
-// variant folder and then split apart below by which folder they came from.
-const goblinIdle = import.meta.glob("../assets/sprites/goblin-*/idle-*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-const goblinAttack = import.meta.glob("../assets/sprites/goblin-*/attack-*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-const goblinHurt = import.meta.glob("../assets/sprites/goblin-*/hurt-*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-const goblinDie = import.meta.glob("../assets/sprites/goblin-*/die-*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-
-/** Splits a glob result keyed by full path into one bucket per immediate parent folder. */
-function groupByDir(modules: Record<string, string>): Record<string, Record<string, string>> {
-  const groups: Record<string, Record<string, string>> = {};
-  for (const [path, url] of Object.entries(modules)) {
-    const dir = path.match(/\/([^/]+)\/[^/]+$/)?.[1];
-    if (!dir) continue;
-    (groups[dir] ??= {})[path] = url;
-  }
-  return groups;
-}
-
-const goblinIdleByDir = groupByDir(goblinIdle);
-const goblinAttackByDir = groupByDir(goblinAttack);
-const goblinHurtByDir = groupByDir(goblinHurt);
-const goblinDieByDir = groupByDir(goblinDie);
-
-function goblinSet(dir: string): SpriteAnimationSet {
-  return {
-    idle: sortedFrames(goblinIdleByDir[dir] ?? {}),
-    attack: sortedFrames(goblinAttackByDir[dir] ?? {}),
-    hurt: sortedFrames(goblinHurtByDir[dir] ?? {}),
-    die: sortedFrames(goblinDieByDir[dir] ?? {}),
-  };
-}
-
 /**
  * Two single-pose Goblin variants from the Drive's "Goblins" mannequin
  * export (Character/NPC Sprites), south-west facing -- same pipeline and
@@ -135,9 +90,12 @@ function goblinSet(dir: string): SpriteAnimationSet {
  * (see `getAvatarSprite`): every state just holds on the one frame, since
  * there's no real attack/hurt/die art for them yet. South-west is the
  * correct native facing for an enemy standing on the stage's right side to
- * look toward the party on the left, so unlike goblin-1/goblin-2 (drawn
- * facing right, meant to be mirrored) these are marked `preOriented` to
- * skip that mirror -- see `SpriteAnimationSet.preOriented`'s own comment.
+ * look toward the party on the left, so (unlike a "drawn facing right,
+ * meant to be mirrored" sheet) these are marked `preOriented` to skip that
+ * mirror -- see `SpriteAnimationSet.preOriented`'s own comment. Replaced the
+ * previous craftpix goblin-1/goblin-2 animated sprite sheets outright, per
+ * the user's own call -- see "Goblin South-West Poses" in the README for
+ * that pass, and its own follow-up entry for this replacement.
  */
 function goblinMannequinSet(image: string): SpriteAnimationSet {
   return { idle: [image], attack: [image], hurt: [image], die: [image], preOriented: true };
@@ -150,12 +108,7 @@ function goblinMannequinSet(image: string): SpriteAnimationSet {
  * generic portrait frame for any template without art yet.
  */
 const MONSTER_SPRITE_VARIANTS: Record<string, SpriteAnimationSet[]> = {
-  goblin: [
-    goblinSet("goblin-1"),
-    goblinSet("goblin-2"),
-    goblinMannequinSet(goblinSwBlackHair),
-    goblinMannequinSet(goblinSwRedHair),
-  ],
+  goblin: [goblinMannequinSet(goblinSwBlackHair), goblinMannequinSet(goblinSwRedHair)],
 };
 
 /** Picks a variant deterministically from a combatant's own id, so it stays the same across re-renders. */

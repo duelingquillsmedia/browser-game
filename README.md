@@ -1950,6 +1950,18 @@ decoupling the animation-state type from whatever else the interface holds.
 `apps/client/src/screens/CombatScreen.css`;
 `apps/client/src/assets/sprites/goblin-mannequin/`.
 
+**Follow-up, per the user's own call: the old craftpix goblin-1/goblin-2
+sprite sheets are gone outright**, not kept as extra variants alongside the
+two mannequin poses above. Removed `apps/client/src/assets/sprites/goblin-1`
+and `goblin-2` (both the in-use PNGs and their unused `source/` originals),
+and `sprites.ts`'s entire animated-sheet machinery that only those two ever
+used -- the `goblin*` `import.meta.glob` calls, `groupByDir`, and
+`goblinSet`. `MONSTER_SPRITE_VARIANTS.goblin` now lists only the two
+`goblinMannequinSet` entries. A goblin encounter always shows one of the two
+new single-pose looks now, picked the same deterministic way as before
+(`pickVariant`, keyed off the combatant's own id) -- no animated
+idle/attack/hurt/die goblin art exists in the project anymore.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
