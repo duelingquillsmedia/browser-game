@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  ACTION_BAR_SLOT_COUNT,
   currentCombatant,
   isTargetable,
   previewTargetsForShape,
@@ -13,6 +14,7 @@ import { CombatHeader } from "../components/combat/CombatHeader";
 import { CombatStage, type CombatantEffect } from "../components/combat/CombatStage";
 import { CombatHud } from "../components/combat/CombatHud";
 import { CombatResultOverlay } from "../components/combat/CombatResultOverlay";
+import { buildActionBarSlots, effectiveActionBarIds } from "../game/actionBar";
 import type { Encounter } from "../game/lore";
 import type { CombatResult } from "../game/setup";
 // Combat, like Title and Character Creation, renders outside <GameShell> (a full letterboxed
@@ -24,6 +26,8 @@ import "./CombatScreen.css";
 export interface CombatScreenProps {
   combat: CombatState;
   encounter: Encounter;
+  /** The party member's Skills-page action bar arrangement -- see game/actionBar.ts. Undefined only pre-migration; treated as all-empty (falls back to a computed default). */
+  actionBarIds: (string | null)[] | undefined;
   onSubmitAction: (request: ActionRequest) => void;
   /** XP/level-up/new-ability outcome of this fight, computed by the parent once `combat.status !== "active"`; null while the fight is still active. Shown directly in the result popup. */
   combatResult: CombatResult | null;
@@ -88,11 +92,13 @@ function useCanvasScale(): number {
   return scale;
 }
 
-export function CombatScreen({ combat, encounter, onSubmitAction, combatResult, onContinue }: CombatScreenProps) {
+export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, combatResult, onContinue }: CombatScreenProps) {
   const scale = useCanvasScale();
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
   const [hoveredActionId, setHoveredActionId] = useState<string | null>(null);
+  /** Which action-bar slot's Basic Attack flyout (melee/ranged) is currently open, if any. */
+  const [expandedSlot, setExpandedSlot] = useState<number | null>(null);
   // Starts from each combatant's pre-fight HP and an empty log, rather than the fully
   // resolved state `combat` already carries on mount -- otherwise a bad initiative roll
   // (enemies acting, and possibly winning, before the player's first turn) would already
@@ -188,6 +194,17 @@ export function CombatScreen({ combat, encounter, onSubmitAction, combatResult, 
   const player = visualState.combatants.find((c) => c.side === "party")!;
   const canAct = currentActor?.side === "party";
 
+  // The Skills page's own action-bar arrangement drives what shows here too --
+  // see game/actionBar.ts. Resolved once per render since both the HUD and the
+  // keyboard shortcuts below need the same slot contents.
+  const actionBarSlots = buildActionBarSlots(effectiveActionBarIds(actionBarIds, player.actions), player.actions);
+
+  // Closes a still-open Basic Attack flyout once it's no longer the player's turn to act,
+  // rather than leaving it visually open into the enemies' turn.
+  useEffect(() => {
+    if (!canAct) setExpandedSlot(null);
+  }, [canAct]);
+
   // For a line/area attack, hovering one enemy previews every enemy it will
   // actually hit -- computed via the same resolution the engine itself uses.
   const areaPreviewIds =
@@ -239,12 +256,20 @@ export function CombatScreen({ combat, encounter, onSubmitAction, combatResult, 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (!canAct || !currentActor) return;
-      if (e.key >= "1" && e.key <= "9") {
-        const skillActions = currentActor.actions.filter((a) => a.kind !== "flee" && a.kind !== "endTurn");
-        const action = skillActions[Number(e.key) - 1];
-        if (action) handleSelectAction(action);
+      if (e.key >= "1" && e.key <= String(ACTION_BAR_SLOT_COUNT)) {
+        const slot = actionBarSlots[Number(e.key) - 1];
+        if (!slot || slot.kind === "empty") return;
+        if (slot.kind === "action") {
+          handleSelectAction(slot.action);
+        } else if (!slot.ranged) {
+          handleSelectAction(slot.melee);
+        } else {
+          const index = Number(e.key) - 1;
+          setExpandedSlot((cur) => (cur === index ? null : index));
+        }
       } else if (e.key === "Escape") {
         setPendingAction(null);
+        setExpandedSlot(null);
       } else if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         handleEndTurn();
@@ -276,6 +301,9 @@ export function CombatScreen({ combat, encounter, onSubmitAction, combatResult, 
         <CombatHud
           state={visualState}
           player={player}
+          slots={actionBarSlots}
+          expandedSlot={expandedSlot}
+          onToggleExpandedSlot={(i) => setExpandedSlot((cur) => (cur === i ? null : i))}
           hoveredActionId={hoveredActionId}
           pendingAction={pendingAction}
           canAct={!!canAct}

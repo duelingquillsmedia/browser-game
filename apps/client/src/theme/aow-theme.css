@@ -279,6 +279,18 @@
   margin-top: 4px;
 }
 
+/** Splits a combined stat grid into named sub-groups, e.g. Basic Attack's Melee/Ranged variants (SkillsScreen.tsx). */
+.aow-skill-stat-group-label {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--aow-ember);
+}
+
 .aow-skill-stat {
   display: flex;
   flex-direction: column;

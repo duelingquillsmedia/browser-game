@@ -316,6 +316,7 @@ function App() {
       key={encounter.id}
       combat={combat}
       encounter={encounter}
+      actionBarIds={character.actionBarIds}
       combatResult={combatResult}
       onSubmitAction={handleSubmitAction}
       onContinue={handleCombatContinue}

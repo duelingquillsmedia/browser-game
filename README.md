@@ -1549,6 +1549,71 @@ render the new damage ranges and Attack/Spell Power figures without error.
 `packages/engine/src/classes.ts`, `combat.ts`, `actions.ts`, `status.ts`;
 `packages/engine/src/__tests__/character.test.ts`, `combat.test.ts`.
 
+## Combat Action Bar: Wired to the Skills Page, Basic Attack Consolidated
+
+The user reported that rearranging skills on the Skills page's action bar had
+no effect on what actually showed up in a fight. The bug: `CombatHud.tsx`
+never read `Character.actionBarIds` at all -- it just took `player.actions`
+in raw definition order and filled a hardcoded 9 slots positionally, while
+the Skills page's own 6-slot `actionBarIds` (added in an earlier pass) sat
+there purely decorative, exactly as its original README section admitted
+("doesn't change what's available in combat"). Fixing that now means an
+untouched `actionBarIds` (every save prior to this pass, since the field was
+never functional) would otherwise leave a fresh fight with an empty bar --
+handled by a computed default, not a data migration (see below).
+
+**New shared module, `apps/client/src/game/actionBar.ts`**, is now the one
+place both the Skills page and the Combat screen resolve slot contents from:
+- `effectiveActionBarIds(actionBarIds, actions)`: returns the character's own
+  stored bar if any slot is filled, otherwise a computed default (the first
+  6 known skills, Basic Attack collapsed to one -- see below) so an
+  untouched bar still fights sensibly. The computed default is never written
+  back automatically; the Skills page materializes it into real stored data
+  the moment the player makes their first edit (so an earlier default skill
+  already shown in another slot doesn't appear to vanish).
+- `buildActionBarSlots(actionBarIds, actions)`: resolves each of the 6 ids
+  against a character's or a combat `Combatant`'s own action list into an
+  `ActionBarSlot` (`empty` / a plain `action` / the combined `basicAttack`).
+
+**Basic Attack no longer costs 2 of the 6 slots.** Since a class's melee and
+ranged Basic Attack variants (`strike-melee`/`strike-ranged`, only both
+present with a ranged weapon equipped) are really one concept, placing
+either one on a slot now displays as a single "Basic Attack" entry
+everywhere: the Skills page's ability list collapses them into one row (its
+detail panel shows both variants' Ability/Damage side by side, under
+"Melee"/"Ranged" sub-headings), and the same slot in real combat shows one
+"BA" button. Clicking it -- with a ranged weapon equipped -- opens a small
+flyout of the two real sub-actions just above it (`CombatHud.tsx`'s new
+`BasicAttackSlot`) instead of arming anything itself; picking either sub-
+action arms it exactly like any other skill and closes the flyout. With no
+ranged weapon there's nothing to choose between, so the slot just behaves
+like a plain single-action slot.
+
+**Combat screen changes**: `CombatScreen`/`CombatHud` both dropped their own
+ad-hoc "first 9 non-flee/endTurn actions" slot logic in favor of the shared
+`buildActionBarSlots`, cutting the visible bar from a hardcoded 9 slots down
+to the Skills page's real 6 (`ACTION_BAR_SLOT_COUNT`) and fixing the 1-9
+keyboard shortcuts to 1-6, resolved against the same slot list (a numbered
+key on a Basic Attack slot toggles its flyout, same as a click). `App.tsx`
+passes the character's `actionBarIds` down to `CombatScreen` as a new prop.
+
+Verified live: on a Ranger (whose default "bow & dagger" starting kit gives
+both Basic Attack variants immediately), the Skills page's default bar
+placed "Basic Attack" in slot 1 and "Defend" in slot 2 with zero manual
+setup; entering a real fight showed the identical BA/DE arrangement;
+clicking BA opened the flyout with "Blade Slash" (melee) and "Quick Shot"
+(ranged) sub-buttons; picking Blade Slash armed it, and clicking an enemy
+resolved a real hit through the engine ("Ranger hits Goblin Slinger with
+Blade Slash for 9 piercing damage") -- all without a console error.
+
+### Critical files
+`apps/client/src/game/actionBar.ts` (new);
+`apps/client/src/screens/SkillsScreen.tsx` (+ `.css`), `CombatScreen.tsx`
+(+ `.css`);
+`apps/client/src/components/combat/CombatHud.tsx`;
+`apps/client/src/App.tsx`;
+`apps/client/src/theme/aow-theme.css`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

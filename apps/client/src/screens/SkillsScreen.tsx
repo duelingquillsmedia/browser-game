@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   ABILITY_NAMES,
-  ACTION_BAR_SLOT_COUNT,
   assignActionBarSlot,
   clearActionBarSlot,
   computeAttackPower,
@@ -11,6 +10,13 @@ import {
   type Character,
   type CombatActionDef,
 } from "@eridan/engine";
+import {
+  BASIC_ATTACK_CANONICAL_ID,
+  RANGED_STRIKE_ACTION_ID,
+  buildActionBarSlots,
+  effectiveActionBarIds,
+  getBasicAttackVariants,
+} from "../game/actionBar";
 import "./SkillsScreen.css";
 
 export interface SkillsScreenProps {
@@ -114,24 +120,45 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
   const [placingActionId, setPlacingActionId] = useState<string | null>(null);
 
   const resourceConfig = getClassResource(character.classId);
-  const actionBar = character.actionBarIds ?? Array(ACTION_BAR_SLOT_COUNT).fill(null);
+  // The Skills page's own slot arrangement is what combat's action bar reads
+  // (see game/actionBar.ts) -- an untouched, all-empty bar falls back to a
+  // computed default so this page and a fresh fight always agree on what's
+  // shown before the player customizes anything.
+  const actionBarIds = effectiveActionBarIds(character.actionBarIds, character.actions);
+  const slots = buildActionBarSlots(actionBarIds, character.actions);
+  const basicAttackSlotIndex = slots.findIndex((s) => s.kind === "basicAttack");
   const actionById = new Map(character.actions.map((a) => [a.id, a]));
 
-  const counts: Record<FilterId, number> = { all: character.actions.length, attack: 0, heal: 0, buff: 0, utility: 0 };
-  for (const action of character.actions) counts[bucketFor(action.kind)]++;
+  // Both Basic Attack variants collapse into one "Basic Attack" list row and
+  // one action-bar slot when a ranged weapon is equipped, so picking either
+  // never costs 2 of the 6 slots -- see actionBar.ts's own doc comment.
+  const { melee: basicAttackMelee, ranged: basicAttackRanged } = getBasicAttackVariants(character.actions);
+  const hasComboBasicAttack = !!(basicAttackMelee && basicAttackRanged);
+  const listActions = hasComboBasicAttack
+    ? character.actions.filter((a) => a.id !== RANGED_STRIKE_ACTION_ID)
+    : character.actions;
+  const displayName = (action: CombatActionDef) =>
+    hasComboBasicAttack && action.id === BASIC_ATTACK_CANONICAL_ID ? "Basic Attack" : action.name;
+  const slotIndexFor = (action: CombatActionDef) =>
+    hasComboBasicAttack && action.id === BASIC_ATTACK_CANONICAL_ID ? basicAttackSlotIndex : actionBarIds.indexOf(action.id);
+
+  const counts: Record<FilterId, number> = { all: listActions.length, attack: 0, heal: 0, buff: 0, utility: 0 };
+  for (const action of listActions) counts[bucketFor(action.kind)]++;
 
   const selected: CombatActionDef | undefined = character.actions.find((a) => a.id === selectedId);
-  const selectedSlotIndex = selected ? actionBar.indexOf(selected.id) : -1;
+  const selectedIsBasicAttack = hasComboBasicAttack && selected?.id === BASIC_ATTACK_CANONICAL_ID;
+  const selectedSlotIndex = selected ? slotIndexFor(selected) : -1;
   const placingAction = placingActionId ? actionById.get(placingActionId) : undefined;
 
   function handleSlotClick(slotIndex: number) {
     if (placingActionId) {
-      onUpdateCharacter(assignActionBarSlot(character, slotIndex, placingActionId));
+      onUpdateCharacter(assignActionBarSlot({ ...character, actionBarIds }, slotIndex, placingActionId));
       setPlacingActionId(null);
       return;
     }
-    const actionId = actionBar[slotIndex];
-    if (actionId) setSelectedId(actionId);
+    const slot = slots[slotIndex];
+    if (slot.kind === "empty") return;
+    setSelectedId(slot.kind === "basicAttack" ? BASIC_ATTACK_CANONICAL_ID : slot.action.id);
   }
 
   return (
@@ -155,23 +182,24 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
             )}
           </p>
           <div className="aow-action-bar-slots">
-            {actionBar.map((actionId, i) => {
-              const action = actionId ? actionById.get(actionId) : undefined;
+            {slots.map((slot, i) => {
+              const isActive =
+                slot.kind === "basicAttack"
+                  ? selectedId === BASIC_ATTACK_CANONICAL_ID
+                  : slot.kind === "action" && selectedId === slot.action.id;
+              const name = slot.kind === "basicAttack" ? "Basic Attack" : slot.kind === "action" ? slot.action.name : null;
+              const bucket = slot.kind === "basicAttack" ? "attack" : slot.kind === "action" ? bucketFor(slot.action.kind) : null;
               return (
                 <button
                   key={i}
                   type="button"
-                  className={`aow-action-bar-slot${placingActionId ? " placing" : ""}${
-                    action && selectedId === action.id ? " active" : ""
-                  }`}
+                  className={`aow-action-bar-slot${placingActionId ? " placing" : ""}${isActive ? " active" : ""}`}
                   onClick={() => handleSlotClick(i)}
-                  title={action ? action.name : "Empty slot"}
+                  title={name ?? "Empty slot"}
                 >
                   <span className="aow-action-bar-key">{i + 1}</span>
-                  {action ? (
-                    <span className={`aow-skill-glyph aow-skill-glyph-${bucketFor(action.kind)}`}>
-                      {iconGlyph(action.name)}
-                    </span>
+                  {name && bucket ? (
+                    <span className={`aow-skill-glyph aow-skill-glyph-${bucket}`}>{iconGlyph(name)}</span>
                   ) : (
                     <span className="aow-action-bar-empty">Empty</span>
                   )}
@@ -200,7 +228,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
             </div>
 
             <div className="aow-skill-rows">
-              {character.actions
+              {listActions
                 .filter((action) => filter === "all" || bucketFor(action.kind) === filter)
                 .map((action) => {
                   const cost =
@@ -212,7 +240,8 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                     : action.usesPerCombat !== undefined
                       ? `${action.usesPerCombat}/fight`
                       : null;
-                  const slotIndex = actionBar.indexOf(action.id);
+                  const slotIndex = slotIndexFor(action);
+                  const name = displayName(action);
                   return (
                     <button
                       key={action.id}
@@ -221,11 +250,11 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                       onClick={() => setSelectedId(action.id)}
                     >
                       <span className={`aow-skill-glyph aow-skill-glyph-${bucketFor(action.kind)}`}>
-                        {iconGlyph(action.name)}
+                        {iconGlyph(name)}
                       </span>
                       <span className="aow-skill-row-body">
                         <span className="aow-skill-row-name">
-                          {action.name}
+                          {name}
                           {slotIndex !== -1 && <span className="aow-skill-slot-tag">Slot {slotIndex + 1}</span>}
                         </span>
                         <span className="aow-skill-row-meta">
@@ -249,18 +278,48 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
               <>
                 <div className="aow-item-header">
                   <span className={`aow-skill-glyph aow-skill-glyph-${bucketFor(selected.kind)} aow-skill-glyph-lg`}>
-                    {iconGlyph(selected.name)}
+                    {iconGlyph(selectedIsBasicAttack ? "Basic Attack" : selected.name)}
                   </span>
                   <div>
-                    <div className="aow-item-name">{selected.name}</div>
+                    <div className="aow-item-name">{selectedIsBasicAttack ? "Basic Attack" : selected.name}</div>
                     <div className="aow-item-type-line">
                       {capitalize(bucketFor(selected.kind))} · {capitalize(selected.kind)}
                     </div>
                   </div>
                 </div>
 
-                <p className="aow-item-flavor">{selected.description}</p>
+                <p className="aow-item-flavor">
+                  {selectedIsBasicAttack
+                    ? "Your weapon attack. Melee and ranged share one action-bar slot -- pick either when it's your turn."
+                    : selected.description}
+                </p>
 
+                {selectedIsBasicAttack && basicAttackMelee && basicAttackRanged ? (
+                  <div className="aow-skill-stat-grid">
+                    <div className="aow-skill-stat">
+                      <span className="aow-skill-stat-label">TARGET</span>
+                      <span>{TARGET_LABELS[basicAttackMelee.target] ?? capitalize(basicAttackMelee.target)}</span>
+                    </div>
+                    <div className="aow-skill-stat-group-label">Melee — {basicAttackMelee.name}</div>
+                    <div className="aow-skill-stat">
+                      <span className="aow-skill-stat-label">ABILITY</span>
+                      <span>{ABILITY_NAMES[basicAttackMelee.ability]}</span>
+                    </div>
+                    <div className="aow-skill-stat">
+                      <span className="aow-skill-stat-label">DAMAGE</span>
+                      <span>{powerRange(basicAttackMelee, character).join("–")}</span>
+                    </div>
+                    <div className="aow-skill-stat-group-label">Ranged — {basicAttackRanged.name}</div>
+                    <div className="aow-skill-stat">
+                      <span className="aow-skill-stat-label">ABILITY</span>
+                      <span>{ABILITY_NAMES[basicAttackRanged.ability]}</span>
+                    </div>
+                    <div className="aow-skill-stat">
+                      <span className="aow-skill-stat-label">DAMAGE</span>
+                      <span>{powerRange(basicAttackRanged, character).join("–")}</span>
+                    </div>
+                  </div>
+                ) : (
                 <div className="aow-skill-stat-grid">
                   <div className="aow-skill-stat">
                     <span className="aow-skill-stat-label">ABILITY</span>
@@ -309,12 +368,13 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                     </div>
                   )}
                 </div>
+                )}
 
                 {selectedSlotIndex !== -1 ? (
                   <button
                     type="button"
                     className="aow-button-ghost"
-                    onClick={() => onUpdateCharacter(clearActionBarSlot(character, selectedSlotIndex))}
+                    onClick={() => onUpdateCharacter(clearActionBarSlot({ ...character, actionBarIds }, selectedSlotIndex))}
                   >
                     Remove from Action Bar
                   </button>
