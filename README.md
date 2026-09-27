@@ -1803,6 +1803,57 @@ melee's.
 `packages/engine/src/items.ts`, `classes.ts`;
 `apps/client/src/components/ItemIcon.tsx`, `game/itemDisplay.ts`.
 
+## Basic Attack: Permanent Q/E Slots Instead of an Action-Bar Slot
+
+Reverted the previous pass's design (see "Combat Action Bar: Wired to the
+Skills Page, Basic Attack Consolidated" above), per the user's own change of
+mind: Basic Attack (melee and ranged) no longer competes for one of the
+Skills page's 6 configurable slots at all. It's a permanent fixture instead,
+always shown on its own two slots after the divider in combat -- taking over
+the position and keybinds of the HEAL/MANA potion slots that were sitting
+there as disabled "Coming soon" placeholders (no functioning potion-in-combat
+system exists yet, so nothing real was displaced): melee on **Q**, ranged on
+**E** (hidden -- rendered as a disabled empty slot -- for a character with no
+ranged weapon equipped).
+
+**`game/actionBar.ts`**: `ActionBarSlot` drops its `"basicAttack"` variant
+(now just `{kind:"empty"} | {kind:"action"}`) -- `defaultActionBarIds` and
+`buildActionBarSlots` both skip/blank out any `isBasicAttack` action instead
+of special-casing it into a combo slot, so it can never land on the 6-slot
+bar again, including for an old save with one still stored in a slot.
+`getBasicAttackVariants` stays (still the one place that reads a
+combatant's/character's `strike-melee`/`strike-ranged` actions), but its
+role changes from "what the combo slot renders" to "what the two permanent
+slots render." `BASIC_ATTACK_CANONICAL_ID`/`RANGED_STRIKE_ACTION_ID` are
+gone -- nothing needs a canonical id to store on a slot anymore.
+
+**`CombatHud.tsx`**: the old flyout (`BasicAttackSlot`, opened by clicking a
+combo slot to reveal melee/ranged sub-buttons) is deleted along with the
+HEAL/MANA placeholders -- `SkillSlot` itself now renders the melee/ranged
+buttons directly, keyed "Q"/"E" instead of a numeric position (its `index`
+prop became `keyLabel: string` to support this, and the now-pointless
+`hideKey` prop -- only ever needed by the flyout's sub-buttons -- is gone
+too).
+
+**`CombatScreen.tsx`**: the `expandedSlot` state and its close-on-turn-end
+effect are gone with the flyout. The keyboard handler adds plain `q`/`e`
+cases (case-insensitive, alongside the existing `1`-`6`/Space/Escape) that
+look up `getBasicAttackVariants(currentActor.actions)` and arm whichever
+variant exists, exactly like clicking its slot.
+
+**`SkillsScreen.tsx`**: since Basic Attack never lands on a bar slot, it's
+no longer listed as a placeable ability at all -- `listActions` filters out
+`isBasicAttack` actions, and all the combo-specific display logic (the
+"Melee — X / Ranged — Y" detail-panel grid, the canonical-id juggling for
+the ability list's "Slot N" tag) is deleted along with it. A player who
+wants to see Radiance's or Arcane Bolt's numbers now does that from the
+combat HUD's hover tooltip on its Q/E slot instead.
+
+### Critical files
+`apps/client/src/game/actionBar.ts`;
+`apps/client/src/components/combat/CombatHud.tsx`;
+`apps/client/src/screens/CombatScreen.tsx`, `SkillsScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -8,17 +8,8 @@ import { ACTION_BAR_SLOT_COUNT, type CombatActionDef } from "@eridan/engine";
 const MELEE_STRIKE_ID = "strike-melee";
 const RANGED_STRIKE_ID = "strike-ranged";
 
-/**
- * What a single action-bar slot actually shows, resolved from a raw stored
- * id against a combatant's current actions. `basicAttack` collapses both
- * Basic Attack variants into one slot (see `buildActionBarSlots`) -- `ranged`
- * is undefined for a character with no ranged weapon equipped, in which case
- * the slot behaves like a plain single action.
- */
-export type ActionBarSlot =
-  | { kind: "empty" }
-  | { kind: "action"; action: CombatActionDef }
-  | { kind: "basicAttack"; melee: CombatActionDef; ranged?: CombatActionDef };
+/** What a single action-bar slot actually shows, resolved from a raw stored id against a combatant's current actions. */
+export type ActionBarSlot = { kind: "empty" } | { kind: "action"; action: CombatActionDef };
 
 /**
  * The Skills page's own 6 organizational slots are the single source of
@@ -26,10 +17,10 @@ export type ActionBarSlot =
  * own `CombatHud`. A character who has never placed anything (every slot
  * still `null`, e.g. a brand-new character, or an existing save from before
  * this feature was wired into real combat) falls back to a computed default
- * -- the first `ACTION_BAR_SLOT_COUNT` known skills, Basic Attack collapsed
- * to one -- so combat is never left with an empty bar just because the
- * player hasn't visited Skills yet. The moment any slot is set, that
- * default stops applying entirely, respecting whatever the player arranged.
+ * -- the first `ACTION_BAR_SLOT_COUNT` known skills -- so combat is never
+ * left with an empty bar just because the player hasn't visited Skills yet.
+ * The moment any slot is set, that default stops applying entirely,
+ * respecting whatever the player arranged.
  */
 export function effectiveActionBarIds(
   actionBarIds: (string | null)[] | undefined,
@@ -40,17 +31,18 @@ export function effectiveActionBarIds(
   return defaultActionBarIds(actions);
 }
 
+/**
+ * Basic Attack (melee and ranged) is a permanent fixture outside the action
+ * bar now -- always available on its own Q/E slots in combat (see
+ * `getBasicAttackVariants` and `CombatHud`'s fixed slots) -- so it's never
+ * placed on the 6-slot bar, not even by this computed default.
+ */
 function defaultActionBarIds(actions: CombatActionDef[]): (string | null)[] {
   const ids: (string | null)[] = Array(ACTION_BAR_SLOT_COUNT).fill(null);
-  let sawBasicAttack = false;
   let i = 0;
   for (const action of actions) {
     if (i >= ACTION_BAR_SLOT_COUNT) break;
-    if (action.kind === "flee" || action.kind === "endTurn") continue;
-    if (action.isBasicAttack) {
-      if (sawBasicAttack) continue;
-      sawBasicAttack = true;
-    }
+    if (action.kind === "flee" || action.kind === "endTurn" || action.isBasicAttack) continue;
     ids[i++] = action.id;
   }
   return ids;
@@ -59,34 +51,27 @@ function defaultActionBarIds(actions: CombatActionDef[]): (string | null)[] {
 /**
  * Resolves each of the 6 slot ids against `actions` (a `Character`'s or a
  * combat `Combatant`'s own list -- either works, they carry the same shape).
- * A stale id (e.g. a Basic Attack variant no longer available after
- * unequipping its weapon) resolves to `empty`, same as the Skills page
- * already tolerated before this module existed. If a slot holds either
- * Basic Attack variant, it's shown as the single combined `basicAttack`
- * entry -- and since only one such id can ever mean anything, a second slot
- * that also resolves to a Basic Attack variant (only possible from data
- * saved before this consolidation) is treated as empty rather than shown
- * twice.
+ * A stale id resolves to `empty`: either a Basic Attack variant no longer
+ * available after unequipping its weapon, or -- since Basic Attack moved
+ * off the action bar entirely -- a Basic Attack id saved to a slot from
+ * before that change.
  */
 export function buildActionBarSlots(actionBarIds: (string | null)[], actions: CombatActionDef[]): ActionBarSlot[] {
-  const { melee, ranged } = getBasicAttackVariants(actions);
   const byId = new Map(actions.map((a) => [a.id, a]));
-  let usedBasicAttack = false;
-
   return actionBarIds.map((id): ActionBarSlot => {
     if (!id) return { kind: "empty" };
     const action = byId.get(id);
-    if (!action) return { kind: "empty" };
-    if (action.isBasicAttack) {
-      if (usedBasicAttack || !melee) return { kind: "empty" };
-      usedBasicAttack = true;
-      return { kind: "basicAttack", melee, ranged };
-    }
+    if (!action || action.isBasicAttack) return { kind: "empty" };
     return { kind: "action", action };
   });
 }
 
-/** A character's two Basic Attack variants, if known -- `ranged` is undefined with no ranged weapon equipped. */
+/**
+ * A character's two Basic Attack variants -- permanent fixtures outside the
+ * action bar, shown on their own Q (melee) / E (ranged) slots in combat
+ * (see `CombatHud`) rather than competing for one of the 6 configurable
+ * slots. `ranged` is undefined with no ranged weapon equipped.
+ */
 export function getBasicAttackVariants(actions: CombatActionDef[]): {
   melee?: CombatActionDef;
   ranged?: CombatActionDef;
@@ -94,9 +79,3 @@ export function getBasicAttackVariants(actions: CombatActionDef[]): {
   const byId = new Map(actions.map((a) => [a.id, a]));
   return { melee: byId.get(MELEE_STRIKE_ID), ranged: byId.get(RANGED_STRIKE_ID) };
 }
-
-/** The canonical id to store when placing the Basic Attack combo on a slot -- always the melee variant, since it's the one every class always has. */
-export const BASIC_ATTACK_CANONICAL_ID = MELEE_STRIKE_ID;
-
-/** The id folded into the Basic Attack combo everywhere it'd otherwise appear as its own separate entry (the Skills page's ability list). */
-export const RANGED_STRIKE_ACTION_ID = RANGED_STRIKE_ID;

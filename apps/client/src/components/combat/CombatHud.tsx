@@ -16,21 +16,13 @@ import {
   skillMeta,
   statusKindColor,
 } from "../../game/combatDisplay";
-import type { ActionBarSlot } from "../../game/actionBar";
-
-const ITEM_SLOTS = [
-  { key: "Q", label: "HEAL", color: "var(--aow-tertiary)" },
-  { key: "E", label: "MANA", color: "var(--aow-green)" },
-] as const;
+import { getBasicAttackVariants, type ActionBarSlot } from "../../game/actionBar";
 
 export interface CombatHudProps {
   state: CombatState;
   player: Combatant;
   /** The Skills page's own 6-slot arrangement, resolved against `player.actions` -- see game/actionBar.ts. */
   slots: ActionBarSlot[];
-  /** Which slot's Basic Attack flyout (melee/ranged sub-buttons) is currently open, if any. */
-  expandedSlot: number | null;
-  onToggleExpandedSlot: (index: number) => void;
   /** The skill bar slot currently under the pointer, for the info line -- distinct from `pendingAction`, which is armed (clicked, awaiting a target). */
   hoveredActionId: string | null;
   pendingAction: CombatActionDef | null;
@@ -63,8 +55,6 @@ export function CombatHud({
   state,
   player,
   slots,
-  expandedSlot,
-  onToggleExpandedSlot,
   hoveredActionId,
   pendingAction,
   canAct,
@@ -82,11 +72,16 @@ export function CombatHud({
   const resourceMax = computeResourceMax(player.abilityScores, player.classId ?? "", player.level ?? 1);
   const shield = player.statusEffects.find((e) => e.defId === "ward")?.amount ?? 0;
 
-  // Every action any slot could show, flattened for the hover-info lookup below --
-  // a Basic Attack slot represents two real actions (melee/ranged) at once.
-  const displayedActions: CombatActionDef[] = slots.flatMap((slot) =>
-    slot.kind === "action" ? [slot.action] : slot.kind === "basicAttack" ? [slot.melee, ...(slot.ranged ? [slot.ranged] : [])] : []
-  );
+  // Basic Attack (melee/ranged) is a permanent fixture on its own Q/E slots below,
+  // not part of the Skills-page-configurable bar -- see game/actionBar.ts.
+  const { melee: basicMelee, ranged: basicRanged } = getBasicAttackVariants(player.actions);
+
+  // Every action any slot could show, flattened for the hover-info lookup below.
+  const displayedActions: CombatActionDef[] = [
+    ...slots.flatMap((slot) => (slot.kind === "action" ? [slot.action] : [])),
+    ...(basicMelee ? [basicMelee] : []),
+    ...(basicRanged ? [basicRanged] : []),
+  ];
   const infoAction = (hoveredActionId ? displayedActions.find((a) => a.id === hoveredActionId) : null) ?? pendingAction;
   const blockReason = infoAction ? describeBlockReason(player, infoAction, state.round) : null;
 
@@ -169,7 +164,7 @@ export function CombatHud({
             </div>
           ) : (
             <div className="cbt-info-idle">
-              {canAct ? "Hover a skill to see its details, or press 1-6." : "Waiting…"}
+              {canAct ? "Hover a skill to see its details, or press 1-6, Q, or E." : "Waiting…"}
             </div>
           )}
           <button type="button" className="cbt-end-turn-button" disabled={!canAct} onClick={onEndTurn}>
@@ -187,28 +182,10 @@ export function CombatHud({
                 </div>
               );
             }
-            if (slot.kind === "basicAttack") {
-              return (
-                <BasicAttackSlot
-                  key={`basic-attack-${i}`}
-                  index={i}
-                  melee={slot.melee}
-                  ranged={slot.ranged}
-                  player={player}
-                  round={state.round}
-                  pendingAction={pendingAction}
-                  expanded={expandedSlot === i}
-                  disabled={!canAct}
-                  onHover={onHoverAction}
-                  onSelect={onSelectAction}
-                  onToggleExpand={() => onToggleExpandedSlot(i)}
-                />
-              );
-            }
             return (
               <SkillSlot
                 key={slot.action.id}
-                index={i}
+                keyLabel={String(i + 1)}
                 action={slot.action}
                 player={player}
                 round={state.round}
@@ -220,16 +197,34 @@ export function CombatHud({
             );
           })}
           <div className="cbt-hud-divider" />
-          {ITEM_SLOTS.map((item) => (
-            <button key={item.key} type="button" className="cbt-skill-slot cbt-item-slot" disabled title="Coming soon">
-              <span className="cbt-item-label" style={{ color: item.color }}>
-                {item.label}
-              </span>
-              <span className="cbt-slot-key">{item.key}</span>
-              <span className="cbt-slot-ap">1</span>
-              <span className="cbt-item-qty">×0</span>
-            </button>
-          ))}
+          {basicMelee && (
+            <SkillSlot
+              keyLabel="Q"
+              action={basicMelee}
+              player={player}
+              round={state.round}
+              armed={pendingAction?.id === basicMelee.id}
+              disabled={!canAct}
+              onHover={onHoverAction}
+              onSelect={onSelectAction}
+            />
+          )}
+          {basicRanged ? (
+            <SkillSlot
+              keyLabel="E"
+              action={basicRanged}
+              player={player}
+              round={state.round}
+              armed={pendingAction?.id === basicRanged.id}
+              disabled={!canAct}
+              onHover={onHoverAction}
+              onSelect={onSelectAction}
+            />
+          ) : (
+            <div className="cbt-skill-slot cbt-skill-slot-empty">
+              <span className="cbt-slot-key">E</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -263,7 +258,7 @@ export function CombatHud({
 }
 
 function SkillSlot({
-  index,
+  keyLabel,
   action,
   player,
   round,
@@ -271,9 +266,9 @@ function SkillSlot({
   disabled,
   onHover,
   onSelect,
-  hideKey,
 }: {
-  index: number;
+  /** The keycap badge shown on the slot -- a numeric position (1-6) for the Skills-page bar, or "Q"/"E" for the permanent Basic Attack slots. */
+  keyLabel: string;
   action: CombatActionDef;
   player: Combatant;
   round: number;
@@ -281,8 +276,6 @@ function SkillSlot({
   disabled: boolean;
   onHover: (id: string | null) => void;
   onSelect: (action: CombatActionDef) => void;
-  /** Suppresses the numeric slot-key badge -- for a Basic Attack flyout's melee/ranged sub-buttons, which don't have their own keyboard shortcut. */
-  hideKey?: boolean;
 }) {
   const ready = isActionReady(player, action, round);
   const roundsUntilReady =
@@ -308,7 +301,7 @@ function SkillSlot({
       <span className="cbt-slot-glyph" style={{ color, textShadow: `0 0 10px ${color}` }}>
         {initialsFor(action.name)}
       </span>
-      {!hideKey && <span className="cbt-slot-key">{index + 1}</span>}
+      <span className="cbt-slot-key">{keyLabel}</span>
       {player.ap !== undefined && <span className="cbt-slot-ap">{action.apCost ?? 1}</span>}
       {action.resourceCost !== undefined && <span className="cbt-slot-mana">{action.resourceCost}</span>}
       {onCooldown && (
@@ -317,98 +310,5 @@ function SkillSlot({
         </span>
       )}
     </button>
-  );
-}
-
-/**
- * A slot holding both Basic Attack variants at once (see game/actionBar.ts):
- * one button, labeled "Basic Attack", that -- with a ranged weapon equipped
- * -- opens a small flyout of the two real sub-actions just above it instead
- * of arming anything itself. With no ranged weapon, there's nothing to
- * choose between, so it behaves exactly like a plain melee `SkillSlot`.
- */
-function BasicAttackSlot({
-  index,
-  melee,
-  ranged,
-  player,
-  round,
-  pendingAction,
-  expanded,
-  disabled,
-  onHover,
-  onSelect,
-  onToggleExpand,
-}: {
-  index: number;
-  melee: CombatActionDef;
-  ranged?: CombatActionDef;
-  player: Combatant;
-  round: number;
-  pendingAction: CombatActionDef | null;
-  expanded: boolean;
-  disabled: boolean;
-  onHover: (id: string | null) => void;
-  onSelect: (action: CombatActionDef) => void;
-  onToggleExpand: () => void;
-}) {
-  const ready = isActionReady(player, melee, round);
-  const color = schoolColor(melee);
-  const armed = pendingAction?.id === melee.id || pendingAction?.id === ranged?.id;
-
-  function pick(action: CombatActionDef) {
-    onSelect(action);
-    onToggleExpand();
-  }
-
-  return (
-    <div className="cbt-basic-attack-wrapper">
-      {expanded && ranged && (
-        <div className="cbt-basic-attack-flyout">
-          <SkillSlot
-            index={index}
-            action={melee}
-            player={player}
-            round={round}
-            armed={pendingAction?.id === melee.id}
-            disabled={disabled}
-            onHover={onHover}
-            onSelect={pick}
-            hideKey
-          />
-          <SkillSlot
-            index={index}
-            action={ranged}
-            player={player}
-            round={round}
-            armed={pendingAction?.id === ranged.id}
-            disabled={disabled}
-            onHover={onHover}
-            onSelect={pick}
-            hideKey
-          />
-        </div>
-      )}
-      <button
-        type="button"
-        className="cbt-skill-slot"
-        disabled={disabled || !ready}
-        style={{
-          borderColor: armed || expanded ? color : undefined,
-          background: armed ? "rgba(184,92,74,.18)" : undefined,
-          boxShadow: armed ? `0 0 0 1px ${color}, 0 0 18px ${color}` : expanded ? `0 0 0 1px ${color}` : "none",
-          opacity: !ready ? 0.4 : 1,
-        }}
-        onMouseEnter={() => onHover(melee.id)}
-        onMouseLeave={() => onHover(null)}
-        onClick={() => (ranged ? onToggleExpand() : onSelect(melee))}
-      >
-        <span className="cbt-slot-glyph" style={{ color, textShadow: `0 0 10px ${color}` }}>
-          {initialsFor("Basic Attack")}
-        </span>
-        <span className="cbt-slot-key">{index + 1}</span>
-        {player.ap !== undefined && <span className="cbt-slot-ap">{melee.apCost ?? 1}</span>}
-      </button>
-    </div>
   );
 }

@@ -970,47 +970,6 @@
   background: rgba(232, 200, 170, 0.12);
 }
 
-.cbt-basic-attack-wrapper {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  flex: none;
-}
-
-.cbt-basic-attack-flyout {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 8px;
-  display: flex;
-  gap: 6px;
-  padding: 6px;
-  background: var(--aow-chip-bg);
-  border: 1px solid rgba(232, 200, 170, 0.24);
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(11, 9, 14, 0.55);
-  z-index: 5;
-}
-
-.cbt-item-slot {
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cbt-item-label {
-  font: 600 10px var(--aow-font-display);
-  letter-spacing: 0.1em;
-}
-
-.cbt-item-qty {
-  position: absolute;
-  bottom: 3px;
-  right: 5px;
-  font: 500 10px var(--aow-font-mono);
-  color: var(--aow-body);
-}
-
 /* ---------- Combat log column ---------- */
 
 .cbt-log-panel {
