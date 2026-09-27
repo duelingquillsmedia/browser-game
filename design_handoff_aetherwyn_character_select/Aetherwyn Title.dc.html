@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=Cinzel:wght@500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+Runic&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#0b090e;color:#ece6df;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}a{color:#e08a72;text-decoration:none}a:hover{color:#f2b3a1}button{font-family:inherit}@keyframes aw-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes aw-spin-r{to{transform:translate(-50%,-50%) rotate(-360deg)}}@keyframes aw-pulse{0%,100%{opacity:.45}50%{opacity:1}}@keyframes aw-rise{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(-70vh);opacity:0}}</style>
+</helmet>
+<div style="position:relative;width:100vw;height:100vh;overflow:hidden;background:#0b090e">
+
+  <sc-if value="{{ customBg }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0">
+      <image-slot id="title-bg" shape="rect" placeholder="Drop a background image (key art, 16:9 or wider)"></image-slot>
+    </div>
+  </sc-if>
+  <sc-if value="{{ arcaneBg }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 42%,#2a1820 0%,#150f18 45%,#0b090e 80%)"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 120% 40% at 50% 110%,rgba(184,92,74,.22),transparent 60%)"></div>
+  </sc-if>
+
+  <div style="position:absolute;inset:0;pointer-events:none">{{ rings }}</div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:{{ scrim }}"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">{{ motes }}</div>
+
+  <div style="position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:center;align-items:{{ align }};padding:48px {{ sidePad }}">
+    <div style="display:flex;flex-direction:column;align-items:{{ align }};gap:14px;text-align:{{ textAlign }}">
+      <div style="display:flex;align-items:center;gap:14px">
+        <span style="width:40px;height:1px;background:linear-gradient(90deg,transparent,#e08a72)"></span>
+        <span style="font:400 15px/1 'Noto Sans Runic',serif;letter-spacing:.5em;color:#e08a72;text-shadow:0 0 12px rgba(224,138,114,.8)">ᚨᛖᚦᛖᚱᚹᛁᚾ</span>
+        <span style="width:40px;height:1px;background:linear-gradient(90deg,#e08a72,transparent)"></span>
+      </div>
+      <h1 style="margin:0;font:800 clamp(44px,8.5vw,112px)/.95 Cinzel,serif;letter-spacing:.14em;color:#f5eee6;text-shadow:0 0 28px rgba(224,138,114,.55),0 0 80px rgba(184,92,74,.35),0 2px 0 #3a2420">AETHERWYN</h1>
+      <div style="font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:.32em;color:#b8ada5;text-transform:uppercase">A turn-based chronicle</div>
+    </div>
+
+    <div style="pointer-events:auto;margin-top:clamp(36px,7vh,64px);width:min(340px,100%);display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ menu }}" as="m" hint-placeholder-count="5">
+        <a href="{{ m.href }}" onMouseEnter="{{ m.hover }}" onClick="{{ m.click }}" style="display:flex;align-items:center;gap:14px;justify-content:{{ m.justify }};padding:12px 16px;border:1px solid {{ m.border }};background:{{ m.bg }};border-radius:3px;cursor:{{ m.cursor }};text-decoration:none">
+          <span style="width:8px;height:8px;flex:none;transform:rotate(45deg);background:#e08a72;box-shadow:0 0 10px #e08a72;opacity:{{ m.dot }}"></span>
+          <span style="display:flex;flex-direction:column;gap:6px;align-items:{{ m.innerAlign }}">
+            <span style="font:600 16px/1 Cinzel,serif;letter-spacing:.2em;color:{{ m.color }};text-shadow:{{ m.glow }}">{{ m.label }}</span>
+            <sc-if value="{{ m.hasSub }}" hint-placeholder-val="{{ false }}">
+              <span style="font:500 10px/1.2 'JetBrains Mono',monospace;letter-spacing:.08em;color:#a39a93">{{ m.sub }}</span>
+            </sc-if>
+          </span>
+          <span style="width:8px;height:8px;flex:none;transform:rotate(45deg);background:#e08a72;box-shadow:0 0 10px #e08a72;opacity:{{ m.dotR }}"></span>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;pointer-events:none;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 22px;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">
+    <span>v0.23.1 · EARLY ACCESS</span>
+    <span style="display:flex;gap:14px;align-items:center">
+      <span style="display:flex;gap:6px;align-items:center"><span style="border:1px solid rgba(232,200,170,.2);border-radius:3px;padding:3px 5px;color:#d8cfc6">↑↓</span>SELECT</span>
+      <span style="display:flex;gap:6px;align-items:center"><span style="border:1px solid rgba(232,200,170,.2);border-radius:3px;padding:3px 5px;color:#d8cfc6">ENTER</span>CONFIRM</span>
+    </span>
+  </div>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:50%;top:24px;transform:translateX(-50%);padding:10px 16px;background:#141118;border:1px solid rgba(232,200,170,.14);border-radius:4px;font:500 12px/1 'JetBrains Mono',monospace;color:#d8cfc6;box-shadow:0 10px 30px rgba(0,0,0,.45)">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;background&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Arcane&quot;,&quot;Custom image&quot;],&quot;default&quot;:&quot;Arcane&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Centered&quot;,&quot;Left&quot;],&quot;default&quot;:&quot;Centered&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scrimStrength&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:90,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;default&quot;:20,&quot;tsType&quot;:&quot;number&quot;},&quot;runesOverImage&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;embers&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { sel: 0, toast: '' };
+  items = [
+    { label: 'CONTINUE', sub: "KEL'HOS · LV 23 CLERIC · DAY 14", href: './Aetherwyn Prototype.dc.html?page=home' },
+    { label: 'NEW GAME', href: './Aetherwyn Character Creation.dc.html' },
+    { label: 'LOAD GAME' },
+    { label: 'SETTINGS' },
+    { label: 'QUIT' }
+  ];
+  componentDidMount() {
+    this.onKey = e => {
+      const n = this.items.length;
+      if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(s => ({ sel: (s.sel + 1) % n })); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(s => ({ sel: (s.sel - 1 + n) % n })); }
+      else if (e.key === 'Enter') this.activate(this.state.sel);
+    };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearTimeout(this.tt); }
+  activate(i) {
+    const it = this.items[i];
+    if (it.href) { location.href = it.href; return; }
+    clearTimeout(this.tt);
+    this.setState({ toast: it.label + ' · not in this prototype' });
+    this.tt = setTimeout(() => this.setState({ toast: '' }), 1600);
+  }
+  buildRings(show) {
+    if (!show) return null;
+    const h = React.createElement;
+    const R = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
+    const ring = (size, count, dur, rev, op, fs) => h('div', { key: size, style: { position: 'absolute', left: '50%', top: '44%', width: size, height: size, borderRadius: '50%', border: '1px solid rgba(224,138,114,' + (op * 0.5) + ')', animation: (rev ? 'aw-spin-r ' : 'aw-spin ') + dur + 's linear infinite', transform: 'translate(-50%,-50%)' } },
+      Array.from({ length: count }, (_, i) => h('span', { key: i, style: { position: 'absolute', left: '50%', top: 0, height: '50%', transformOrigin: '50% 100%', transform: 'translateX(-50%) rotate(' + (i * 360 / count) + 'deg)', font: '400 ' + fs + 'px/1 "Noto Sans Runic",serif', color: 'rgba(224,138,114,' + op + ')', textShadow: '0 0 10px rgba(224,138,114,.6)', paddingTop: 8 } }, R[i % R.length])));
+    return h('div', { style: { position: 'absolute', inset: 0, animation: 'aw-pulse 6s ease-in-out infinite' } },
+      ring('min(118vh,118vw)', 48, 240, false, 0.28, 18),
+      ring('min(92vh,92vw)', 36, 180, true, 0.4, 16),
+      ring('min(66vh,66vw)', 24, 140, false, 0.22, 14));
+  }
+  buildMotes(n) {
+    const h = React.createElement;
+    if (!this._m || this._m.length !== n) this._m = Array.from({ length: n }, () => ({ x: Math.random() * 100, d: 8 + Math.random() * 10, del: -Math.random() * 18, s: 2 + Math.random() * 3 }));
+    return this._m.map((m, i) => h('span', { key: i, style: { position: 'absolute', left: m.x + '%', bottom: -10, width: m.s, height: m.s, borderRadius: '50%', background: '#f2b3a1', boxShadow: '0 0 8px 2px rgba(224,138,114,.7)', animation: 'aw-rise ' + m.d + 's linear ' + m.del + 's infinite' } }));
+  }
+  renderVals() {
+    const p = this.props;
+    const custom = (p.background ?? 'Arcane') === 'Custom image';
+    const left = (p.layout ?? 'Centered') === 'Left';
+    const dim = (p.scrimStrength ?? (custom ? 55 : 20)) / 100;
+    const narrow = typeof window !== 'undefined' && window.innerWidth < 640;
+    const scrim = left
+      ? `linear-gradient(90deg,rgba(11,9,14,${Math.min(1, dim + 0.35)}) 0%,rgba(11,9,14,${dim * 0.6}) 55%,rgba(11,9,14,${dim * 0.25}) 100%)`
+      : `radial-gradient(ellipse 60% 70% at 50% 50%,rgba(11,9,14,${dim}) 0%,rgba(11,9,14,${dim * 0.7}) 60%,rgba(11,9,14,${Math.min(1, dim + 0.3)}) 100%)`;
+    const menu = this.items.map((it, i) => {
+      const on = this.state.sel === i;
+      return {
+        label: it.label, sub: it.sub || '', hasSub: !!it.sub, href: it.href || undefined,
+        justify: left ? 'flex-start' : 'center', innerAlign: left ? 'flex-start' : 'center',
+        border: on ? 'rgba(224,138,114,.45)' : 'transparent',
+        bg: on ? 'linear-gradient(90deg,rgba(184,92,74,.08),rgba(184,92,74,.22),rgba(184,92,74,.08))' : 'transparent',
+        color: on ? '#f5eee6' : '#b8ada5', glow: on ? '0 0 14px rgba(224,138,114,.7)' : 'none',
+        dot: on ? 1 : 0, dotR: on && !left ? 1 : 0, cursor: 'pointer',
+        hover: () => this.setState({ sel: i }),
+        click: e => { if (!it.href) { e.preventDefault(); this.activate(i); } }
+      };
+    });
+    return {
+      customBg: custom, arcaneBg: !custom,
+      rings: this.buildRings(!custom || (p.runesOverImage ?? false)),
+      motes: (p.embers ?? true) ? this.buildMotes(28) : null,
+      scrim, align: left ? 'flex-start' : 'center', textAlign: left ? 'left' : 'center',
+      sidePad: left ? (narrow ? '24px' : 'clamp(32px,8vw,140px)') : '24px',
+      menu, toast: this.state.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=Cinzel:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+Runic&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#050407;color:#ece6df;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}a{color:#e08a72;text-decoration:none}a:hover{color:#f2b3a1}button{font:inherit;color:inherit}</style>
+</helmet>
+<div style="position:fixed;inset:0;background:#050407;overflow:hidden">
+<div data-screen-label="Character Select" style="position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale({{ scale }});display:grid;grid-template-rows:64px minmax(0,1fr) 76px;background:radial-gradient(ellipse 70% 60% at 50% 0%, #1d1420 0%, #0b090e 65%);overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:18px;padding:0 28px;border-bottom:1px solid rgba(232,200,170,.1)">
+    <a href="./Aetherwyn Title.dc.html" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a39a93">‹ TITLE</a>
+    <div style="width:1px;height:22px;background:rgba(232,200,170,.12)"></div>
+    <div style="width:13px;height:13px;border:1.5px solid #e08a72;transform:rotate(45deg);box-shadow:0 0 10px rgba(224,138,114,.5)"></div>
+    <div style="font:700 16px 'Cinzel',serif;letter-spacing:.24em;color:#f3ece4;text-shadow:0 0 14px rgba(224,138,114,.45)">AETHERWYN</div>
+    <div style="flex:1"></div>
+    <div style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#8a817b">SELECT CHARACTER · {{ usedCount }} / 3 SLOTS</div>
+  </header>
+
+  <main style="display:flex;flex-direction:column;align-items:center;gap:26px;padding:34px 60px 26px;min-height:0">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div style="font:700 30px/1.1 'Cinzel',serif;letter-spacing:.08em;color:#f3ece4;text-shadow:0 0 18px rgba(224,138,114,.3)">Choose your character</div>
+      <div style="font:400 15px 'Alegreya Sans',sans-serif;color:#a39a93">Select a hero to continue their journey, or begin a new one in an empty slot.</div>
+    </div>
+
+    <div style="flex:1;min-height:0;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,420px));justify-content:center;gap:24px">
+      <sc-for list="{{ cards }}" as="c" hint-placeholder-count="3">
+        <sc-if value="{{ c.filled }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ c.select }}" onDoubleClick="{{ c.play }}" style="position:relative;display:flex;flex-direction:column;min-height:0;border:1px solid {{ c.border }};border-radius:4px;background:#141118;box-shadow:{{ c.glow }};cursor:pointer;overflow:hidden;transition:border-color .15s, box-shadow .15s" style-hover="border-color:rgba(224,138,114,.5)">
+            <div style="position:relative;flex:1;min-height:0">
+              <image-slot id="{{ c.slotId }}" placeholder="Drop a portrait" style="display:block;width:100%;height:100%"></image-slot>
+              <div style="position:absolute;left:0;right:0;bottom:0;height:45%;background:linear-gradient(180deg,transparent,rgba(20,17,24,.96));pointer-events:none"></div>
+              <div style="position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:8px;pointer-events:none">
+                <div style="height:22px;padding:0 8px;display:flex;align-items:center;border:1px solid rgba(232,200,170,.18);border-radius:3px;background:rgba(11,9,14,.8);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#a39a93">SLOT {{ c.n }}</div>
+                <sc-if value="{{ c.isSel }}" hint-placeholder-val="{{ false }}">
+                  <div style="height:22px;padding:0 8px;display:flex;align-items:center;border:1px solid #e08a72;border-radius:3px;background:rgba(184,92,74,.3);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#f3ece4">SELECTED</div>
+                </sc-if>
+                <sc-if value="{{ c.fresh }}" hint-placeholder-val="{{ false }}">
+                  <div style="height:22px;padding:0 8px;display:flex;align-items:center;border:1px solid rgba(134,196,111,.5);border-radius:3px;background:rgba(11,9,14,.8);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#86c46f">NEW</div>
+                </sc-if>
+              </div>
+              <div style="position:absolute;left:18px;right:18px;bottom:14px;display:flex;align-items:center;gap:14px;pointer-events:none">
+                <div style="position:relative;width:46px;height:46px;flex:none">
+                  <div style="position:absolute;inset:6px;transform:rotate(45deg);border:1px solid {{ c.color }};background:#1a1216;box-shadow:0 0 12px {{ c.color }}"></div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 14px 'Cinzel',serif;color:#f3ece4">{{ c.lvl }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+                  <div style="font:700 24px/1 'Cinzel',serif;letter-spacing:.05em;color:#f3ece4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+                  <div style="display:flex;align-items:center;gap:8px;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#cfc6bd">
+                    <span>{{ c.race }}</span>
+                    <span style="color:#5a5158">·</span>
+                    <span style="color:{{ c.color }}">{{ c.cls }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 16px;border-top:1px solid rgba(232,200,170,.08)">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <div style="display:flex;justify-content:space-between;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b"><span>EXPERIENCE</span><span style="color:#d8cfc6">{{ c.xpText }}</span></div>
+                <div style="height:5px;border-radius:2px;background:#0e0c11;overflow:hidden"><div style="height:100%;width:{{ c.xpPct }};background:linear-gradient(90deg,#8a6f35,#d9b865);box-shadow:0 0 6px rgba(217,184,101,.5)"></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+                <div style="display:flex;flex-direction:column;gap:3px;padding:7px 9px;border-radius:3px;background:#100d13"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">LOCATION</span><span style="font:600 13px 'Cinzel',serif;color:#ece6df;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.loc }}</span></div>
+                <div style="display:flex;flex-direction:column;gap:3px;padding:7px 9px;border-radius:3px;background:#100d13"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">DAY</span><span style="font:600 13px 'Cinzel',serif;color:#ece6df">{{ c.day }}</span></div>
+                <div style="display:flex;flex-direction:column;gap:3px;padding:7px 9px;border-radius:3px;background:#100d13"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8a817b">PLAYED</span><span style="font:600 13px 'Cinzel',serif;color:#ece6df">{{ c.played }}</span></div>
+              </div>
+              <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#6b625c">LAST PLAYED · {{ c.last }}</div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ c.empty }}" hint-placeholder-val="{{ false }}">
+          <a href="./Aetherwyn Character Creation.dc.html" onMouseEnter="{{ c.select }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;border:1px dashed {{ c.border }};border-radius:4px;background:repeating-linear-gradient(135deg, rgba(232,200,170,.025) 0 6px, transparent 6px 12px), #100d13;cursor:pointer;transition:border-color .15s" style-hover="border-color:rgba(224,138,114,.6)">
+            <div style="position:relative;width:64px;height:64px">
+              <div style="position:absolute;inset:10px;transform:rotate(45deg);border:1px solid #e08a72;box-shadow:0 0 16px rgba(224,138,114,.35)"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:400 26px 'Cinzel',serif;color:#e08a72">+</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8a817b">SLOT {{ c.n }} · EMPTY</div>
+              <div style="font:700 18px 'Cinzel',serif;letter-spacing:.1em;color:#f3ece4">Create New Character</div>
+              <div style="font:400 14px 'Alegreya Sans',sans-serif;color:#a39a93">Choose a race, class and name.</div>
+            </div>
+          </a>
+        </sc-if>
+      </sc-for>
+    </div>
+  </main>
+
+  <footer style="display:flex;align-items:center;gap:14px;padding:0 28px;border-top:1px solid rgba(232,200,170,.1);background:#100d13">
+    <a href="./Aetherwyn Title.dc.html" style="height:44px;min-width:130px;padding:0 18px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(232,200,170,.18);border-radius:3px;background:#141118;font:600 12px 'Cinzel',serif;letter-spacing:.16em;color:#d8cfc6" style-hover="border-color:rgba(224,138,114,.55)">‹ TITLE</a>
+    <button onClick="{{ askDelete }}" style="height:44px;padding:0 18px;display:flex;align-items:center;gap:10px;border:1px solid {{ delBorder }};border-radius:3px;background:#141118;cursor:{{ delCursor }};opacity:{{ delOpacity }}" style-hover="border-color:rgba(208,96,74,.6)">
+      <span style="font:600 12px 'Cinzel',serif;letter-spacing:.16em;color:#d0604a">DELETE</span>
+      <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8a817b">DEL</span>
+    </button>
+    <div style="flex:1;display:flex;justify-content:center;gap:12px">
+      <sc-for list="{{ cards }}" as="c" hint-placeholder-count="3">
+        <div style="width:9px;height:9px;transform:rotate(45deg);border:1px solid {{ c.pipBorder }};background:{{ c.pipFill }}"></div>
+      </sc-for>
+    </div>
+    <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#6b625c">1–3 SELECT</div>
+    <button onClick="{{ play }}" style="height:48px;min-width:240px;padding:0 24px;display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;border:1px solid {{ playBorder }};border-radius:3px;background:{{ playBg }};box-shadow:{{ playGlow }};cursor:{{ playCursor }}">
+      <span style="font:700 13px 'Cinzel',serif;letter-spacing:.18em;color:{{ playColor }}">{{ playLabel }}</span>
+      <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(243,236,228,.6)">ENTER</span>
+    </button>
+  </footer>
+
+  <sc-if value="{{ confirming }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelDelete }}" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(5,4,7,.78)">
+      <div onClick="{{ stop }}" style="width:440px;display:flex;flex-direction:column;align-items:center;gap:14px;padding:30px 32px;border:1px solid rgba(208,96,74,.45);border-radius:4px;background:#141118;box-shadow:0 20px 60px rgba(0,0,0,.6), 0 0 30px rgba(208,96,74,.12);text-align:center">
+        <div style="width:14px;height:14px;transform:rotate(45deg);background:#d0604a;box-shadow:0 0 14px #d0604a"></div>
+        <div style="font:700 22px 'Cinzel',serif;letter-spacing:.08em;color:#f3ece4">Delete {{ delName }}?</div>
+        <div style="font:400 15px/1.4 'Alegreya Sans',sans-serif;color:#cfc6bd;text-wrap:pretty">{{ delDesc }} All progress in this slot will be lost. This cannot be undone.</div>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button onClick="{{ cancelDelete }}" style="height:42px;min-width:130px;padding:0 18px;border:1px solid rgba(232,200,170,.18);border-radius:3px;background:#100d13;cursor:pointer;font:600 12px 'Cinzel',serif;letter-spacing:.16em;color:#d8cfc6" style-hover="border-color:rgba(224,138,114,.55)">CANCEL</button>
+          <button onClick="{{ doDelete }}" style="height:42px;min-width:160px;padding:0 18px;border:1px solid #d0604a;border-radius:3px;background:#7a2f22;cursor:pointer;font:700 12px 'Cinzel',serif;letter-spacing:.16em;color:#f3ece4" style-hover="background:#8c3828">DELETE</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const CLS={cleric:['Cleric','#d9b865'],warrior:['Warrior','#d0604a'],rogue:['Rogue','#b287e6'],mage:['Mage','#5fc4d6'],druid:['Druid','#86c46f']};
+const RACE={elf:'Elf',human:'Human',dwarf:'Dwarf'};
+const XPN=c=>c.xpMax||800;
+const DEFAULT=[
+{id:'kelhos',name:"Kel'hos",race:'elf',cls:'cleric',lvl:23,xp:18420,xpMax:24000,loc:'Ridgeton',day:14,played:'41h 12m',last:'Today'},
+{id:'brenna',name:'Brenna',race:'dwarf',cls:'warrior',lvl:8,xp:2140,xpMax:3200,loc:'Ashvale',day:5,played:'6h 48m',last:'3 days ago'},
+null];
+const KEY='aetherwyn-slots';
+
+class Component extends DCLogic {
+  state={slots:DEFAULT,sel:0,confirming:false};
+  componentDidMount(){
+    let slots=DEFAULT;
+    try{const raw=localStorage.getItem(KEY);if(raw)slots=JSON.parse(raw);}catch(e){}
+    try{
+      const nc=JSON.parse(localStorage.getItem('aetherwyn-newchar')||'null');
+      const i=slots.findIndex(s=>!s);
+      if(nc&&i>=0){slots=slots.slice();slots[i]={id:'c'+Date.now(),name:nc.name,race:nc.race,cls:nc.cls,lvl:1,xp:0,xpMax:800,loc:'Ridgeton',day:1,played:'0h 00m',last:'Just now',fresh:true};localStorage.removeItem('aetherwyn-newchar');this.save(slots);}
+    }catch(e){}
+    const first=Math.max(0,slots.findIndex(Boolean));
+    this.setState({slots,sel:first});
+    this.fit=()=>this.setState({scale:Math.min(window.innerWidth/1600,window.innerHeight/900)});
+    window.addEventListener('resize',this.fit);this.fit();
+    this.onKey=e=>{
+      if(this.state.confirming){if(e.key==='Escape')this.setState({confirming:false});if(e.key==='Enter'){e.preventDefault();this.doDelete();}return;}
+      const n=parseInt(e.key,10);if(n>=1&&n<=3){this.setState({sel:n-1});return;}
+      if(e.key==='ArrowLeft')this.setState(s=>({sel:(s.sel+2)%3}));
+      if(e.key==='ArrowRight')this.setState(s=>({sel:(s.sel+1)%3}));
+      if(e.key==='Enter'){e.preventDefault();this.play();}
+      if(e.key==='Delete'||e.key==='Backspace')this.askDelete();
+      if(e.key==='Escape')location.href='./Aetherwyn Title.dc.html';
+    };
+    window.addEventListener('keydown',this.onKey);
+  }
+  componentWillUnmount(){window.removeEventListener('resize',this.fit);window.removeEventListener('keydown',this.onKey);}
+  save(slots){try{localStorage.setItem(KEY,JSON.stringify(slots));}catch(e){}}
+  play(){
+    const s=this.state,c=s.slots[s.sel];
+    if(!c){location.href='./Aetherwyn Character Creation.dc.html';return;}
+    try{localStorage.setItem('aetherwyn-active-slot',String(s.sel));}catch(e){}
+    location.href='./Aetherwyn Prototype.dc.html?page=home';
+  }
+  askDelete(){if(this.state.slots[this.state.sel])this.setState({confirming:true});}
+  doDelete(){
+    const slots=this.state.slots.slice();slots[this.state.sel]=null;this.save(slots);
+    const next=slots.findIndex(Boolean);this.setState({slots,confirming:false,sel:next<0?this.state.sel:next});
+  }
+  renderVals(){
+    const s=this.state,cur=s.slots[s.sel];
+    const cards=s.slots.map((c,i)=>{
+      const on=i===s.sel,base={n:i+1,select:()=>this.setState({sel:i}),pipBorder:on?'#e08a72':c?'#8a817b':'#3a333f',pipFill:on?'#b85c4a':'transparent'};
+      if(!c)return {...base,filled:false,empty:true,border:on?'#e08a72':'rgba(232,200,170,.2)'};
+      const [cn,col]=CLS[c.cls]||['Adventurer','#e08a72'],need=XPN(c);
+      return {...base,filled:true,empty:false,isSel:on,fresh:!!c.fresh,slotId:'cs-portrait-'+c.id,name:c.name,lvl:c.lvl,race:(RACE[c.race]||'').toUpperCase(),cls:cn.toUpperCase(),color:col,
+        loc:c.loc,day:c.day,played:c.played,last:String(c.last).toUpperCase(),
+        xpText:c.xp.toLocaleString()+' / '+need.toLocaleString(),xpPct:Math.min(100,c.xp/need*100)+'%',
+        border:on?'#e08a72':'rgba(232,200,170,.11)',
+        glow:on?'0 0 0 1px #e08a72, 0 0 32px rgba(184,92,74,.28), 0 18px 40px rgba(0,0,0,.45)':'inset 0 1px 0 rgba(255,255,255,.03), 0 10px 30px rgba(0,0,0,.35)',
+        play:()=>{this.setState({sel:i},()=>this.play());}};
+    });
+    return {
+      scale:s.scale||1,cards,usedCount:s.slots.filter(Boolean).length,
+      playLabel:cur?'ENTER WORLD':'CREATE CHARACTER',playBorder:'#e08a72',playBg:'#b85c4a',playGlow:'0 0 18px rgba(184,92,74,.35)',playCursor:'pointer',playColor:'#f3ece4',play:()=>this.play(),
+      delBorder:cur?'rgba(208,96,74,.35)':'rgba(232,200,170,.1)',delCursor:cur?'pointer':'not-allowed',delOpacity:cur?1:.4,askDelete:()=>this.askDelete(),
+      confirming:s.confirming,delName:cur?cur.name:'',delDesc:cur?'Level '+cur.lvl+' '+(RACE[cur.race]||'')+' '+(CLS[cur.cls]||[''])[0]+'.':'',
+      cancelDelete:()=>this.setState({confirming:false}),doDelete:()=>this.doDelete(),stop:e=>e.stopPropagation()
+    };
+  }
+}
+</script>
+</body>
+</html>
