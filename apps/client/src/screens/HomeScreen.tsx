@@ -21,6 +21,7 @@ export interface HomeScreenProps {
   onOpenCharacterSheet: () => void;
   onOpenInventory: () => void;
   onOpenSkills: () => void;
+  onOpenCharacterSelect: () => void;
   onSignOut: () => void;
 }
 
@@ -31,6 +32,7 @@ export function HomeScreen({
   onOpenCharacterSheet,
   onOpenInventory,
   onOpenSkills,
+  onOpenCharacterSelect,
   onSignOut,
 }: HomeScreenProps) {
   const race = RACES[character.raceId];
@@ -126,6 +128,9 @@ export function HomeScreen({
             <div className="aow-card-actions">
               <button type="button" className="aow-button-ghost" disabled={!canRest} onClick={onRest}>
                 Rest
+              </button>
+              <button type="button" className="aow-button-ghost" onClick={onOpenCharacterSelect}>
+                Character Select
               </button>
               <button type="button" className="aow-button-ghost" onClick={onSignOut}>
                 Sign Out

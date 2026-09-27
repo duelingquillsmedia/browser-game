@@ -158,6 +158,7 @@ function App() {
           onOpenCharacterSheet={() => setScreen({ kind: "character", character: screen.character })}
           onOpenInventory={() => setScreen({ kind: "inventory", character: screen.character })}
           onOpenSkills={() => setScreen({ kind: "skills", character: screen.character })}
+          onOpenCharacterSelect={() => setScreen({ kind: "characterSelect" })}
           onSignOut={async () => {
             await supabase.auth.signOut();
             setScreen({ kind: "intro" });

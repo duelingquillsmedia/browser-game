@@ -2107,9 +2107,15 @@ character was actually selected, with no click involved. Removed; an empty
 slot now only reacts to an actual click (still going straight to Character
 Creation, same as before), matching how every filled card already worked.
 
+**Reachable from Home, not just Title.** A "Character Select" button sits
+between Rest and Sign Out on the Home dashboard's Character card, so a
+player can jump back to pick a different one of their (up to three) heroes
+mid-session instead of having to sign out and back in first.
+
 ### Critical files
 `apps/client/src/screens/CharacterSelectScreen.tsx` (+ `.css`);
-`apps/client/src/game/roster.ts`, `setup.ts`; `apps/client/src/App.tsx`.
+`apps/client/src/game/roster.ts`, `setup.ts`; `apps/client/src/App.tsx`,
+`apps/client/src/screens/HomeScreen.tsx`.
 
 ## Fix: Pre-Reforge "fighter" Classid Crashed On Load
 
