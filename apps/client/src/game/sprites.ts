@@ -1,6 +1,7 @@
 import { getAvatarById } from "./avatars";
 import goblinSwBlackHair from "../assets/sprites/goblin-mannequin/south-west-black-hair.png";
 import goblinSwRedHair from "../assets/sprites/goblin-mannequin/south-west-red-hair.png";
+import direWolfSwDarkGrey from "../assets/sprites/direwolf-mannequin/south-west-dark-grey.png";
 
 export interface SpriteAnimationSet {
   idle: string[];
@@ -84,20 +85,17 @@ export function getAvatarSprite(avatarId?: string): SpriteAnimationSet | undefin
 }
 
 /**
- * Two single-pose Goblin variants from the Drive's "Goblins" mannequin
- * export (Character/NPC Sprites), south-west facing -- same pipeline and
+ * Wraps a single south-west-facing pose from the Drive's mannequin export
+ * (Character/NPC Sprites) as a monster's combat sprite -- same pipeline and
  * single-static-frame treatment as a player's Character Creation avatar
  * (see `getAvatarSprite`): every state just holds on the one frame, since
- * there's no real attack/hurt/die art for them yet. South-west is the
+ * there's no real attack/hurt/die art for these yet. South-west is the
  * correct native facing for an enemy standing on the stage's right side to
  * look toward the party on the left, so (unlike a "drawn facing right,
  * meant to be mirrored" sheet) these are marked `preOriented` to skip that
- * mirror -- see `SpriteAnimationSet.preOriented`'s own comment. Replaced the
- * previous craftpix goblin-1/goblin-2 animated sprite sheets outright, per
- * the user's own call -- see "Goblin South-West Poses" in the README for
- * that pass, and its own follow-up entry for this replacement.
+ * mirror -- see `SpriteAnimationSet.preOriented`'s own comment.
  */
-function goblinMannequinSet(image: string): SpriteAnimationSet {
+function mannequinSet(image: string): SpriteAnimationSet {
   return { idle: [image], attack: [image], hurt: [image], die: [image], preOriented: true };
 }
 
@@ -106,9 +104,16 @@ function goblinMannequinSet(image: string): SpriteAnimationSet {
  * variants per template so multiple instances of the same monster in a
  * fight (e.g. two Goblin Raiders) don't look identical. Falls back to the
  * generic portrait frame for any template without art yet.
+ *
+ * `goblin` replaced the previous craftpix goblin-1/goblin-2 animated sprite
+ * sheets outright with two mannequin poses, per the user's own call -- see
+ * "Goblin South-West Poses" in the README and its own follow-up entry for
+ * that pass. `direWolf` is new: only one color variant exists in the Drive
+ * so far (Dark Grey).
  */
 const MONSTER_SPRITE_VARIANTS: Record<string, SpriteAnimationSet[]> = {
-  goblin: [goblinMannequinSet(goblinSwBlackHair), goblinMannequinSet(goblinSwRedHair)],
+  goblin: [mannequinSet(goblinSwBlackHair), mannequinSet(goblinSwRedHair)],
+  direWolf: [mannequinSet(direWolfSwDarkGrey)],
 };
 
 /** Picks a variant deterministically from a combatant's own id, so it stays the same across re-renders. */

@@ -1962,6 +1962,28 @@ new single-pose looks now, picked the same deterministic way as before
 (`pickVariant`, keyed off the combatant's own id) -- no animated
 idle/attack/hurt/die goblin art exists in the project anymore.
 
+## Dire Wolf South-West Pose
+
+Same mannequin pipeline and treatment as the two Goblin variants above,
+this time for the Tiuv Forest encounter's Dire Wolf (`direWolf` in
+`monsters.ts`), which had no combat sprite at all before this (it fell back
+to the generic initial-letter portrait). Only one color variant exists in
+the Drive's "Dire_Wolf_Dark_Grey" folder so far, so `MONSTER_SPRITE_VARIANTS`
+gets a single-entry `direWolf` array rather than the two-way pick a Goblin
+fight gets.
+
+The download needed a second attempt -- its first came through with the
+same IDAT-CRC failure documented for the Cleric's and one Goblin variant's
+south-east/south-west assets; the retry validated cleanly.
+
+`goblinMannequinSet` was renamed to the class-agnostic `mannequinSet` (still
+identical: wraps one image as every animation state, `preOriented: true`)
+since it's no longer goblin-specific now that a second monster uses it.
+
+### Critical files
+`apps/client/src/game/sprites.ts`;
+`apps/client/src/assets/sprites/direwolf-mannequin/`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
