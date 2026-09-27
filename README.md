@@ -1753,6 +1753,25 @@ that one file would let this finish with no other code changes needed.
 `apps/client/src/screens/CharacterScreen.css`;
 `apps/client/src/game/avatars.ts`, `sprites.ts`.
 
+## Cleric Avatar: Combat-Facing Art Landed
+
+The user re-exported the Cleric's south-east pose in the Drive and asked
+for another attempt. The new `south-east.png` (same file ID as the six
+corrupted attempts above, but a different `fileSize`/`modifiedTime` —
+genuinely re-exported, not a stale reference) downloaded clean on the first
+try: base64 length, decoded byte count, and every PNG chunk's CRC32 all
+checked out, and PIL loaded it without error (64×64 RGBA, matching the
+south-facing portrait's own new size from the pass above).
+
+Saved as `apps/client/src/assets/avatars/cleric-male-black-hair-se.png` and
+wired up as the Cleric's `combatImage` in `avatars.ts` — no other code
+changes needed, since `getAvatarSprite`'s `combatImage ?? image`
+preference was already built for this. The Cleric now visibly faces the
+enemies in combat instead of the camera.
+
+### Critical files
+`apps/client/src/game/avatars.ts`.
+
 ## Ranged Spell Foci: Radiance, Arcane Bolt, Nature's Blast
 
 Cleric, Druid, and Wizard have had a named ranged Basic Attack variant
