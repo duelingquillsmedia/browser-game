@@ -501,11 +501,25 @@ interface LegacyCharacterShape {
 }
 
 /**
+ * Old classId -> current classId, for every rename a still-live character
+ * could be carrying. `fighter`/`wizard` were this engine's original SRD
+ * names, renamed to `warrior`/`mage` when Character Creation adopted the
+ * handoff's own roster; `mage` was later renamed again to `wizard` in the
+ * Class Style Sheet reforge (an original `wizard` character needs no entry
+ * here -- "wizard" has meant the same class slot both times that name was
+ * used, before and after the `mage` detour).
+ */
+const LEGACY_CLASS_ID: Record<string, string> = {
+  fighter: "warrior",
+  mage: "wizard",
+};
+
+/**
  * Migrates a character (and every nested companion, which carries the same
- * shape) saved before the Class Style Sheet reforge: `classId: "mage"` ->
- * `"wizard"` (same class slot, new kit — see classes.ts), and the old
- * single `equipment.weapon` into `meleeWeapon`/`rangedWeapon` by looking up
- * that item's now-real slot. A no-op for an already-migrated character.
+ * shape) saved before the Class Style Sheet reforge: a `classId` renamed
+ * since it was saved (see `LEGACY_CLASS_ID`), and the old single
+ * `equipment.weapon` into `meleeWeapon`/`rangedWeapon` by looking up that
+ * item's now-real slot. A no-op for an already-migrated character.
  */
 export function withClassMigrationIfMissing(character: Character): Character {
   const legacy = character as unknown as LegacyCharacterShape;
@@ -517,7 +531,7 @@ export function withClassMigrationIfMissing(character: Character): Character {
     equipment = { ...rest, [getItem(weapon).slot!]: weapon };
   }
 
-  const classId = legacy.classId === "mage" ? "wizard" : character.classId;
+  const classId = LEGACY_CLASS_ID[legacy.classId] ?? character.classId;
   const companions = character.companions
     ? Object.fromEntries(Object.entries(character.companions).map(([id, c]) => [id, withClassMigrationIfMissing(c)]))
     : character.companions;

@@ -658,6 +658,22 @@ describe("withClassMigrationIfMissing", () => {
     expect((migrated.equipment as { weapon?: string }).weapon).toBeUndefined();
   });
 
+  it("renames a pre-reforge \"fighter\" character to \"warrior\"", () => {
+    const modern = createCharacter({
+      id: "pc-legacy-fighter",
+      name: "Old Fighter",
+      raceId: "human",
+      classId: "warrior",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 10, wis: 10 },
+    });
+    // Simulate a row persisted before even the Mage/Wizard-era rename: classId "fighter".
+    const legacy: Character = { ...modern, classId: "fighter" } as unknown as Character;
+
+    const migrated = withClassMigrationIfMissing(legacy);
+
+    expect(migrated.classId).toBe("warrior");
+  });
+
   it("recurses into nested companions, which carry the same pre-reforge shape", () => {
     const companion: Character = {
       ...createCharacter({

@@ -2102,6 +2102,34 @@ delete confirmation dialog including its failure path.
 `apps/client/src/screens/CharacterSelectScreen.tsx` (+ `.css`);
 `apps/client/src/game/roster.ts`, `setup.ts`; `apps/client/src/App.tsx`.
 
+## Fix: Pre-Reforge "fighter" Classid Crashed On Load
+
+Character Select surfaced a pre-existing bug the very first time the
+account it hit had a real reason to load its roster and look closely at
+the result: a level 1 Dwarf character named "Fighter," saved back on
+2026-09-20 (`classId: "fighter"`) -- before the Character Creation reforge
+even renamed that class to Warrior (see "New Character Creation flow"
+above) -- crashed `getClass` with `Unknown class: "fighter"` on load,
+because `withClassMigrationIfMissing` only ever handled the *later*
+`mage` -> `wizard` rename from that same reforge, never `fighter` ->
+`warrior` from it. Previously this was invisible: Continue's old
+try/catch around `loadMostRecentCharacter` swallowed the error and quietly
+dropped the player into Character Creation instead, as if they'd never
+made a character at all. Nothing was ever lost -- the row sat untouched in
+Supabase the whole time -- but Character Select's own error handling
+surfaces load failures instead of hiding them, so this one finally became
+visible instead of silently losing a real character from view.
+
+Fixed at the root: `withClassMigrationIfMissing`'s single `mage` ->
+`wizard` check became a small `LEGACY_CLASS_ID` table with both renames.
+Both are safe to keep in the same one-way lookup -- `fighter` and the
+original `wizard` were this engine's first SRD class names, and `wizard`
+needs no entry of its own since it's meant the same class slot before and
+after its own `mage` detour.
+
+### Critical files
+`packages/engine/src/character.ts`, `__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
