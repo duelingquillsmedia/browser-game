@@ -51,7 +51,7 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
     <div className="aow-panel aow-town-hub-panel">
       <div className="aow-panel-header">
         {townName.toUpperCase()} TOWN HUB
-        <span className="aow-town-hub-gold">{character.gold.toLocaleString()}G</span>
+        <span className="aow-town-hub-gold">{character.gold.toLocaleString()}</span>
       </div>
       <div className="aow-card-body aow-town-hub-body">
         <div className="aow-town-hub-buildings">
@@ -113,7 +113,7 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
                   disabled={character.gold < item.value}
                   onClick={() => onUpdateCharacter(buyItem(character, item.id))}
                 >
-                  Buy · {item.value}G
+                  Buy · {item.value}
                 </button>
               </div>
             ))}
@@ -137,7 +137,7 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
                   disabled={character.gold < item.value}
                   onClick={() => onUpdateCharacter(buyItem(character, item.id))}
                 >
-                  Buy · {item.value}G
+                  Buy · {item.value}
                 </button>
               </div>
             ))}
@@ -164,7 +164,7 @@ export function TownHubPanel({ townName, character, onUpdateCharacter }: TownHub
                     </div>
                   </Tooltip>
                   <button type="button" className="aow-button-ghost" onClick={() => onUpdateCharacter(sellItem(character, item.id))}>
-                    Sell · {Math.round(item.value * SELL_PRICE_RATIO)}G
+                    Sell · {Math.round(item.value * SELL_PRICE_RATIO)}
                   </button>
                 </div>
               ))

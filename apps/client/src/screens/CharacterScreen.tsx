@@ -128,7 +128,7 @@ function EquipmentSlot({
       <div className="aow-eq-item-name" style={item ? { color: tile.color } : undefined}>
         {item ? item.name : "—"}
       </div>
-      {side === "weapon" && item && <div className="aow-eq-value">VAL {item.value}G</div>}
+      {side === "weapon" && item && <div className="aow-eq-value">VAL {item.value}</div>}
     </div>
   );
 
@@ -279,10 +279,10 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
             EQUIPMENT
             <span className="aow-eq-header-spacer" />
             <span className="aow-eq-header-meta">
-              GOLD <span>{character.gold.toLocaleString()}G</span>
+              GOLD <span>{character.gold.toLocaleString()}</span>
             </span>
             <span className="aow-eq-header-meta">
-              GEAR VALUE <span>{gearValue}G</span>
+              GEAR VALUE <span>{gearValue}</span>
             </span>
           </div>
           <div className="aow-equipment-body">
