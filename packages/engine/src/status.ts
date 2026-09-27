@@ -88,6 +88,15 @@ export interface StatusEffect {
  * to compute the DoT/HoT per-tick amount, the shield's total capacity, or
  * the buff's flat evasion bonus, rolled once at application time. Omitted
  * for a pure-CC status.
+ *
+ * Where the Character Stats Style Sheet describes the amount as "X% of
+ * Attack/Spell Power" rather than a raw ability score (Poisoned Throw's
+ * poison tick, Arcane Barrier's evasion buff), `power` is stored **double**
+ * the sheet's stated fraction -- same convention as
+ * `CombatActionDef.percentOfAbility`, since Attack/Spell Power is just
+ * `ability × 2`. Enrage's buff is the one exception: the sheet ties it
+ * directly to a raw Vitality percentage, not Attack/Spell Power, so its
+ * `power` is stored undoubled.
  */
 export interface StatusApplication {
   defId: StatusEffectId;

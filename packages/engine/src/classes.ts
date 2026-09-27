@@ -12,9 +12,20 @@ export interface StartingEquipmentOption {
 /**
  * One of a class's two named Basic Attack variants (melee/ranged), per the
  * Class Style Sheet's own explicit per-slot name/ability/modifier (e.g.
- * Warrior's "Wild Swing (20% of strength as modifier)"). `ability` is
- * ignored in favor of `basicAttackAbilityMode` for a class that has one
- * (Soldier) -- see character.ts's `generateBasicAttacks`.
+ * Warrior's "Wild Swing (20% of attack power)"). `ability` is ignored in
+ * favor of `basicAttackAbilityMode` for a class that has one (Soldier,
+ * Rogue) -- see character.ts's `generateBasicAttacks`.
+ *
+ * `percentOfAbility` is stored as **double** the sheet's own stated
+ * percentage (e.g. Wild Swing's sheet-stated "20% of attack power" is
+ * stored as `0.4`, not `0.2`). Attack Power/Spell Power (see the Character
+ * Stats Style Sheet) are simply `ability score × 2`, and combat.ts's damage
+ * formula multiplies the RAW ability score directly rather than computing
+ * Attack/Spell Power first -- doubling the stored coefficient here produces
+ * numerically identical results to "X% of Attack/Spell Power" without any
+ * engine-side formula change. Keep player-facing `description` text quoting
+ * the sheet's own (undoubled) percentage against "Attack Power"/"Spell
+ * Power", not this doubled internal value.
  */
 export interface BasicAttackVariant {
   name: string;
@@ -87,6 +98,17 @@ export interface CharacterClass {
  * (parry-as-evasion, armor-as-evasion, the flat+percent heal/damage
  * formula, and Rogue's still-"Placeholder" passive, left unimplemented
  * because the sheet itself hasn't decided it yet).
+ *
+ * A later revision of the sheet reworded every ability's damage/healing
+ * scaling to be explicit about Attack Power vs. Spell Power (the Character
+ * Stats Style Sheet's two headline offense stats, each `ability score × 2`)
+ * rather than a raw ability score -- see `BasicAttackVariant`'s own doc
+ * comment for how `percentOfAbility` encodes that without an engine-side
+ * formula change. Soldier's and Rogue's "Attack Power = whichever of
+ * STR/DEX is higher" both use `basicAttackAbilityMode`. Enrage and Arcane
+ * Barrier's buffs stayed a direct Evasion bonus (not real Armor Rating)
+ * even though their sheet text now says "armor" -- confirmed with the user
+ * this was wording, not a mechanic change.
  */
 export const CLASSES: Record<string, CharacterClass> = {
   warrior: {
@@ -96,8 +118,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "vit"],
     evenLevelAbilityGrowth: { str: 2, vit: 2, dex: 1 },
-    basicAttackMelee: { name: "Wild Swing", ability: "str", percentOfAbility: 0.2 },
-    basicAttackRanged: { name: "Wild Shot", ability: "dex", percentOfAbility: 0.15 },
+    basicAttackMelee: { name: "Wild Swing", ability: "str", percentOfAbility: 0.4 },
+    basicAttackRanged: { name: "Wild Shot", ability: "dex", percentOfAbility: 0.3 },
     actions: [
       {
         id: "enrage",
@@ -115,7 +137,7 @@ export const CLASSES: Record<string, CharacterClass> = {
       {
         id: "cleave",
         name: "Cleave",
-        description: "A wide arcing attack that strikes every enemy in the target's row. Weapon damage, scales with Strength. Costs Fury.",
+        description: "A wide arcing attack that strikes every enemy in the target's row. Weapon damage, scales with Attack Power. Costs Fury.",
         kind: "attack",
         target: "enemy",
         targetShape: "line",
@@ -162,8 +184,8 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "str",
     savingThrowProficiencies: ["str", "dex"],
     evenLevelAbilityGrowth: { str: 2, dex: 2, vit: 1 },
-    basicAttackMelee: { name: "Practiced Strike", ability: "str", percentOfAbility: 0.15 },
-    basicAttackRanged: { name: "Steady Shot", ability: "dex", percentOfAbility: 0.15 },
+    basicAttackMelee: { name: "Practiced Strike", ability: "str", percentOfAbility: 0.3 },
+    basicAttackRanged: { name: "Steady Shot", ability: "dex", percentOfAbility: 0.3 },
     basicAttackAbilityMode: "highestOfStrDex",
     actions: [
       {
@@ -214,18 +236,18 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "wis",
     savingThrowProficiencies: ["wis"],
     evenLevelAbilityGrowth: { wis: 2, str: 1, vit: 1 },
-    basicAttackMelee: { name: "Swinging Smite", ability: "str", percentOfAbility: 0.15 },
-    basicAttackRanged: { name: "Radiance", ability: "wis", percentOfAbility: 0.15 },
+    basicAttackMelee: { name: "Swinging Smite", ability: "str", percentOfAbility: 0.3 },
+    basicAttackRanged: { name: "Radiance", ability: "wis", percentOfAbility: 0.3 },
     actions: [
       {
         id: "mend",
         name: "Mend",
-        description: "Calls upon your deity to restore health: heals an ally for 50 + 10% of your Wisdom. Costs Prayer.",
+        description: "Calls upon your deity to restore health: heals an ally for 50 + 10% of your Spell Power. Costs Prayer.",
         kind: "heal",
         target: "ally",
         ability: "wis",
         flatBase: 50,
-        percentOfAbility: 0.1,
+        percentOfAbility: 0.2,
         resourceCost: 1,
         apCost: 2,
         schoolId: "radiant",
@@ -235,14 +257,14 @@ export const CLASSES: Record<string, CharacterClass> = {
         id: "radiant-beam",
         name: "Radiant Beam",
         description:
-          "Calls down a divine beam, damaging the target and adjacent enemies in their row for 100 + 20% of your Wisdom. Costs Prayer.",
+          "Calls down a divine beam, damaging the target and adjacent enemies in their row for 100 + 20% of your Spell Power. Costs Prayer.",
         kind: "attack",
         target: "enemy",
         targetShape: "area",
         ability: "wis",
         damageType: "radiant",
         flatBase: 100,
-        percentOfAbility: 0.2,
+        percentOfAbility: 0.4,
         resourceCost: 4,
         apCost: 3,
         schoolId: "radiant",
@@ -250,7 +272,7 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
     ],
     passives: [
-      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Wisdom score." },
+      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Spell Power." },
     ],
     startingEquipmentOptions: [
       { id: "mace-and-leather", label: "Ashen Mace & Studded Leather", equipment: { meleeWeapon: "ashenMace", armor: "studdedLeather" } },
@@ -265,13 +287,13 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "wis"],
     evenLevelAbilityGrowth: { dex: 2, wis: 1, vit: 1 },
-    basicAttackMelee: { name: "Blade Slash", ability: "str", percentOfAbility: 0.15 },
-    basicAttackRanged: { name: "Quick Shot", ability: "dex", percentOfAbility: 0.2 },
+    basicAttackMelee: { name: "Blade Slash", ability: "str", percentOfAbility: 0.3 },
+    basicAttackRanged: { name: "Quick Shot", ability: "dex", percentOfAbility: 0.4 },
     actions: [
       {
         id: "barbed-arrow",
         name: "Barbed Arrow",
-        description: "Arms your next 2 attacks with barbed arrowheads, causing the target to bleed. Costs Focus.",
+        description: "Arms your next 2 attacks with barbed arrowheads, causing the target to bleed for 5% of your Attack Power. Costs Focus.",
         kind: "buff",
         target: "self",
         ability: "dex",
@@ -284,12 +306,12 @@ export const CLASSES: Record<string, CharacterClass> = {
       {
         id: "natures-remedy",
         name: "Nature's Remedy",
-        description: "Forages for herbs to mend a wound: heals you for 50 + 10% of your Wisdom. Costs Focus.",
+        description: "Forages for herbs to mend a wound: heals you for 50 + 10% of your Spell Power. Costs Focus.",
         kind: "heal",
         target: "self",
         ability: "wis",
         flatBase: 50,
-        percentOfAbility: 0.1,
+        percentOfAbility: 0.2,
         resourceCost: 2,
         apCost: 2,
         schoolId: "martial",
@@ -321,20 +343,22 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "dex",
     savingThrowProficiencies: ["dex", "int"],
     evenLevelAbilityGrowth: { dex: 3 },
-    basicAttackMelee: { name: "Subtle Slash", ability: "str", percentOfAbility: 0.15 },
-    basicAttackRanged: { name: "Quick Strike", ability: "dex", percentOfAbility: 0.15 },
+    // "Attack Power = Dexterity * 2 or Strength * 2 (whichever is higher)" -- same rule as Soldier.
+    basicAttackAbilityMode: "highestOfStrDex",
+    basicAttackMelee: { name: "Subtle Slash", ability: "str", percentOfAbility: 0.3 },
+    basicAttackRanged: { name: "Quick Strike", ability: "dex", percentOfAbility: 0.3 },
     actions: [
       {
         id: "evasive-jab",
         name: "Evasive Jab",
         description:
-          "A quick strike through your foe's guard: weapon damage + 20% of your Dexterity, then Readied (1 stack, -50% chance to be hit) until spent. Costs Cunning.",
+          "A quick strike through your foe's guard: weapon damage + 20% of your Attack Power, then Readied (1 stack, -50% chance to be hit) until spent. Costs Cunning.",
         kind: "attack",
         target: "enemy",
         ability: "dex",
         weaponDamageSource: "melee",
         damageType: "piercing",
-        percentOfAbility: 0.2,
+        percentOfAbility: 0.4,
         resourceCost: 20,
         apCost: 3,
         schoolId: "shadow",
@@ -345,17 +369,17 @@ export const CLASSES: Record<string, CharacterClass> = {
         id: "poisoned-throw",
         name: "Poisoned Throw",
         description:
-          "A blade dipped in poison: weapon damage + 15% of your Dexterity, poisoning the target for 3 turns. Costs Cunning.",
+          "A blade dipped in poison: weapon damage + 15% of your Attack Power, poisoning the target for 3 turns (5% Attack Power per turn). Costs Cunning.",
         kind: "attack",
         target: "enemy",
         ability: "dex",
         weaponDamageSource: "melee",
         damageType: "piercing",
-        percentOfAbility: 0.15,
+        percentOfAbility: 0.3,
         resourceCost: 15,
         apCost: 2,
         schoolId: "shadow",
-        applyStatus: { defId: "poisoned", turns: 3, weaponPercent: 0.05 },
+        applyStatus: { defId: "poisoned", turns: 3, power: 0.1 },
         unlockLevel: 4,
       },
     ],
@@ -375,18 +399,18 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "wis",
     savingThrowProficiencies: ["int", "wis"],
     evenLevelAbilityGrowth: { wis: 2, vit: 1, dex: 1 },
-    basicAttackMelee: { name: "Nature's Strike", ability: "str", percentOfAbility: 0.15 },
-    basicAttackRanged: { name: "Nature's Blast", ability: "wis", percentOfAbility: 0.15 },
+    basicAttackMelee: { name: "Nature's Strike", ability: "str", percentOfAbility: 0.3 },
+    basicAttackRanged: { name: "Nature's Blast", ability: "wis", percentOfAbility: 0.3 },
     actions: [
       {
         id: "wylde-healing",
         name: "Wylde Healing",
-        description: "Summons the will of the Wylde to heal yourself or an ally for 50 + 10% of your Wisdom. Costs Wylde.",
+        description: "Summons the will of the Wylde to heal yourself or an ally for 50 + 10% of your Spell Power. Costs Wylde.",
         kind: "heal",
         target: "ally",
         ability: "wis",
         flatBase: 50,
-        percentOfAbility: 0.1,
+        percentOfAbility: 0.2,
         resourceCost: 30,
         apCost: 2,
         schoolId: "nature",
@@ -395,14 +419,14 @@ export const CLASSES: Record<string, CharacterClass> = {
       {
         id: "wylde-wrath",
         name: "Wylde Wrath",
-        description: "A massive vine whips in a wide arc, striking an entire row of enemies for 75 + 25% of your Wisdom. Costs Wylde.",
+        description: "A massive vine whips in a wide arc, striking an entire row of enemies for 75 + 25% of your Spell Power. Costs Wylde.",
         kind: "attack",
         target: "enemy",
         targetShape: "line",
         ability: "wis",
         damageType: "piercing",
         flatBase: 75,
-        percentOfAbility: 0.25,
+        percentOfAbility: 0.5,
         resourceCost: 60,
         apCost: 3,
         schoolId: "nature",
@@ -410,7 +434,7 @@ export const CLASSES: Record<string, CharacterClass> = {
       },
     ],
     passives: [
-      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Wisdom score." },
+      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Spell Power." },
     ],
     startingEquipmentOptions: [
       { id: "mace", label: "Ashen Mace & Leather Armor", equipment: { meleeWeapon: "ashenMace", armor: "leatherArmor" } },
@@ -425,20 +449,20 @@ export const CLASSES: Record<string, CharacterClass> = {
     primaryAbility: "int",
     savingThrowProficiencies: ["int", "wis"],
     evenLevelAbilityGrowth: { int: 3 },
-    basicAttackMelee: { name: "Arcane Smash", ability: "str", percentOfAbility: 0.15 },
-    basicAttackRanged: { name: "Arcane Bolt", ability: "int", percentOfAbility: 0.2 },
+    basicAttackMelee: { name: "Arcane Smash", ability: "str", percentOfAbility: 0.3 },
+    basicAttackRanged: { name: "Arcane Bolt", ability: "int", percentOfAbility: 0.4 },
     actions: [
       {
         id: "elemental-shard",
         name: "Elemental Shard",
         description:
-          "Invokes the Arcane, creating a shard of elemental power -- fire, ice, or force at random -- for 65 + 20% of your Intellect. Costs Arcana.",
+          "Invokes the Arcane, creating a shard of elemental power -- fire, ice, or force at random -- for 65 + 20% of your Spell Power. Costs Arcana.",
         kind: "attack",
         target: "enemy",
         ability: "int",
         randomDamageTypes: ["fire", "cold", "force"],
         flatBase: 65,
-        percentOfAbility: 0.2,
+        percentOfAbility: 0.4,
         resourceCost: 30,
         apCost: 2,
         schoolId: "arcane",
@@ -447,19 +471,19 @@ export const CLASSES: Record<string, CharacterClass> = {
       {
         id: "arcane-barrier",
         name: "Arcane Barrier",
-        description: "Conjures a protective shield: evasion increases by 50% of your Intellect for 3 turns. Costs Arcana.",
+        description: "Conjures a protective shield: evasion increases by 50% of your Spell Power for 3 turns. Costs Arcana.",
         kind: "buff",
         target: "self",
         ability: "int",
         resourceCost: 30,
         apCost: 2,
         schoolId: "arcane",
-        applyStatus: { defId: "fortified", turns: 3, power: 0.5 },
+        applyStatus: { defId: "fortified", turns: 3, power: 1.0 },
         unlockLevel: 4,
       },
     ],
     passives: [
-      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Intellect score." },
+      { name: "Spellcasting", description: "Your spells' damage and healing scale off your Spell Power." },
     ],
     startingEquipmentOptions: [
       { id: "staff", label: "Oaken Staff & Traveler's Robe", equipment: { meleeWeapon: "oakenStaff", armor: "travelersRobe" } },

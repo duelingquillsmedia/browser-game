@@ -647,16 +647,23 @@ function resolveAttack(
   if (target.side === "party") handlePartyDamageOutcome(state, target, finalDamage, hpBefore);
   if (target.hp > 0) {
     resolveApplyStatus(state, actor, target, action, rng);
-    resolveProc(state, actor, target);
+    resolveProc(state, actor, target, action);
   }
   return { hit: true, crit: isCrit };
 }
 
-/** Ranger's Barbed Arrow: consumes one "primed" stack on `actor` and, if one was spent, applies a weapon-damage-scaled bleed to the target they just hit. */
-function resolveProc(state: CombatState, actor: Combatant, target: Combatant): void {
+/**
+ * Ranger's Barbed Arrow: consumes one "primed" stack on `actor` and, if one
+ * was spent, applies a bleed to the target they just hit, scaled off the
+ * ability that landed the attack -- "5% of Attack Power" per the Character
+ * Stats Style Sheet, i.e. 10% of the raw ability score (see
+ * `StatusApplication.power`'s own doc comment on this ×2 convention).
+ */
+const BARBED_BLEED_ABILITY_PERCENT = 0.1;
+
+function resolveProc(state: CombatState, actor: Combatant, target: Combatant, action: CombatActionDef): void {
   if (!consumeStatusStack(actor, "proc")) return;
-  const range = weaponDamageRange(actor, "ranged") ?? weaponDamageRange(actor, "melee");
-  const amount = range ? Math.max(1, Math.round(((range.min + range.max) / 2) * 0.05)) : 1;
+  const amount = Math.max(1, Math.round(actor.abilityScores[action.ability] * BARBED_BLEED_ABILITY_PERCENT));
   applyStatusEffect(target, { defId: "bleeding", turnsRemaining: 3, amount });
   log(state, `${target.name} begins bleeding from ${actor.name}'s barbed shot.`, {
     kind: "info",

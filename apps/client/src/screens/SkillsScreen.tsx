@@ -79,9 +79,11 @@ function hasComputableAmount(action: CombatActionDef): boolean {
  * combat.ts's `computeBaseDamage`/`previewBaseDamageRange`: a weapon-scaled
  * action rolls that weapon's own advertised range plus a flat bonus, with no
  * extra variance on top -- a Basic Attack's bonus is its own named
- * `percentOfAbility` (e.g. Wild Swing: 20% of Strength), which *replaces* the
- * flat Attack Power bonus every other weapon-scaled ability (Cleave, Serrated
- * Blade, Evasive Jab, ...) still gets; a flat-plus-percent action (Mend,
+ * `percentOfAbility` (e.g. Wild Swing: 20% of Attack Power, stored as double
+ * that against the raw ability score -- see classes.ts's `BasicAttackVariant`
+ * doc comment), which *replaces* the flat Attack Power bonus every other
+ * weapon-scaled ability (Cleave, Serrated Blade, Evasive Jab, ...) still
+ * gets; a flat-plus-percent action (Mend,
  * Wylde Healing, ...) passes through the same 85%-115% variance band as a
  * plain power-scaled one.
  */

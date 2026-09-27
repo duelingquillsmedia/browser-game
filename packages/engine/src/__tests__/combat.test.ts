@@ -466,7 +466,7 @@ describe("weapon damage", () => {
     });
   }
 
-  it("rolls the melee Basic Attack within the weapon's own min-max range, plus Wild Swing's own 20%-of-Strength modifier", () => {
+  it("rolls the melee Basic Attack within the weapon's own min-max range, plus Wild Swing's own 20%-of-Attack-Power modifier", () => {
     const warrior = toCombatant(makeArmedWarrior(), "party");
     // Hunter's Longsword: 14-20 damage.
     expect(warrior.meleeWeaponDamageMin).toBe(14);
@@ -476,15 +476,17 @@ describe("weapon damage", () => {
     let state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
     // Level 1: str 10 base + Human's own odd-level growth at level 1 (+1) = 11, no Warrior class
-    // growth yet (starts at level 2) -- Wild Swing's own modifier: round(11 * 0.20) = +2 flat
-    // bonus (replaces the homebrew Attack Power bonus for Basic Attacks specifically).
+    // growth yet (starts at level 2) -- Wild Swing's own modifier is stored as double the sheet's
+    // stated "20% of Attack Power" (percentOfAbility 0.4, since Attack Power = str x 2 -- see
+    // BasicAttackVariant's own doc comment), so: round(11 * 0.4) = +4 flat bonus (replaces the
+    // homebrew Attack Power bonus for Basic Attacks specifically).
     // Force the weapon roll to its minimum (14 of 14-20).
     state = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 16); // 14 + 2
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18); // 14 + 4
 
     // Force the weapon roll to its maximum (20).
     state = submitPlayerAction(
@@ -492,7 +494,7 @@ describe("weapon damage", () => {
       { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_FAILURE])
     );
-    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 16 - 22); // 20 + 2
+    expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18 - 24); // 20 + 4
   });
 
   it("leaves a class ability's damage scaling off the ability score untouched by the weapon's range", () => {

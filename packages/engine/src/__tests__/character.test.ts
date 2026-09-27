@@ -209,18 +209,20 @@ describe("equipItem / unequipItem", () => {
     });
 
     // Rogue starts with a Hunter's Shortbow equipped in the ranged slot, no melee weapon. Rogue's
-    // named variants (Class Style Sheet): ranged "Quick Strike" scales off Dexterity, melee
-    // "Subtle Slash" off Strength -- neither depends on the equipped weapon's own `ability` field
-    // anymore, or on Rogue's primaryAbility (dex).
+    // named variants (Class Style Sheet): ranged "Quick Strike", melee "Subtle Slash" -- neither
+    // depends on the equipped weapon's own `ability` field anymore, or on Rogue's primaryAbility
+    // (dex). Rogue's own "Attack Power = whichever of STR/DEX is higher" rule (basicAttackAbilityMode)
+    // overrides both variants' own listed ability -- this Elf's DEX (15+growth) beats STR (10), so
+    // both resolve to "dex", same as Soldier's own tie-break test below.
     const rangedStrike = rogue.actions.find((a) => a.id === "strike-ranged");
     expect(rangedStrike?.name).toBe("Quick Strike");
     expect(rangedStrike?.ability).toBe("dex");
     expect(rogue.rangedWeaponDamageMin).toBe(7);
     expect(rogue.rangedWeaponDamageMax).toBe(10);
-    // The unarmed melee variant is still offered (Subtle Slash), scaling off Strength either way.
+    // The unarmed melee variant is still offered (Subtle Slash), also resolving to DEX here.
     const meleeStrike = rogue.actions.find((a) => a.id === "strike-melee");
     expect(meleeStrike?.name).toBe("Subtle Slash");
-    expect(meleeStrike?.ability).toBe("str");
+    expect(meleeStrike?.ability).toBe("dex");
     expect(rogue.meleeWeaponDamageMin).toBeUndefined();
 
     // Unequipping the ranged weapon removes the ranged Basic Attack variant entirely.
@@ -258,17 +260,21 @@ describe("equipItem / unequipItem", () => {
   it("names and scales every class's Basic Attack variants exactly per the Class Style Sheet", () => {
     // Melee/ranged variant name, ability, and percentOfAbility for every class -- transcribed
     // directly from the sheet's highlighted update (see classes.ts's own BasicAttackVariant entries).
+    // percentOfAbility is double the sheet's stated "X% of Attack/Spell Power" (see BasicAttackVariant's
+    // own doc comment): e.g. Wild Swing's sheet-stated 20% is stored/expected here as 0.4.
     const expected: Record<
       string,
       { melee: [string, string, number]; ranged: [string, string, number] }
     > = {
-      warrior: { melee: ["Wild Swing", "str", 0.2], ranged: ["Wild Shot", "dex", 0.15] },
-      soldier: { melee: ["Practiced Strike", "str", 0.15], ranged: ["Steady Shot", "str", 0.15] },
-      cleric: { melee: ["Swinging Smite", "str", 0.15], ranged: ["Radiance", "wis", 0.15] },
-      ranger: { melee: ["Blade Slash", "str", 0.15], ranged: ["Quick Shot", "dex", 0.2] },
-      rogue: { melee: ["Subtle Slash", "str", 0.15], ranged: ["Quick Strike", "dex", 0.15] },
-      druid: { melee: ["Nature's Strike", "str", 0.15], ranged: ["Nature's Blast", "wis", 0.15] },
-      wizard: { melee: ["Arcane Smash", "str", 0.15], ranged: ["Arcane Bolt", "int", 0.2] },
+      warrior: { melee: ["Wild Swing", "str", 0.4], ranged: ["Wild Shot", "dex", 0.3] },
+      soldier: { melee: ["Practiced Strike", "str", 0.3], ranged: ["Steady Shot", "str", 0.3] },
+      cleric: { melee: ["Swinging Smite", "str", 0.3], ranged: ["Radiance", "wis", 0.3] },
+      ranger: { melee: ["Blade Slash", "str", 0.3], ranged: ["Quick Shot", "dex", 0.4] },
+      // Rogue now also uses "highest of STR/DEX" (basicAttackAbilityMode) like Soldier -- str/dex
+      // are equal (both 12 + growth) here, and the tie-break picks str for both variants.
+      rogue: { melee: ["Subtle Slash", "str", 0.3], ranged: ["Quick Strike", "str", 0.3] },
+      druid: { melee: ["Nature's Strike", "str", 0.3], ranged: ["Nature's Blast", "wis", 0.3] },
+      wizard: { melee: ["Arcane Smash", "str", 0.3], ranged: ["Arcane Bolt", "int", 0.4] },
     };
 
     for (const cls of Object.values(CLASSES)) {
@@ -291,8 +297,9 @@ describe("equipItem / unequipItem", () => {
 
       const melee = withBothWeapons.actions.find((a) => a.id === "strike-melee");
       expect(melee?.name, `${cls.id} melee name`).toBe(meleeName);
-      // Soldier's own "highest of STR/DEX" mode overrides its variants' listed ability; str/dex
-      // are equal (both 12 + growth) here, and the tie-break picks str -- matching the table above.
+      // Soldier's and Rogue's own "highest of STR/DEX" mode overrides their variants' listed
+      // ability; str/dex are equal (both 12 + growth) here, and the tie-break picks str -- matching
+      // the table above.
       expect(melee?.ability, `${cls.id} melee ability`).toBe(meleeAbility);
       expect(melee?.percentOfAbility, `${cls.id} melee percentOfAbility`).toBe(meleePercent);
 

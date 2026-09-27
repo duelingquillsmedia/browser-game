@@ -72,9 +72,17 @@ export interface CombatActionDef {
    * the ability's own bonus is added on top of the weapon roll.
    */
   weaponDamageSource?: "melee" | "ranged";
-  /** Flat amount added before the random variance band — the "50" in "50 health + 10% of WIS" (Mend, Wylde Healing, Nature's Remedy, ...). */
+  /** Flat amount added before the random variance band — the "50" in "50 + 10% of Spell Power" (Mend, Wylde Healing, Nature's Remedy, ...). */
   flatBase?: number;
-  /** Fraction of the scaling ability score added on top of `flatBase` and/or the weapon roll — the "0.10" in the same. */
+  /**
+   * Fraction of the scaling ability score added on top of `flatBase` and/or
+   * the weapon roll. Stored as **double** the Character Stats Style Sheet's
+   * own stated percentage of Attack Power/Spell Power (e.g. its "10% of
+   * Spell Power" is `0.2` here) -- see `BasicAttackVariant`'s own doc
+   * comment in classes.ts for why: Attack/Spell Power is just `ability × 2`,
+   * so doubling the stored fraction here reproduces "X% of Attack/Spell
+   * Power" while this formula keeps multiplying the raw ability score.
+   */
   percentOfAbility?: number;
   /** Elemental Shard-style actions: one damage type is picked at random (via the fight's own RNG) each time this resolves, overriding `damageType`. */
   randomDamageTypes?: DamageType[];

@@ -1498,6 +1498,57 @@ the new math.
 `apps/client/src/screens/CharacterScreen.tsx` (+ `.css`);
 `apps/client/src/components/ItemTooltipContent.tsx`, `InventoryScreen.tsx`.
 
+## Class Style Sheet: Reworded to Attack Power / Spell Power
+
+The user reworded the Google Drive **Class Style Sheet** to describe most
+class abilities as scaling off Attack Power/Spell Power (the Character
+Stats Style Sheet's `ability score × 2` headline stats) instead of a raw
+ability score — e.g. Wild Swing went from "20% of Strength" to "20% of
+Attack Power". Wired into real combat math, same as every prior sheet pass.
+
+**Implemented as a data-only change, no formula rewrite**: since Attack
+Power and Spell Power are both just `ability score × 2`, "X% of Attack/Spell
+Power" is mathematically identical to "(X×2)% of the raw ability score" —
+the same score combat.ts already multiplies directly. So every affected
+`percentOfAbility` (Basic Attack variants, Cleave, Mend, Radiant Beam,
+Evasive Jab, Elemental Shard, Wylde Healing/Wrath, ...) and status `power`
+coefficient (Arcane Barrier's evasion buff) in `classes.ts` was simply
+doubled, with zero changes to `combat.ts`'s `computeBaseDamage`/
+`previewBaseDamageRange` or the client's own duplicate preview formula in
+`SkillsScreen.tsx`. Enrage was the one exception left undoubled — its sheet
+text ties it to raw Vitality, not a Power-derived stat. Doc comments on
+`BasicAttackVariant`, `CombatActionDef.percentOfAbility`, and
+`StatusApplication.power` now explain the doubling convention so it isn't
+mistaken for a bug later.
+
+**Two real mechanic changes** (not just re-scaled coefficients):
+- **Rogue's Basic Attack** now uses `basicAttackAbilityMode:
+  "highestOfStrDex"` (the mode Soldier already had) per the sheet's "Attack
+  Power = Dexterity × 2 or Strength × 2, whichever is higher."
+- **Poisoned Throw**'s poison tick and **Barbed Arrow**'s bleed both moved
+  from a weapon-damage basis to an ability-score basis, since the sheet now
+  states them as "% of Attack Power": Poisoned Throw's `applyStatus` swapped
+  `weaponPercent` for a pre-doubled `power`; Barbed Arrow's `resolveProc` in
+  `combat.ts` now takes the triggering action and reads
+  `actor.abilityScores[action.ability]` instead of the weapon's average
+  damage roll.
+
+**Confirmed with the user, not guessed**: Enrage and Arcane Barrier's buffs
+stay a direct Evasion bonus — their sheet text now says "armor," but that's
+wording, not a request to route them through the real Armor Rating stat
+(which would need a further ~20× rescale to matter after the 5% conversion
+from the previous pass).
+
+Verified with all 147 engine tests (updated for the doubled coefficients and
+Rogue's new tie-break ability, including a ripple into the cross-class
+Basic Attack table test), clean engine/client builds, and a live Playwright
+pass across Warrior/Wizard/Rogue confirming the Skills and Character screens
+render the new damage ranges and Attack/Spell Power figures without error.
+
+### Critical files
+`packages/engine/src/classes.ts`, `combat.ts`, `actions.ts`, `status.ts`;
+`packages/engine/src/__tests__/character.test.ts`, `combat.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
