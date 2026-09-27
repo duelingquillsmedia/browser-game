@@ -2098,6 +2098,15 @@ blocks outbound Supabase) confirming keyboard nav (1–3, arrows, Enter,
 Delete/Backspace, Esc), slot selection, the empty-slot Create flow, and the
 delete confirmation dialog including its failure path.
 
+**Fix: hover no longer steals selection.** The handoff's own empty-slot
+card selects itself on `onMouseEnter` (see its README: "Hovering it
+selects the slot and turns the border ember"), ported as-is at first. In
+practice that meant simply moving the mouse across an empty slot -- on the
+way to anything else on the page -- silently deselected whichever filled
+character was actually selected, with no click involved. Removed; an empty
+slot now only reacts to an actual click (still going straight to Character
+Creation, same as before), matching how every filled card already worked.
+
 ### Critical files
 `apps/client/src/screens/CharacterSelectScreen.tsx` (+ `.css`);
 `apps/client/src/game/roster.ts`, `setup.ts`; `apps/client/src/App.tsx`.

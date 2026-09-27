@@ -53,7 +53,7 @@ interface SlotCardProps {
 function SlotCard({ n, entry, isSelected, onSelect, onPlay }: SlotCardProps) {
   if (!entry) {
     return (
-      <button type="button" className="aow-select-card aow-select-card-empty" onMouseEnter={onSelect} onClick={onPlay}>
+      <button type="button" className="aow-select-card aow-select-card-empty" onClick={onPlay}>
         <div className="aow-select-empty-diamond">
           <span>+</span>
         </div>
