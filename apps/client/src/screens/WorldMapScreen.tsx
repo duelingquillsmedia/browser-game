@@ -110,6 +110,8 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
   const travel = mapState.travel;
   const [travelNow, setTravelNow] = useState(() => Date.now());
   const travelCompletingRef = useRef(false);
+  /** True once the player's asked to stop early -- shows the confirmation note under Halt Travel until the next hex boundary resolves the (now shortened) journey. */
+  const [haltRequested, setHaltRequested] = useState(false);
 
   const canVenture = character.hp > 0;
 
@@ -311,11 +313,40 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
   function startTravel(destKey: string, days: number) {
     const now = Date.now();
     setTravelNow(now);
+    setHaltRequested(false);
     onUpdateCharacter({
       ...character,
       worldMapState: {
         ...mapState,
         travel: { toHexKey: destKey, startedAt: now, arriveAt: now + days * TRAVEL_SECONDS_PER_HEX * 1000, days },
+      },
+    });
+  }
+
+  /**
+   * Stops an in-progress journey early -- not instantly (the party can't teleport mid-hex), but
+   * at the next hex boundary along the original route. Truncates the travel in place to whichever
+   * hex the party is about to reach (based on real elapsed time, same 30s-per-hex pacing
+   * `startTravel` used), so the existing tick loop's own `completeTravel` call resolves it exactly
+   * like any other arrival -- no separate "halted" completion path needed. A no-op once already on
+   * the final leg (nothing left to truncate) or if already requested.
+   */
+  function haltTravel() {
+    if (!travel || haltRequested || !travelPath) return;
+    setHaltRequested(true);
+    const elapsedHexes = Math.floor((Date.now() - travel.startedAt) / (TRAVEL_SECONDS_PER_HEX * 1000));
+    const stopAtIndex = Math.min(elapsedHexes + 1, travel.days);
+    if (stopAtIndex >= travel.days) return;
+    onUpdateCharacter({
+      ...character,
+      worldMapState: {
+        ...mapState,
+        travel: {
+          toHexKey: travelPath[stopAtIndex].key,
+          startedAt: travel.startedAt,
+          arriveAt: travel.startedAt + stopAtIndex * TRAVEL_SECONDS_PER_HEX * 1000,
+          days: stopAtIndex,
+        },
       },
     });
   }
@@ -601,9 +632,22 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
               )}
 
               {travel ? (
-                <button type="button" className="aow-button-primary aow-map-venture-button" disabled>
-                  Traveling…
-                </button>
+                <>
+                  <button type="button" className="aow-button-primary aow-map-venture-button" disabled>
+                    Traveling…
+                  </button>
+                  <button
+                    type="button"
+                    className="aow-button-ghost aow-map-halt-button"
+                    disabled={haltRequested}
+                    onClick={haltTravel}
+                  >
+                    Halt Travel
+                  </button>
+                  {haltRequested && (
+                    <p className="aow-muted-text aow-map-halt-note">Travel will halt at the next hex.</p>
+                  )}
+                </>
               ) : matchedEncounter && isPartyHere ? (
                 <button
                   type="button"

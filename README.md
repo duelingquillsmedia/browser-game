@@ -1984,6 +1984,34 @@ since it's no longer goblin-specific now that a second monster uses it.
 `apps/client/src/game/sprites.ts`;
 `apps/client/src/assets/sprites/direwolf-mannequin/`.
 
+## World Map: Halt Travel Mid-Journey
+
+A second button under the disabled "Traveling…" one, shown for the
+duration of a timed journey (see "World Map: Timed Travel with an Animated
+Party Dot" above): **Halt Travel**. Clicking it doesn't stop the party
+instantly -- they can't teleport mid-hex -- so a confirmation note appears
+below it ("Travel will halt at the next hex") while the journey keeps
+running to that point.
+
+Mechanically, `haltTravel` truncates the *in-progress* `TravelState` in
+place rather than adding a separate "halted" completion path: it works out
+how many hexes have actually elapsed (real time since `startedAt`, at the
+same 30s-per-hex pacing `startTravel` set up), takes the next one along the
+original route (`travelPath`, already computed for the animated dot), and
+overwrites `travel` with a shorter journey ending there --
+same `startedAt`, an `arriveAt` recomputed for that nearer hex, and `days`
+reduced to match. The existing tick loop's `completeTravel` call needs no
+changes at all: it just resolves against whatever `travel` currently holds,
+so once the shortened arrival time passes, the party lands on that
+intermediate hex exactly like any other arrival (fog reveal, day count,
+`partyHexKey` update). Already on the final leg (nothing left to
+shorten)? The click still shows the note, but the journey simply finishes
+where it was already headed. `haltRequested` (and the button/note) resets
+the moment a fresh journey starts via `startTravel`.
+
+### Critical files
+`apps/client/src/screens/WorldMapScreen.tsx`, `WorldMapScreen.css`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
