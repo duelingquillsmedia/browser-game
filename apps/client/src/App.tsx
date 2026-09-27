@@ -3,6 +3,7 @@ import type { ActionRequest, Character, CombatState } from "@eridan/engine";
 import { submitPlayerAction } from "@eridan/engine";
 import { AuthScreen } from "./screens/AuthScreen";
 import { CharacterCreationScreen } from "./screens/CharacterCreationScreen";
+import { CharacterSelectScreen } from "./screens/CharacterSelectScreen";
 import { TitleScreen } from "./screens/TitleScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { GameShell } from "./components/GameShell";
@@ -13,13 +14,14 @@ import { WorldMapScreen } from "./screens/WorldMapScreen";
 import { CombatScreen } from "./screens/CombatScreen";
 import { GAME_NAME, WORLD_NAME, type Encounter } from "./game/lore";
 import { applyCombatResults, beginEncounter, restCharacter } from "./game/setup";
-import { addCharacterToRoster, loadMostRecentCharacter, updateCharacterInRoster } from "./game/roster";
+import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
 import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
 import "./App.css";
 
 type Screen =
   | { kind: "intro" }
   | { kind: "auth" }
+  | { kind: "characterSelect" }
   | { kind: "creation" }
   | { kind: "home"; character: Character }
   | { kind: "character"; character: Character }
@@ -35,19 +37,6 @@ function App() {
     screenRef.current = screen;
   }, [screen]);
 
-  // Jumps straight to the player's most recently played character (or
-  // creation, for an account with none yet) -- there's no character-select
-  // step to land on in between.
-  async function goToCharacterOrCreation() {
-    try {
-      const character = await loadMostRecentCharacter();
-      setScreen(character ? { kind: "home", character } : { kind: "creation" });
-    } catch (err) {
-      console.error("Failed to load your character:", err);
-      setScreen({ kind: "creation" });
-    }
-  }
-
   // Picks up sign-ins that complete via a full-page redirect (Google OAuth,
   // email confirmation links) — those land back here with no in-memory
   // screen state, so without this the user would be stuck looking at
@@ -57,7 +46,7 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" && (screenRef.current.kind === "intro" || screenRef.current.kind === "auth")) {
-        goToCharacterOrCreation();
+        setScreen({ kind: "characterSelect" });
       }
       if (event === "SIGNED_OUT") {
         setScreen({ kind: "intro" });
@@ -91,18 +80,12 @@ function App() {
     );
   }
 
-  async function handleBegin() {
+  // Both Title screen buttons land on Character Select now -- there's no
+  // path that skips it, so the account's three-slot cap holds structurally
+  // (Character Creation is only reachable from an empty slot there).
+  async function goToCharacterSelectOrAuth() {
     const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      setScreen({ kind: "auth" });
-      return;
-    }
-    await goToCharacterOrCreation();
-  }
-
-  async function handleNewGame() {
-    const { data } = await supabase.auth.getSession();
-    setScreen({ kind: data.session ? "creation" : "auth" });
+    setScreen({ kind: data.session ? "characterSelect" : "auth" });
   }
 
   if (screen.kind === "intro") {
@@ -110,14 +93,26 @@ function App() {
       <TitleScreen
         gameName={GAME_NAME}
         tagline={`A turn-based chronicle of ${WORLD_NAME}`}
-        onContinue={handleBegin}
-        onNewGame={handleNewGame}
+        onContinue={goToCharacterSelectOrAuth}
+        onNewGame={goToCharacterSelectOrAuth}
       />
     );
   }
 
   if (screen.kind === "auth") {
-    return <AuthScreen onAuthenticated={goToCharacterOrCreation} onBack={() => setScreen({ kind: "intro" })} />;
+    return (
+      <AuthScreen onAuthenticated={() => setScreen({ kind: "characterSelect" })} onBack={() => setScreen({ kind: "intro" })} />
+    );
+  }
+
+  if (screen.kind === "characterSelect") {
+    return (
+      <CharacterSelectScreen
+        onEnterWorld={(character) => setScreen({ kind: "home", character })}
+        onCreateNew={() => setScreen({ kind: "creation" })}
+        onBack={() => setScreen({ kind: "intro" })}
+      />
+    );
   }
 
   if (screen.kind === "creation") {
@@ -127,7 +122,7 @@ function App() {
           const saved = await addCharacterToRoster(character);
           setScreen({ kind: "home", character: saved });
         }}
-        onBack={() => setScreen({ kind: "intro" })}
+        onBack={() => setScreen({ kind: "characterSelect" })}
       />
     );
   }

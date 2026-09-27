@@ -9,8 +9,8 @@ import {
   type CombatActionDef,
   type CombatState,
 } from "@eridan/engine";
-import type { Encounter } from "./lore";
-import { PARTY_START_HEX, hexDisk } from "./eridanMap";
+import { HOME_TOWN_NAME, type Encounter } from "./lore";
+import { PARTY_START_HEX, hexDisk, POI_BY_HEX } from "./eridanMap";
 
 /**
  * Backfills a fresh or pre-map-update character's World Map progress: party
@@ -27,6 +27,12 @@ export function withWorldMapStateIfMissing(character: Character): Character {
       exploredHexKeys: [...hexDisk(PARTY_START_HEX, 5)],
     },
   };
+}
+
+/** The named town/landmark at a character's current World Map hex, for display (e.g. Character Select's Location tile). Falls back to the home town for a character standing on an un-named hex. */
+export function currentLocationName(character: Character): string {
+  const hexKey = character.worldMapState?.partyHexKey ?? PARTY_START_HEX;
+  return POI_BY_HEX[hexKey]?.name ?? HOME_TOWN_NAME;
 }
 
 /**

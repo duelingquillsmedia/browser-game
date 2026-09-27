@@ -16,21 +16,32 @@ function rowToCharacter(row: CharacterRow): Character {
   return withWorldMapStateIfMissing(withStartingGearIfMissing(withClassMigrationIfMissing({ ...row.data, id: row.id })));
 }
 
+export interface RosterEntry {
+  character: Character;
+  /** When this character was last saved -- rest, equip, combat results, action bar changes, ... Drives Character Select's "LAST PLAYED" line. */
+  updatedAt: string;
+}
+
 /**
- * The character the player most recently played, by `updated_at` (bumped on
- * every save -- rest, equip, combat results, action bar changes, ...). Used
- * to jump straight into a returning player's hero with no selection step;
- * `null` for an account that hasn't created one yet.
+ * Every character on the account, oldest-created first -- Character Select
+ * assigns these to its three slots in that order, so a player's first hero
+ * always lands in Slot 1. There's no server-side cap at 3; the UI enforces
+ * it structurally by only offering Character Creation from an empty slot.
  */
-export async function loadMostRecentCharacter(): Promise<Character | null> {
+export async function loadRoster(): Promise<RosterEntry[]> {
   const { data, error } = await supabase
     .from("characters")
-    .select("id, data")
-    .order("updated_at", { ascending: false })
-    .limit(1);
+    .select("id, data, updated_at")
+    .order("created_at", { ascending: true })
+    .limit(3);
   if (error) throw error;
-  const rows = data as CharacterRow[];
-  return rows.length > 0 ? rowToCharacter(rows[0]) : null;
+  const rows = data as (CharacterRow & { updated_at: string })[];
+  return rows.map((row) => ({ character: rowToCharacter(row), updatedAt: row.updated_at }));
+}
+
+export async function deleteCharacterFromRoster(id: string): Promise<void> {
+  const { error } = await supabase.from("characters").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function addCharacterToRoster(character: Character): Promise<Character> {

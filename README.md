@@ -2051,6 +2051,57 @@ the moment a fresh journey starts via `startTravel`.
 ### Critical files
 `apps/client/src/screens/WorldMapScreen.tsx`, `WorldMapScreen.css`.
 
+## Character Select: Three Slots Between Title and Home
+
+The user uploaded a new Aetherwyn design handoff to the repo
+(`design_handoff_aetherwyn_character_select/`) for a Character Select
+screen -- up to three character slots, standing between the Title screen
+and Home, that this project didn't have before (Continue used to jump
+straight to whichever character was played most recently, or straight to
+Creation for an account with none). Both Title buttons (CONTINUE and NEW
+GAME) now land on Character Select instead, and it's the only door into
+Character Creation -- reachable solely from an empty slot -- which is what
+makes the three-slot cap hold without any server-side enforcement.
+
+**Data, not the prototype's sample/localStorage rig**: the handoff's own
+`Aetherwyn Character Select.dc.html` is a static HTML reference with
+hand-authored sample characters and a `localStorage['aetherwyn-slots']`
+array standing in for a save system. This project already has a real one
+(Supabase), so slots are the account's own characters instead --
+`game/roster.ts`'s new `loadRoster()` fetches up to three, ordered
+oldest-created-first so a player's first hero always lands in Slot 1, and
+`deleteCharacterFromRoster()` backs the DELETE button. There's no `fresh`/
+"NEW" tag: that flag exists in the prototype because its Character Creation
+writes a transient `localStorage` marker Character Select reads on next
+load, but this project's own Creation flow goes straight to Home after
+`addCharacterToRoster`, so a hero is never actually seen freshly-made here.
+
+**Two stats swapped for real ones**: the handoff's third stat tile is
+"Played" (a play-time clock this engine has never tracked) -- swapped for
+**Gold**, which the character actually has. "Last Played" reads real
+`updated_at` (bumped on every save) formatted as Today/Yesterday/N days
+ago, rather than the sample data's hand-written strings. "Location" reads
+the party's current World Map hex through the same `POI_BY_HEX` lookup
+`WorldMapScreen.tsx` already uses for its own header, pulled out into
+`game/setup.ts`'s new `currentLocationName()` so both call sites share it.
+
+**Visual porting, same pattern as every other Aetherwyn screen in this
+project** (Title, Character Creation, Home, World Map, Character): fluid
+layout with the shared `--aow-` design tokens (`theme/aow-theme.css`)
+rather than the handoff's literal fixed 1600×900 scaled canvas, and pixel-
+art portraits (`getAvatarById`, `image-rendering: pixelated`) in place of
+the handoff's tall photo-style portrait crop -- falling back to a class-
+colored runic glyph (mirroring Character Creation's own fallback) for the
+six classes with no avatar art yet. Verified with a throwaway `sandbox.html`
+Playwright pass (mock roster data, since this container's network policy
+blocks outbound Supabase) confirming keyboard nav (1–3, arrows, Enter,
+Delete/Backspace, Esc), slot selection, the empty-slot Create flow, and the
+delete confirmation dialog including its failure path.
+
+### Critical files
+`apps/client/src/screens/CharacterSelectScreen.tsx` (+ `.css`);
+`apps/client/src/game/roster.ts`, `setup.ts`; `apps/client/src/App.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
