@@ -295,6 +295,17 @@
   image-rendering: pixelated;
 }
 
+/* A monster variant already drawn facing south-west (toward the party from the stage's
+   right side) rather than the "facing right, mirror to face left" convention every other
+   enemy sprite follows -- see SpriteAnimationSet.preOriented's own comment. Also small
+   native pixel art, same as a player's own avatar, so keep it crisp the same way. Combined
+   selector (not a later rule overriding .cbt-unit-art-enemy's transform) so this doesn't
+   depend on CSS source order. */
+.cbt-unit-art-enemy.cbt-unit-art-preoriented .combatant-sprite-frame {
+  transform: none;
+  image-rendering: pixelated;
+}
+
 .cbt-acting-marker {
   position: absolute;
   left: 50%;

@@ -1908,6 +1908,48 @@ bonus (`DEFEND_EVASION_BONUS`) was 25, not the 10% asked for here.
 `packages/engine/src/__tests__/combat.test.ts`;
 `apps/client/src/components/combat/CombatHud.tsx`.
 
+## Goblin South-West Poses (Second Combat Variant Pipeline)
+
+The Drive's "Goblins" folder (Character/NPC Sprites) holds two color
+variants (Black Hair, Red Hair) from the same single-pose, 8-direction
+mannequin generator already used for Cleric's avatar art -- a different
+pipeline entirely from `goblin-1`/`goblin-2`'s existing craftpix sprite
+sheets (10-frame animated idle/attack/hurt/die). Downloaded each variant's
+`south-west.png` (the Red Hair one needed a second attempt -- its first
+download failed the usual IDAT CRC check, same transcription-fidelity issue
+documented in "Cleric Avatar: Bigger Portrait; Combat-Facing Art Deferred";
+the retry came through clean) and wired them in as two more `goblin`
+sprite variants, alongside the two existing animated ones, using the same
+single-frame-for-every-state treatment as `getAvatarSprite` (no real
+attack/hurt/die art for these either).
+
+**South-west, not mirrored.** Enemies stand on the stage's right side and
+every existing monster sprite is drawn facing right, then CSS-mirrored
+(`scaleX(-1)`) to face the party on the left -- the exact mirror of why the
+player's own avatar wanted a *south-east* combat pose (party stands on the
+left, needs to face right, no mirror applied to party sprites at all).
+South-west is already the correct facing for an enemy on the right to look
+toward the party, so mirroring it would turn it the wrong way. Rather than
+special-case these two variants deeper in the sprite-selection code,
+`SpriteAnimationSet` gained an optional `preOriented` flag; `CombatStage.tsx`'s
+`UnitArt` adds a `cbt-unit-art-preoriented` class instead of relying on the
+usual enemy mirror when set, and `CombatScreen.css`'s
+`.cbt-unit-art-enemy.cbt-unit-art-preoriented` rule resets the transform to
+`none` (and adds `image-rendering: pixelated`, same reason the avatar rule
+needs it -- small native pixel art scaled up to fill the portrait frame).
+
+`CharacterSprite.tsx`'s `SpriteState` type was `keyof SpriteAnimationSet`,
+which broke the moment a non-sequence field (`preOriented`) joined that
+interface -- `frames[state]` could no longer be assumed to be a `string[]`.
+Changed it to an explicit `"idle" | "attack" | "hurt" | "die"` union instead,
+decoupling the animation-state type from whatever else the interface holds.
+
+### Critical files
+`apps/client/src/game/sprites.ts`;
+`apps/client/src/components/combat/CombatStage.tsx`, `CharacterSprite.tsx`;
+`apps/client/src/screens/CombatScreen.css`;
+`apps/client/src/assets/sprites/goblin-mannequin/`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

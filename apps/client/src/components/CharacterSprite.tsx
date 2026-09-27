@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import type { SpriteAnimationSet } from "../game/sprites";
 
-export type SpriteState = keyof SpriteAnimationSet;
+// A literal union, not `keyof SpriteAnimationSet` -- that interface also carries the
+// non-sequence `preOriented` flag, which isn't a playable animation state.
+export type SpriteState = "idle" | "attack" | "hurt" | "die";
 
 export interface CharacterSpriteProps {
   frames: SpriteAnimationSet;

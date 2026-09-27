@@ -51,7 +51,7 @@ function UnitArt({
 
   return (
     <div
-      className={`cbt-unit-art ${isEnemy ? "cbt-unit-art-enemy" : ""} ${avatarSprite ? "cbt-unit-art-avatar" : ""} ${effect ? `cbt-fx-${effect.kind}` : ""}`}
+      className={`cbt-unit-art ${isEnemy ? "cbt-unit-art-enemy" : ""} ${isEnemy && sprite?.preOriented ? "cbt-unit-art-preoriented" : ""} ${avatarSprite ? "cbt-unit-art-avatar" : ""} ${effect ? `cbt-fx-${effect.kind}` : ""}`}
     >
       {sprite ? (
         <CharacterSprite frames={sprite} state={spriteState} />

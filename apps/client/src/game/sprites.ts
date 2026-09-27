@@ -1,10 +1,20 @@
 import { getAvatarById } from "./avatars";
+import goblinSwBlackHair from "../assets/sprites/goblin-mannequin/south-west-black-hair.png";
+import goblinSwRedHair from "../assets/sprites/goblin-mannequin/south-west-red-hair.png";
 
 export interface SpriteAnimationSet {
   idle: string[];
   attack: string[];
   hurt: string[];
   die: string[];
+  /**
+   * Marks art that's already drawn facing south-west -- toward the party's
+   * side of the stage from an enemy's position on the right -- so `UnitArt`
+   * skips the usual "drawn facing right, mirror to face left" treatment
+   * every other enemy sprite gets (see CombatScreen.css's `.cbt-unit-art-enemy`
+   * rule). Undefined/false for every pre-existing monster sprite sheet.
+   */
+  preOriented?: boolean;
 }
 
 function sortedFrames(modules: Record<string, string>): string[] {
@@ -119,13 +129,33 @@ function goblinSet(dir: string): SpriteAnimationSet {
 }
 
 /**
+ * Two single-pose Goblin variants from the Drive's "Goblins" mannequin
+ * export (Character/NPC Sprites), south-west facing -- same pipeline and
+ * single-static-frame treatment as a player's Character Creation avatar
+ * (see `getAvatarSprite`): every state just holds on the one frame, since
+ * there's no real attack/hurt/die art for them yet. South-west is the
+ * correct native facing for an enemy standing on the stage's right side to
+ * look toward the party on the left, so unlike goblin-1/goblin-2 (drawn
+ * facing right, meant to be mirrored) these are marked `preOriented` to
+ * skip that mirror -- see `SpriteAnimationSet.preOriented`'s own comment.
+ */
+function goblinMannequinSet(image: string): SpriteAnimationSet {
+  return { idle: [image], attack: [image], hurt: [image], die: [image], preOriented: true };
+}
+
+/**
  * Monster combat sprites, keyed by template id, with one or more visual
  * variants per template so multiple instances of the same monster in a
  * fight (e.g. two Goblin Raiders) don't look identical. Falls back to the
  * generic portrait frame for any template without art yet.
  */
 const MONSTER_SPRITE_VARIANTS: Record<string, SpriteAnimationSet[]> = {
-  goblin: [goblinSet("goblin-1"), goblinSet("goblin-2")],
+  goblin: [
+    goblinSet("goblin-1"),
+    goblinSet("goblin-2"),
+    goblinMannequinSet(goblinSwBlackHair),
+    goblinMannequinSet(goblinSwRedHair),
+  ],
 };
 
 /** Picks a variant deterministically from a combatant's own id, so it stays the same across re-renders. */
