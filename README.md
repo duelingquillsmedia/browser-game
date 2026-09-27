@@ -1984,6 +1984,26 @@ since it's no longer goblin-specific now that a second monster uses it.
 `apps/client/src/game/sprites.ts`;
 `apps/client/src/assets/sprites/direwolf-mannequin/`.
 
+## Goblin Slinger South-West Pose
+
+Same mannequin pipeline and treatment as the Goblin and Dire Wolf poses
+above, this time for `goblinSlinger` (Tameless Shore's skirmisher, per
+`monsters.ts`) -- it had no combat sprite at all before this, falling back
+to the generic initial-letter portrait same as the Dire Wolf did. Sourced
+from the Drive's "Goblin Crossbow" folder (`NPC_Goblin_Male_Green-Skinned_
+Grey_Hair_Crossbow`), a distinct gear/hair variant from the plain Goblin's
+two mannequin exports, so it gets its own `MONSTER_SPRITE_VARIANTS` entry
+rather than joining `goblin`'s array. Only one variant exists for it so far,
+same single-entry shape as `direWolf`.
+
+The download validated cleanly on the very first attempt this time -- no
+IDAT-CRC retry needed, unlike several of the other Drive assets pulled in
+recent passes.
+
+### Critical files
+`apps/client/src/game/sprites.ts`;
+`apps/client/src/assets/sprites/goblin-slinger-mannequin/`.
+
 ## World Map: Halt Travel Mid-Journey
 
 A second button under the disabled "Traveling…" one, shown for the

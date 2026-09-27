@@ -2,6 +2,7 @@ import { getAvatarById } from "./avatars";
 import goblinSwBlackHair from "../assets/sprites/goblin-mannequin/south-west-black-hair.png";
 import goblinSwRedHair from "../assets/sprites/goblin-mannequin/south-west-red-hair.png";
 import direWolfSwDarkGrey from "../assets/sprites/direwolf-mannequin/south-west-dark-grey.png";
+import goblinSlingerSwGreyHair from "../assets/sprites/goblin-slinger-mannequin/south-west-grey-hair-crossbow.png";
 
 export interface SpriteAnimationSet {
   idle: string[];
@@ -108,12 +109,14 @@ function mannequinSet(image: string): SpriteAnimationSet {
  * `goblin` replaced the previous craftpix goblin-1/goblin-2 animated sprite
  * sheets outright with two mannequin poses, per the user's own call -- see
  * "Goblin South-West Poses" in the README and its own follow-up entry for
- * that pass. `direWolf` is new: only one color variant exists in the Drive
- * so far (Dark Grey).
+ * that pass. `direWolf` and `goblinSlinger` are both new: only one color/gear
+ * variant exists in the Drive for each so far (Dark Grey; Grey Hair with a
+ * crossbow).
  */
 const MONSTER_SPRITE_VARIANTS: Record<string, SpriteAnimationSet[]> = {
   goblin: [mannequinSet(goblinSwBlackHair), mannequinSet(goblinSwRedHair)],
   direWolf: [mannequinSet(direWolfSwDarkGrey)],
+  goblinSlinger: [mannequinSet(goblinSlingerSwGreyHair)],
 };
 
 /** Picks a variant deterministically from a combatant's own id, so it stays the same across re-renders. */
