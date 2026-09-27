@@ -54,6 +54,8 @@ export interface Combatant {
   racePassiveId?: RacePassiveId;
   /** A party member's class (for UI purposes, e.g. picking a combat sprite); monsters have none. */
   classId?: string;
+  /** A party member's chosen pixel-art avatar id, if any (see `apps/client/src/game/avatars.ts`); monsters have none. Takes priority over the raceId/classId-keyed combat sprite table when both could apply. */
+  avatarId?: string;
   /** A monster's template (for UI purposes, e.g. picking a combat sprite); party members have none. */
   templateId?: string;
   /** A party member's character level (for UI display, e.g. the Combat screen's "LV n"); monsters have no level concept. */
@@ -111,6 +113,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     raceId: "raceId" in source ? source.raceId : undefined,
     racePassiveId: "racePassiveId" in source ? source.racePassiveId : undefined,
     classId: "classId" in source ? source.classId : undefined,
+    avatarId: "classId" in source ? source.appearance?.avatarId : undefined,
     templateId: "templateId" in source ? source.templateId : undefined,
     level: "classId" in source ? source.level : undefined,
     abilityScores: source.abilityScores,

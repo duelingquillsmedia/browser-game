@@ -1654,10 +1654,11 @@ being built from the palette pick.
 **Display**: `CharacterScreen.tsx`'s equipment portrait box (previously
 name/class text only) now shows the chosen avatar image above that text,
 via a new `getAvatarById(character.appearance?.avatarId)` lookup. Combat's
-own sprite system (`game/sprites.ts`) was deliberately left untouched --
-it's keyed by `raceId:classId` and expects full `idle/attack/hurt/die`
-frame sets, which this single idle-only portrait doesn't have; wiring real
-sprites into combat is future work once more of the animation set exists.
+own sprite system (`game/sprites.ts`) was deliberately left untouched at
+first, since it's keyed by `raceId:classId` and expects full
+`idle/attack/hurt/die` frame sets this single idle-only portrait doesn't
+have -- **now superseded by the next section**, which wires it in anyway
+using the one idle frame for every state.
 
 Verified live: creating a Cleric shows the avatar grid and lets you pick
 the Black Hair option (both the live preview and the final summary reflect
@@ -1672,6 +1673,49 @@ all without a console error, and with all 147 engine tests still passing
 `apps/client/src/game/avatars.ts` (new), `assets/avatars/` (new);
 `apps/client/src/screens/CharacterCreationScreen.tsx` (+ `.css`),
 `CharacterScreen.tsx` (+ `.css`).
+
+## Cleric Avatar Refreshed + Wired Into Combat
+
+The user replaced the Cleric sprite in the Google Drive with a new export
+(same `Idle/rotations/south.png` shape, now 64×64 instead of 48×48) and
+asked for the chosen avatar to also appear in real fights, not just
+Character Creation and the Character screen.
+
+**Art swap**: the new `south.png` was downloaded from the Drive's refreshed
+`Cleric_Male_Fair-Skinned_Black_Hair/Idle` folder and now replaces
+`apps/client/src/assets/avatars/cleric-male-black-hair.png` in place --
+same filename, same `avatars.ts` registry entry, so nothing downstream
+needed to change to pick up the new art.
+
+**Combat wiring**: `Combatant` (`packages/engine/src/combat.ts`) gained an
+optional `avatarId`, copied over in `toCombatant` from
+`source.appearance?.avatarId` (party members only; monsters have none). On
+the client, `game/sprites.ts` gained `getAvatarSprite(avatarId)`, which
+wraps the chosen avatar's single portrait image as a `SpriteAnimationSet`
+where `idle`/`attack`/`hurt`/`die` all just point at that same frame --
+`CharacterSprite` already renders a length-1 sequence as a static image, so
+this needed no changes there. `CombatStage.tsx`'s `UnitArt` now tries
+`getAvatarSprite(combatant.avatarId)` before falling back to the existing
+`raceId:classId`-keyed `getPartySprite` table, since a player's own avatar
+pick is class-scoped and independent of race -- it should win regardless of
+which race chose it. A new `cbt-unit-art-avatar` class keeps this native
+pixel art crisp (`image-rendering: pixelated`) without affecting the
+existing, already-high-resolution craftpix sprite sheets that share the
+same rule.
+
+Verified live: a Human Cleric who picked the avatar at creation now shows
+the same pixel-art portrait — at its new, sharper resolution — in the
+Character Creation preview, the Character screen, and, newly, standing in
+for the old initials-in-a-frame placeholder in an actual fight (Raiders on
+the Tameless Shore), all without a console error. Engine build/tests (147
+passing) and client typecheck/build stayed clean throughout, since
+`avatarId` is optional and additive everywhere it was added.
+
+### Critical files
+`packages/engine/src/combat.ts`;
+`apps/client/src/assets/avatars/cleric-male-black-hair.png`;
+`apps/client/src/game/sprites.ts`;
+`apps/client/src/components/combat/CombatStage.tsx` (+ `CombatScreen.css`).
 
 ## Lore
 

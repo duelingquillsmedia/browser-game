@@ -288,6 +288,13 @@
   transform: scaleX(-1);
 }
 
+/* A player's own chosen Character Creation avatar is small native pixel art (e.g. 64x64),
+   scaled way up to fill the portrait frame -- keep it crisp instead of blurring like the
+   higher-resolution craftpix sprite sheets do at this same rule. */
+.cbt-unit-art-avatar .combatant-sprite-frame {
+  image-rendering: pixelated;
+}
+
 .cbt-acting-marker {
   position: absolute;
   left: 50%;

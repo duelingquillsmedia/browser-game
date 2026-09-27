@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { previewAttack, STATUS_EFFECT_DEFS, type Combatant, type CombatActionDef, type CombatState } from "@eridan/engine";
 import { CharacterSprite, type SpriteState } from "../CharacterSprite";
-import { getPartySprite, getMonsterSprite } from "../../game/sprites";
+import { getAvatarSprite, getPartySprite, getMonsterSprite } from "../../game/sprites";
 import { computeStageLayout, schoolColor, statusKindColor, type StageLayout } from "../../game/combatDisplay";
 import type { Encounter } from "../../game/lore";
 import portraitFrameParty from "../../assets/ui/portrait-frame-party.png";
@@ -44,14 +44,15 @@ function UnitArt({
   effect?: CombatantEffect;
   isEnemy: boolean;
 }) {
-  const sprite = isEnemy
-    ? getMonsterSprite(combatant.templateId, combatant.id)
-    : getPartySprite(combatant.raceId, combatant.classId);
+  const avatarSprite = isEnemy ? undefined : getAvatarSprite(combatant.avatarId);
+  const sprite = isEnemy ? getMonsterSprite(combatant.templateId, combatant.id) : (avatarSprite ?? getPartySprite(combatant.raceId, combatant.classId));
   const frame = isEnemy ? portraitFrameEnemy : portraitFrameParty;
   const spriteState = spriteStateFor(combatant, effect);
 
   return (
-    <div className={`cbt-unit-art ${isEnemy ? "cbt-unit-art-enemy" : ""} ${effect ? `cbt-fx-${effect.kind}` : ""}`}>
+    <div
+      className={`cbt-unit-art ${isEnemy ? "cbt-unit-art-enemy" : ""} ${avatarSprite ? "cbt-unit-art-avatar" : ""} ${effect ? `cbt-fx-${effect.kind}` : ""}`}
+    >
       {sprite ? (
         <CharacterSprite frames={sprite} state={spriteState} />
       ) : (
