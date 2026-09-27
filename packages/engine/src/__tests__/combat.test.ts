@@ -129,10 +129,10 @@ describe("combat engine", () => {
     const heroAfterHit = state.combatants.find((c) => c.id === "hero")!;
     expect(heroAfterHit.hp).toBe(10);
 
-    // Hero defends, gaining +25 evasion until their next turn. Foe's hit chance against
-    // hero is normally 90 - 7 (dex-based evasion) = 83%, so a roll of 70 would connect --
-    // but Defend drops it to 90 - 32 = 58%, so that same roll of 70 now misses.
-    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forPercentRoll(70)]));
+    // Hero defends, gaining +10 evasion until their next turn. Foe's hit chance against
+    // hero is normally 90 - 7 (dex-based evasion) = 83%, so a roll of 80 would connect --
+    // but Defend drops it to 90 - 7 - 10 = 73%, so that same roll of 80 now misses.
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forPercentRoll(80)]));
     const heroAfterDefend = state.combatants.find((c) => c.id === "hero")!;
     expect(heroAfterDefend.hp).toBe(10); // unchanged: the follow-up attack missed
     expect(state.round).toBe(2);

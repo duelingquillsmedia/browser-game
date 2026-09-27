@@ -39,7 +39,7 @@ export type Side = "party" | "enemy";
 export type Rank = "front" | "back";
 
 /** Flat evasion-percentage bonus from using Defend, on top of the target's own Dexterity-based evasion. */
-const DEFEND_EVASION_BONUS = 25;
+const DEFEND_EVASION_BONUS = 10;
 
 /** Every party member's Action Points refill to this at the start of each of their own turns. Monsters never use the AP economy — they act via a single free action each turn, as before. */
 export const PLAYER_AP_PER_TURN = 4;
@@ -801,7 +801,7 @@ function resolveDefend(state: CombatState, actor: Combatant): void {
   actor.tempEvasionBonus += DEFEND_EVASION_BONUS;
   log(
     state,
-    `${actor.name} uses ${DEFEND_ACTION.name}: much harder to hit until their next turn.`,
+    `${actor.name} uses ${DEFEND_ACTION.name}: +${DEFEND_EVASION_BONUS}% evasion and Advantage on Flee until their next turn.`,
     { kind: "defend", actorId: actor.id }
   );
 }

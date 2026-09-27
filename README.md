@@ -1877,6 +1877,37 @@ class, same as before.
 ### Critical files
 `apps/client/src/game/setup.ts`.
 
+## Defend: +10% Evasion, Made Visible
+
+Defend already worked mechanically (`resolveDefend` in `combat.ts` set
+`dodging = true` and bumped `tempEvasionBonus`, which `effectiveEvasionBonus`
+already folds into every incoming hit-chance roll against the defender) --
+the user's report that it "might not do anything" was really a visibility
+gap: nothing in the UI ever showed the buff was active, and its own flat
+bonus (`DEFEND_EVASION_BONUS`) was 25, not the 10% asked for here.
+
+- **`combat.ts`**: `DEFEND_EVASION_BONUS` is now `10` (was 25), and
+  `resolveDefend`'s log line states the actual numbers ("+10% evasion and
+  Advantage on Flee until their next turn") instead of vague flavor text.
+- **`actions.ts`**: `DEFEND_ACTION.description` states the same numbers, so
+  the Skills page and combat's hover tooltip show it too.
+- **`CombatHud.tsx`**: the status-chip row (previously only ever populated
+  from `player.statusEffects`) now also shows a "Defending" chip whenever
+  `player.dodging` is true. Defend's buff isn't a real status effect (it's
+  the older, bespoke `tempEvasionBonus`/`dodging` pair predating the
+  status-effect system, and turning it into one wasn't needed just to fix
+  its visibility) -- the chip is synthesized directly from `dodging` and
+  styled with the same "buff" kind color as a real one, so it reads
+  identically without changing how Defend itself is resolved.
+- Updated `combat.test.ts`'s Defend hit-chance test for the new bonus (a
+  foe's hit chance against a defending hero is now 90 - 7 (Dexterity
+  evasion) - 10 (Defend) = 73%, not 58%).
+
+### Critical files
+`packages/engine/src/combat.ts`, `actions.ts`;
+`packages/engine/src/__tests__/combat.test.ts`;
+`apps/client/src/components/combat/CombatHud.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

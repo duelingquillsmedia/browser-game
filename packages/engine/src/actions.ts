@@ -104,7 +104,7 @@ export const BASIC_ATTACK: CombatActionDef = {
 export const DEFEND_ACTION: CombatActionDef = {
   id: "defend",
   name: "Defend",
-  description: "Focus on defense: until your next turn, you're much harder to hit, and easier to flee with.",
+  description: "Focus on defense: until your next turn, gain +10% Evasion and Advantage on Flee attempts.",
   kind: "defend",
   target: "self",
   ability: "str",
