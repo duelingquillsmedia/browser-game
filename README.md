@@ -1614,6 +1614,65 @@ Blade Slash for 9 piercing damage") -- all without a console error.
 `apps/client/src/App.tsx`;
 `apps/client/src/theme/aow-theme.css`.
 
+## Pixel-Art Avatar Selection (Cleric)
+
+The user added a **Character and NPC Sprites** folder to the Google Drive
+with the project's first real portrait art: an 8-directional idle sprite set
+for a male Cleric with black hair (`Pixel Art - Player Races/Cleric/Male -
+Black Hair`). This wires up an avatar-selection system on Character
+Creation's Appearance step, built to grow as more classes get art rather
+than as a one-off for this single image.
+
+**`CharacterAppearance` gained an optional `avatarId?: string`**
+(`packages/engine/src/character.ts`) alongside its existing skin/hair/eyes
+palette fields — purely cosmetic, same "the engine doesn't act on this
+beyond storing it" contract as the rest of the interface. No other engine
+change was needed: `appearance` was already a straight pass-through from
+`CreateCharacterOptions` into `createCharacter`.
+
+**New `apps/client/src/game/avatars.ts`** is the registry: `AVATARS_BY_CLASS`
+maps a class id to its list of selectable `{ id, label, image }` options —
+keyed by class, not race, so a player can pick this avatar regardless of
+their own character's chosen race, even though the source art itself
+depicts a half-elf. Only `cleric` has an entry today (the one image, saved
+to `apps/client/src/assets/avatars/cleric-male-black-hair.png`); adding the
+next class's art is just another array entry, no structural change. Two
+helpers, `getAvatarsForClass`/`getAvatarById`, are shared by every screen
+that needs to look one up.
+
+**Character Creation** (`CharacterCreationScreen.tsx`): the Appearance step
+now shows an "Avatar" grid of thumbnails above the existing "Palette" swatch
+grid, only when `getAvatarsForClass(classId)` returns anything -- empty for
+every class but Cleric today, so nothing changes for them beyond a reworded
+note ("More pixel-art avatars are on the way for other classes..."). Picking
+an avatar is optional, not required to continue. Switching class resets any
+chosen avatar (`pickClass`), since options are class-specific. The live
+preview panel and the final step's summary both reflect the choice; on
+submit, `avatarId` rides along inside the same `appearance` object already
+being built from the palette pick.
+
+**Display**: `CharacterScreen.tsx`'s equipment portrait box (previously
+name/class text only) now shows the chosen avatar image above that text,
+via a new `getAvatarById(character.appearance?.avatarId)` lookup. Combat's
+own sprite system (`game/sprites.ts`) was deliberately left untouched --
+it's keyed by `raceId:classId` and expects full `idle/attack/hurt/die`
+frame sets, which this single idle-only portrait doesn't have; wiring real
+sprites into combat is future work once more of the animation set exists.
+
+Verified live: creating a Cleric shows the avatar grid and lets you pick
+the Black Hair option (both the live preview and the final summary reflect
+it); creating any other class shows no avatar section at all; switching
+from Cleric to Warrior mid-creation clears the pick; and the finished
+character's screen shows the pixel portrait in its equipment frame --
+all without a console error, and with all 147 engine tests still passing
+(the new field is optional and additive).
+
+### Critical files
+`packages/engine/src/character.ts`;
+`apps/client/src/game/avatars.ts` (new), `assets/avatars/` (new);
+`apps/client/src/screens/CharacterCreationScreen.tsx` (+ `.css`),
+`CharacterScreen.tsx` (+ `.css`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

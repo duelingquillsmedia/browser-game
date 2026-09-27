@@ -17,6 +17,7 @@ import {
   type Race,
 } from "@eridan/engine";
 import { APPEARANCE_PRESETS, NAME_POOLS } from "../game/appearance";
+import { getAvatarById, getAvatarsForClass } from "../game/avatars";
 import { HOME_TOWN_NAME } from "../game/lore";
 import "../theme/aow-theme.css";
 import "./CharacterCreationScreen.css";
@@ -108,6 +109,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const [raceId, setRaceId] = useState<string | null>(null);
   const [classId, setClassId] = useState<string | null>(null);
   const [lookIndex, setLookIndex] = useState(0);
+  const [avatarId, setAvatarId] = useState<string | undefined>(undefined);
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +123,8 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const resourceConfig = getClassResource(classId ?? undefined);
   const looks = race ? APPEARANCE_PRESETS[race.id] : [];
   const chosenLook = looks[lookIndex];
+  const avatarOptions = classId ? getAvatarsForClass(classId) : [];
+  const chosenAvatar = getAvatarById(avatarId);
 
   const raceChoice: HalfElfChoice | undefined =
     raceId === "halfElf" ? { doubleAbility: halfElfDouble, singleAbilities: halfElfSingles, passiveSource: halfElfPassive } : undefined;
@@ -179,7 +183,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
         classId: cls.id,
         baseAbilityScores: BASE_ABILITY_SCORES,
         raceChoice,
-        appearance: chosenLook,
+        appearance: chosenLook && { ...chosenLook, avatarId },
       });
       await onComplete(character);
     } catch (err) {
@@ -191,6 +195,12 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   function pickRace(id: string) {
     setRaceId(id);
     setLookIndex(0);
+  }
+
+  /** Avatar options are per-class, so an old pick wouldn't necessarily be valid for a newly chosen class. */
+  function pickClass(id: string) {
+    setClassId(id);
+    setAvatarId(undefined);
   }
 
   function randomName() {
@@ -352,7 +362,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                     type="button"
                     className={`aow-creation-class-row${classId === c.id ? " selected" : ""}`}
                     style={classId === c.id ? { borderColor: CLASS_COLOR_VAR[c.id] } : undefined}
-                    onClick={() => setClassId(c.id)}
+                    onClick={() => pickClass(c.id)}
                   >
                     <span className="aow-creation-card-glyph" style={{ color: CLASS_COLOR_VAR[c.id] }}>
                       {CLASS_GLYPHS[c.id]}
@@ -455,6 +465,23 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
 
           {step === 3 && race && (
             <div className="aow-creation-look-grid">
+              {avatarOptions.length > 0 && (
+                <>
+                  <p className="aow-creation-section-label">Avatar</p>
+                  {avatarOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`aow-creation-card aow-creation-avatar-card${avatarId === opt.id ? " selected" : ""}`}
+                      onClick={() => setAvatarId(opt.id)}
+                    >
+                      <img src={opt.image} alt="" className="aow-creation-avatar-img" />
+                      <span className="aow-creation-card-name">{opt.label}</span>
+                    </button>
+                  ))}
+                  <p className="aow-creation-section-label">Palette</p>
+                </>
+              )}
               {looks.map((look, i) => (
                 <button
                   key={look.presetName}
@@ -471,7 +498,8 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                 </button>
               ))}
               <p className="aow-muted-text aow-creation-look-note">
-                A custom portrait can be added later — this only picks a starting palette.
+                More pixel-art avatars are on the way for other classes -- everyone can still pick a
+                starting palette above.
               </p>
             </div>
           )}
@@ -511,6 +539,12 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                   <span>Appearance</span>
                   <span>{chosenLook?.presetName ?? "—"}</span>
                 </div>
+                {avatarOptions.length > 0 && (
+                  <div className="aow-stat-row">
+                    <span>Avatar</span>
+                    <span>{chosenAvatar?.label ?? "Default"}</span>
+                  </div>
+                )}
                 <div className="aow-stat-row">
                   <span>Starts in</span>
                   <span>{HOME_TOWN_NAME} · Day 1</span>
@@ -524,9 +558,13 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
 
         <div className="aow-creation-preview">
           <div className={`aow-creation-preview-frame${cls ? " has-class" : ""}`} style={cls ? { borderColor: CLASS_COLOR_VAR[cls.id] } : undefined}>
-            <span className="aow-creation-preview-glyph" style={cls ? { color: CLASS_COLOR_VAR[cls.id] } : undefined}>
-              {cls ? CLASS_GLYPHS[cls.id] : race ? RACE_GLYPHS[race.id] : "?"}
-            </span>
+            {chosenAvatar ? (
+              <img src={chosenAvatar.image} alt="" className="aow-creation-preview-avatar" />
+            ) : (
+              <span className="aow-creation-preview-glyph" style={cls ? { color: CLASS_COLOR_VAR[cls.id] } : undefined}>
+                {cls ? CLASS_GLYPHS[cls.id] : race ? RACE_GLYPHS[race.id] : "?"}
+              </span>
+            )}
             <div className="aow-creation-preview-caption">
               <div className="aow-creation-preview-name" style={{ color: trimmedName ? undefined : "var(--aow-faint)" }}>
                 {trimmedName || "Unnamed"}

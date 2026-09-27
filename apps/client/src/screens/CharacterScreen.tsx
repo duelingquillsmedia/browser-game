@@ -16,6 +16,7 @@ import {
   type ItemSlot,
 } from "@eridan/engine";
 import { combatStatGroups, equipmentTileStyle, resistanceRows, type CombatStatRow } from "../game/characterDisplay";
+import { getAvatarById } from "../game/avatars";
 import { ItemIcon } from "../components/ItemIcon";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
 import { ItemTooltipContent } from "../components/ItemTooltipContent";
@@ -177,6 +178,7 @@ function EquipmentSlot({
 export function CharacterScreen({ character, onUpdateCharacter }: CharacterScreenProps) {
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
+  const avatar = getAvatarById(character.appearance?.avatarId);
   const resourceConfig = getClassResource(character.classId);
   const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
 
@@ -293,6 +295,7 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
                 ))}
               </div>
               <div className="aow-equipment-portrait">
+                {avatar && <img src={avatar.image} alt="" className="aow-equipment-portrait-avatar" />}
                 <span>{character.name}</span>
                 <span className="aow-muted-text">
                   {race?.name ?? character.raceId} {cls?.name ?? character.classId}

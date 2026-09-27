@@ -223,6 +223,13 @@
   color: var(--aow-tertiary);
 }
 
+.aow-equipment-portrait-avatar {
+  width: 140px;
+  height: 140px;
+  image-rendering: pixelated;
+  margin-bottom: auto;
+}
+
 .aow-weapon-row {
   display: flex;
   justify-content: center;

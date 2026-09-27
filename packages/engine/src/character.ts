@@ -108,6 +108,13 @@ export interface CharacterAppearance {
   skin: string;
   hair: string;
   eyes: string;
+  /**
+   * A player-chosen pixel-art portrait id (see `apps/client/src/game/avatars.ts`),
+   * scoped to the character's class rather than tied to any one preset above --
+   * purely cosmetic, same as the rest of this interface. Undefined when no art
+   * exists yet for the character's class, or the player didn't pick one.
+   */
+  avatarId?: string;
 }
 
 export function abilityMod(character: Character, key: AbilityKey): number {

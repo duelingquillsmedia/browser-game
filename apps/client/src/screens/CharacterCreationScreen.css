@@ -474,6 +474,28 @@
   grid-column: 1 / -1;
 }
 
+.aow-creation-section-label {
+  grid-column: 1 / -1;
+  margin: 4px 0 -2px;
+  font-family: var(--aow-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--aow-faint);
+}
+
+.aow-creation-avatar-card {
+  align-items: center;
+  text-align: center;
+}
+
+.aow-creation-avatar-img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
 /* Name step */
 
 .aow-creation-name-layout {
@@ -547,6 +569,12 @@
   font-family: var(--aow-font-runic);
   font-size: 96px;
   color: var(--aow-faint);
+}
+
+.aow-creation-preview-avatar {
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
 }
 
 .aow-creation-preview-caption {
