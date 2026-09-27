@@ -1854,6 +1854,29 @@ combat HUD's hover tooltip on its Q/E slot instead.
 `apps/client/src/components/combat/CombatHud.tsx`;
 `apps/client/src/screens/CombatScreen.tsx`, `SkillsScreen.tsx`.
 
+## Resting No Longer Refills a Generator/Spender Resource Pool
+
+"Town Hub: Gold, Potions, and Shops" above shipped `restCharacter` restoring
+resource to its class's full max unconditionally -- fine for Wylde/Arcana
+(Druid/Wizard), but wrong for the other five: `resources.ts` and
+`stats.ts`'s own `computeResourceStart` already document that Fury/
+Expertise/Prayer/Focus/Cunning (Warrior/Soldier/Cleric/Ranger/Rogue) are
+generator/spender pools meant to start every fight at zero and get built up
+by Basic Attacks -- `toCombatant` already uses `computeResourceStart` for a
+fresh fight, but `restCharacter` bypassed that distinction entirely and
+handed those five classes a full bar to spend from turn one, undoing the
+whole "starts empty" design the moment the player rested.
+
+Fixed by swapping `restCharacter`'s `computeResourceMax` call for
+`computeResourceStart` -- the same function `toCombatant` already trusts for
+"what should this class's resource be at the start of a fight." Resting now
+reproduces exactly that: zero for the five fixed pools, a full refill for
+Wylde/Arcana. HP is unaffected -- always restores to `maxHp` regardless of
+class, same as before.
+
+### Critical files
+`apps/client/src/game/setup.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

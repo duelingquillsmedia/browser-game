@@ -1,5 +1,5 @@
 import {
-  computeResourceMax,
+  computeResourceStart,
   createMonster,
   gainExperience,
   getMonsterTemplate,
@@ -86,12 +86,21 @@ export function applyCombatResults(character: Character, combat: CombatState): C
   return { character: rewardedCharacter, xpGained: xpAwarded, goldGained, levelsGained, newlyUnlockedActions };
 }
 
-/** Fully restores HP and resource pool — used when resting at a settlement's Inn (see WorldMapScreen's Town Hub) or the Home screen. */
+/**
+ * Fully restores HP, and resets the resource pool to its own fresh-fight
+ * starting value — used when resting at a settlement's Inn (see
+ * WorldMapScreen's Town Hub) or the Home screen. That's a full refill for a
+ * mana-like pool (Wylde/Arcana: Druid/Wizard), but zero for a generator/
+ * spender pool (Fury/Expertise/Prayer/Focus/Cunning: Warrior/Soldier/
+ * Cleric/Ranger/Rogue) — those are meant to start every fight empty and get
+ * built up by Basic Attacks, not banked between fights via rest (see
+ * `computeResourceStart`'s own doc comment).
+ */
 export function restCharacter(character: Character): Character {
-  const resourceMax = computeResourceMax(character.abilityScores, character.classId, character.level);
+  const resourceStart = computeResourceStart(character.abilityScores, character.classId, character.level);
   return {
     ...character,
     hp: character.maxHp,
-    resource: resourceMax ?? character.resource,
+    resource: resourceStart ?? character.resource,
   };
 }
