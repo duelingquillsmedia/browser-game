@@ -25,8 +25,10 @@ export interface RosterEntry {
 /**
  * Every character on the account, oldest-created first -- Character Select
  * assigns these to its three slots in that order, so a player's first hero
- * always lands in Slot 1. There's no server-side cap at 3; the UI enforces
- * it structurally by only offering Character Creation from an empty slot.
+ * always lands in Slot 1. The UI already only offers Character Creation
+ * from an empty slot, but the three-character cap is also enforced in the
+ * database itself (a `trg_enforce_character_limit` trigger on `characters`)
+ * so it holds even against a client bug or a race between two open tabs.
  */
 export async function loadRoster(): Promise<RosterEntry[]> {
   const { data, error } = await supabase

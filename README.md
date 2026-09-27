@@ -2130,6 +2130,36 @@ after its own `mage` detour.
 ### Critical files
 `packages/engine/src/character.ts`, `__tests__/character.test.ts`.
 
+## Character Limit Enforced in the Database
+
+Checking the fighter-classId account afterward turned up a bigger issue:
+across many earlier testing sessions it had accumulated **10** characters,
+not 3 -- Character Select's oldest-created-first slot assignment (see
+above) surfaced the three *oldest* (mostly throwaway test characters),
+leaving the account's actual, leveled-up Cleric invisible in every slot.
+The user asked for the extras deleted (down to that one Cleric) and for
+the three-character cap to be a real limiter rather than an assumption.
+
+The 9 extra rows were deleted directly in Supabase. For the cap itself,
+client-side gating (Character Creation only reachable from an empty slot)
+was already there but isn't a real limit -- nothing stops a second tab, a
+retry, or a future bug from inserting a fourth row straight past it. A
+Postgres trigger closes that gap at the source: `trg_enforce_character_limit`
+fires `before insert` on `characters`, counts the inserting user's existing
+rows, and raises (aborting the insert) once that count is already 3. It
+went in as a direct migration on the live project rather than a checked-in
+SQL file, matching how the table itself was originally set up (see
+"Supabase Backend" below) -- this repo has no migrations directory yet.
+Verified by attempting 3 more inserts for the affected account inside a
+rolled-back transaction: the third one hit the trigger's own exception
+message cleanly, and the account's row count was unaffected afterward.
+
+### Critical files
+None in this repo -- a `characters` table trigger on the live Supabase
+project (`grhwedkojxidqrtzwdtd`). `apps/client/src/game/roster.ts` and
+`screens/CharacterSelectScreen.tsx`'s own doc comments were updated to
+describe it.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

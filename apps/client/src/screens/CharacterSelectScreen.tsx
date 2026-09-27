@@ -138,9 +138,10 @@ function SlotCard({ n, entry, isSelected, onSelect, onPlay }: SlotCardProps) {
  * Up to three character slots, standing between the Title screen and Home
  * (see the Aetherwyn design handoff, `design_handoff_aetherwyn_character_select/`).
  * Slots are the account's own characters ordered oldest-created-first, not
- * the handoff's hand-authored sample/localStorage data -- so the cap at
- * three is enforced structurally (Character Creation is only reachable from
- * an empty slot here) rather than in the engine or the Supabase schema.
+ * the handoff's hand-authored sample/localStorage data. The cap at three is
+ * enforced twice over: Character Creation is only reachable from an empty
+ * slot here, and the Supabase schema itself rejects a fourth `characters`
+ * row per account (see `game/roster.ts`'s own `loadRoster` doc comment).
  *
  * Two deliberate departures from the handoff, both noted in the README:
  * the "Played" stat tile became "Gold" (this engine tracks no play-time),
