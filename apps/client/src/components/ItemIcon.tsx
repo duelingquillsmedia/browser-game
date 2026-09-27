@@ -150,6 +150,17 @@ function Charm() {
   );
 }
 
+/** A spellcaster's ranged focus (Radiance/Arcane Bolt/Nature's Blast) -- a glowing orb atop a short haft, color-coded per school. */
+function Focus(glowFill: string, glowStroke: string) {
+  return (
+    <svg viewBox="0 0 48 48" className="item-icon" aria-hidden="true">
+      <rect x="22" y="24" width="4" height="20" rx="1.5" fill="#8a5a2b" stroke="#5c3b1a" strokeWidth="1" />
+      <circle cx="24" cy="16" r="10" fill={glowFill} stroke={glowStroke} strokeWidth="1.5" />
+      <circle cx="24" cy="16" r="4.5" fill="#ffffff" opacity="0.7" />
+    </svg>
+  );
+}
+
 function Potion(liquidFill: string, stroke: string) {
   return (
     <svg viewBox="0 0 48 48" className="item-icon" aria-hidden="true">
@@ -172,6 +183,9 @@ const ITEM_ICONS: Record<string, ReactElement> = {
   oakenStaff: <Staff />,
   ashenMace: <Mace />,
   ritualDagger: <Dagger />,
+  radiance: Focus("#d9b865", "#8a6d1a"),
+  arcaneBolt: Focus("#5fc4d6", "#2f7ba3"),
+  naturesBlast: Focus("#86c46f", "#4a7a3a"),
   practicedKnuckles: <Knuckles />,
   leatherArmor: ArmorVest("#7a5a2b", "#4a3417"),
   studdedLeather: ArmorVest("#6b4a22", "#3f2c12", "studs"),

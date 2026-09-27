@@ -1753,6 +1753,39 @@ that one file would let this finish with no other code changes needed.
 `apps/client/src/screens/CharacterScreen.css`;
 `apps/client/src/game/avatars.ts`, `sprites.ts`.
 
+## Ranged Spell Foci: Radiance, Arcane Bolt, Nature's Blast
+
+Cleric, Druid, and Wizard have had a named ranged Basic Attack variant
+(Radiance/Arcane Bolt/Nature's Blast — see "Class Style Sheet: Named,
+Explicitly-Scaled Basic Attack Variants" above) since that pass, but no
+starting kit ever equipped a `rangedWeapon`, so it was never actually
+reachable in combat. Three new `rangedWeapon`-slot items in `items.ts` fix
+that, one per class, each granting a ranged Basic Attack that deals a
+distinct magical damage type (not a mundane physical one, so it reads as
+genuinely a "spell" rather than a second weapon swing):
+
+- **Radiance** (Cleric) — radiant, matching Radiant Beam's own school.
+- **Arcane Bolt** (Wizard) — force, one of Elemental Shard's own damage types.
+- **Nature's Blast** (Druid) — poison, distinct from Wylde Wrath's piercing
+  vines so the two don't read as the same attack.
+
+Each rolls its own small min-max damage range (9-13 for the WIS-scaled two,
+matching Ashen Mace's own tier; 8-12 for Arcane Bolt, matching Oaken
+Staff's), the same "weapon roll + Class Style Sheet's own percentOfAbility"
+shape every other Basic Attack already uses — no combat.ts changes needed.
+
+Cleric's and Wizard's starting equipment options now equip their class's
+focus alongside whichever melee weapon the player picks, so both classes
+start with a working melee **and** ranged Basic Attack. Druid's two options
+diverge on purpose: "Ashen Mace, Nature's Blast & Leather Armor" gives the
+melee+ranged pairing like the other two casters, while the existing
+"Shortbow & Leather Armor" option is left untouched as a distinct
+ranged-only, physical-arrow build for a player who wants that instead.
+
+### Critical files
+`packages/engine/src/items.ts`, `classes.ts`;
+`apps/client/src/components/ItemIcon.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

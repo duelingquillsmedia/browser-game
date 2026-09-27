@@ -275,8 +275,16 @@ export const CLASSES: Record<string, CharacterClass> = {
       { name: "Spellcasting", description: "Your spells' damage and healing scale off your Spell Power." },
     ],
     startingEquipmentOptions: [
-      { id: "mace-and-leather", label: "Ashen Mace & Studded Leather", equipment: { meleeWeapon: "ashenMace", armor: "studdedLeather" } },
-      { id: "mace-and-mail", label: "Ashen Mace & Chain Shirt", equipment: { meleeWeapon: "ashenMace", armor: "chainShirt" } },
+      {
+        id: "mace-and-leather",
+        label: "Ashen Mace, Radiance & Studded Leather",
+        equipment: { meleeWeapon: "ashenMace", rangedWeapon: "radiance", armor: "studdedLeather" },
+      },
+      {
+        id: "mace-and-mail",
+        label: "Ashen Mace, Radiance & Chain Shirt",
+        equipment: { meleeWeapon: "ashenMace", rangedWeapon: "radiance", armor: "chainShirt" },
+      },
     ],
     startingInventory: ["ringOfWarding"],
   },
@@ -437,7 +445,11 @@ export const CLASSES: Record<string, CharacterClass> = {
       { name: "Spellcasting", description: "Your spells' damage and healing scale off your Spell Power." },
     ],
     startingEquipmentOptions: [
-      { id: "mace", label: "Ashen Mace & Leather Armor", equipment: { meleeWeapon: "ashenMace", armor: "leatherArmor" } },
+      {
+        id: "mace",
+        label: "Ashen Mace, Nature's Blast & Leather Armor",
+        equipment: { meleeWeapon: "ashenMace", rangedWeapon: "naturesBlast", armor: "leatherArmor" },
+      },
       { id: "shortbow", label: "Shortbow & Leather Armor", equipment: { rangedWeapon: "huntersShortbow", armor: "leatherArmor" } },
     ],
     startingInventory: ["ringOfWarding"],
@@ -486,8 +498,16 @@ export const CLASSES: Record<string, CharacterClass> = {
       { name: "Spellcasting", description: "Your spells' damage and healing scale off your Spell Power." },
     ],
     startingEquipmentOptions: [
-      { id: "staff", label: "Oaken Staff & Traveler's Robe", equipment: { meleeWeapon: "oakenStaff", armor: "travelersRobe" } },
-      { id: "dagger", label: "Ritual Dagger & Traveler's Robe", equipment: { meleeWeapon: "ritualDagger", armor: "travelersRobe" } },
+      {
+        id: "staff",
+        label: "Oaken Staff, Arcane Bolt & Traveler's Robe",
+        equipment: { meleeWeapon: "oakenStaff", rangedWeapon: "arcaneBolt", armor: "travelersRobe" },
+      },
+      {
+        id: "dagger",
+        label: "Ritual Dagger, Arcane Bolt & Traveler's Robe",
+        equipment: { meleeWeapon: "ritualDagger", rangedWeapon: "arcaneBolt", armor: "travelersRobe" },
+      },
     ],
     startingInventory: ["luckyCharm"],
   },
