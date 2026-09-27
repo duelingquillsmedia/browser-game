@@ -1,4 +1,4 @@
-import { ABILITY_NAMES, getItem, type Character, type ItemSlot, type ItemTemplate } from "@eridan/engine";
+import { getItem, isMagicalAbility, type Character, type ItemSlot, type ItemTemplate } from "@eridan/engine";
 
 export function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -16,12 +16,27 @@ export function slotLabel(slot: ItemSlot | undefined): string {
   return slot ? SLOT_LABELS[slot] : "Potion";
 }
 
+/**
+ * Every class's melee Basic Attack scales off Attack Power regardless of the
+ * equipped weapon's own `ability` field (see character.ts's
+ * `generateBasicAttacks` -- it always uses the class's own
+ * `basicAttackMelee.ability`, str for every class today, never the weapon's).
+ * A ranged weapon's `ability` field, unlike melee's, does match what its
+ * Basic Attack actually scales off (every ranged item's `ability` was set to
+ * mirror its wielding class's `basicAttackRanged.ability`), so it's a
+ * reliable, item-only way to label Attack Power vs. Spell Power here without
+ * needing the wielder's class in scope.
+ */
+function powerLabel(item: ItemTemplate): "Attack Power" | "Spell Power" {
+  if (item.slot === "meleeWeapon") return "Attack Power";
+  return isMagicalAbility(item.ability ?? "str") ? "Spell Power" : "Attack Power";
+}
+
 export function formatItemStats(item: ItemTemplate): string | null {
   const parts: string[] = [];
   if (item.damageMin !== undefined && item.damageMax !== undefined) {
-    const ability = item.ability ?? "str";
     const damageType = item.damageType ?? "slashing";
-    parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${ABILITY_NAMES[ability]})`);
+    parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${powerLabel(item)})`);
   }
   if (item.armorRating) parts.push(`+${item.armorRating} Armor`);
   return parts.length > 0 ? parts.join(" · ") : null;

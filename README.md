@@ -1782,9 +1782,26 @@ melee+ranged pairing like the other two casters, while the existing
 "Shortbow & Leather Armor" option is left untouched as a distinct
 ranged-only, physical-arrow build for a player who wants that instead.
 
+**Follow-up fix — item tooltips showed the wrong scaling stat.** The
+Inventory/equipment tooltip (`itemDisplay.ts`'s `formatItemStats`) labeled a
+weapon's scaling stat with `ABILITY_NAMES[item.ability]` — the item's own
+stored `ability` field — which is stale for melee: `generateBasicAttacks`
+always scales melee off the class's own `basicAttackMelee.ability` (str for
+every class), never the weapon's. That made Ashen Mace's and Oaken Staff's
+tooltips claim Wisdom/Intellect scaling even though their damage has always
+used Strength in combat — a display-only bug, not a combat one. Fixed by
+computing a display-only `powerLabel`: meleeWeapon always shows "Attack
+Power"; rangedWeapon shows "Spell Power" when `isMagicalAbility(item.ability)`
+(Radiance/Arcane Bolt/Nature's Blast) or "Attack Power" otherwise (Hunter's
+Shortbow) — matching the Attack Power/Spell Power framing "Character Stats
+Style Sheet: Physical/Magical Offense Split" already established elsewhere.
+A ranged item's `ability` field is trustworthy for this (every one was set
+to match its wielding class's own `basicAttackRanged.ability`), unlike
+melee's.
+
 ### Critical files
 `packages/engine/src/items.ts`, `classes.ts`;
-`apps/client/src/components/ItemIcon.tsx`.
+`apps/client/src/components/ItemIcon.tsx`, `game/itemDisplay.ts`.
 
 ## Lore
 
