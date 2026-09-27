@@ -224,10 +224,10 @@
 }
 
 .aow-equipment-portrait-avatar {
-  width: 140px;
-  height: 140px;
+  width: 220px;
+  height: 220px;
   image-rendering: pixelated;
-  margin-bottom: auto;
+  margin: auto 0;
 }
 
 .aow-weapon-row {

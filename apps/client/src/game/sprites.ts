@@ -57,17 +57,19 @@ export function getPartySprite(raceId?: string, classId?: string): SpriteAnimati
 
 /**
  * A party member's own chosen Character Creation avatar (see game/avatars.ts),
- * wrapped as a single-frame "animation" set -- there's only ever one idle
- * portrait per avatar today, no attack/hurt/die art yet, so every state just
- * holds on that same frame (`CharacterSprite` already renders a length-1
- * sequence statically, no looping). Takes priority over `getPartySprite`'s
- * raceId/classId table when a combatant has both, since it's the player's
- * own deliberate pick.
+ * wrapped as a single-frame "animation" set -- there's only ever one combat
+ * pose per avatar today, no real attack/hurt/die art yet, so every state
+ * just holds on that same frame (`CharacterSprite` already renders a
+ * length-1 sequence statically, no looping). Uses the avatar's south-east
+ * `combatImage` rather than its south-facing `image`, so the party member
+ * visibly faces the enemies (to their right on the stage) instead of the
+ * camera. Takes priority over `getPartySprite`'s raceId/classId table when a
+ * combatant has both, since it's the player's own deliberate pick.
  */
 export function getAvatarSprite(avatarId?: string): SpriteAnimationSet | undefined {
   const avatar = getAvatarById(avatarId);
   if (!avatar) return undefined;
-  const frame = [avatar.image];
+  const frame = [avatar.combatImage ?? avatar.image];
   return { idle: frame, attack: frame, hurt: frame, die: frame };
 }
 

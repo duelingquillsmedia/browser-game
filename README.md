@@ -1717,6 +1717,42 @@ passing) and client typecheck/build stayed clean throughout, since
 `apps/client/src/game/sprites.ts`;
 `apps/client/src/components/combat/CombatStage.tsx` (+ `CombatScreen.css`).
 
+## Cleric Avatar: Bigger Portrait; Combat-Facing Art Deferred
+
+The user asked for two follow-ups: make the Character screen's avatar
+bigger and vertically centered, and use a south-east-facing pose in combat
+so the party member visibly faces the enemies instead of the camera.
+
+**Character screen portrait (done)**: `.aow-equipment-portrait-avatar`
+grew from 140px to 220px and switched from `margin-bottom: auto` (which
+pinned it to the top of the frame, flush above the name/class caption) to
+`margin: auto 0`, splitting the leftover vertical space evenly above and
+below it -- true centering in the portrait box, verified live.
+
+**Combat-facing pose (infrastructure done, art blocked)**: `AvatarOption`
+gained an optional `combatImage` field and `sprites.ts`'s `getAvatarSprite`
+now prefers it over the south-facing `image` for combat specifically
+(`combatImage ?? image`), so this is ready to use the moment real
+south-east art exists. It doesn't yet, though: the Drive's south-east
+export for this avatar (`Cleric_Male_Fair-Skinned_Black_Hair/Idle/rotations/
+south-east.png`) came through with corrupted pixel data on **every one of
+six separate download attempts** -- confirmed by decoding each attempt's
+PNG and checking its IDAT chunk's zlib checksum, which failed every time
+despite the file's outer container (dimensions, overall byte count) always
+looking correct. Cross-comparing five independent transcriptions located
+the disagreement to a couple of characters partway through the compressed
+stream, and majority-voting across them got decompression to succeed for
+all but the last few bytes of image data -- close, but not a clean, correct
+image, and not worth shipping a subtly-broken sprite. `AVATARS_BY_CLASS`
+leaves `combatImage` unset for now, so combat keeps showing the
+working south-facing pose (a real sprite, just not turned toward the
+enemies) rather than a blank or corrupted one. Re-exporting or re-sharing
+that one file would let this finish with no other code changes needed.
+
+### Critical files
+`apps/client/src/screens/CharacterScreen.css`;
+`apps/client/src/game/avatars.ts`, `sprites.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
