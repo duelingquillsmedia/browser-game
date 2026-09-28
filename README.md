@@ -2601,6 +2601,104 @@ confirm the bigger controls read clearly with no cramping or overflow.
 `apps/client/src/screens/CombatScreen.css`,
 `components/combat/CombatHud.tsx`.
 
+## Combat HUD: Collapsible Log, Press-and-Hold Ability Popover, Real-Pixel Mobile Dock
+
+The user said mobile Combat still read small after the previous pass and
+asked for three specific changes: turn the always-on combat log into a
+button that pops open a modal (with a top-right minimize/close button);
+replace the hover-only ability description row above the action bar with
+a press-and-hold popover per ability, so the freed space can go toward
+much bigger action-bar buttons; and enlarge the bottom-left HP/resource
+readout to match. Unlike the previous round, the user explicitly accepted
+trading some battlefield space for legibility this time.
+
+**Log modal (`CombatHud.tsx`)**: `LogScrollList` was pulled out as its own
+component (own ref, own scroll-to-bottom effect) so it can render twice --
+once in the always-visible desktop `.cbt-log-panel`, once inside a
+conditional `.cbt-log-modal-backdrop` opened by a `logOpen` state toggle
+from a new `.cbt-log-toggle-button`. The modal closes on backdrop tap or
+its `×` button; `stopPropagation` on the panel itself keeps a tap inside
+the log from closing it.
+
+**Ability popover (`SkillSlot`)**: a long-press (450ms `setTimeout`,
+armed on `onTouchStart`, cleared on `onTouchMove`/`onTouchEnd`) shows a
+`.cbt-skill-popover` with the same name/meta/block-reason/description the
+desktop hover row shows; a `longPressRef` flag tells the `onClick` that
+follows the touch's synthetic click to swallow itself instead of also
+arming the ability. A `document`-level `touchstart` listener closes the
+popover on any tap outside the slot.
+
+**The scaling problem this actually turned on**: the first attempt just
+grew `.cbt-skill-slot`, bar heights, etc. under the existing
+`@media (pointer: coarse)` block, same as the previous round. Measuring
+it on a real landscape-phone viewport (Playwright's iPhone 12 landscape,
+750x340) showed the "84px" buttons rendering at **32px** on screen. The
+reason: `.cbt-artboard` (header + stage + hud) is one fixed 1600x900 box
+scaled as a unit via `transform: scale(min(w/1600, h/900))` -- any CSS
+size bump *inside* it just gets shrunk back down by that same factor, so
+no amount of enlarging elements in there can ever read as "much larger"
+on a short phone. The desktop-oriented 3-column HUD grid (status | actions
+| log) made it worse: squeezed into a narrow non-status column, an
+8-button action bar at real 84px wrapped across 4 rows, an 467px-tall
+footer on a 340px-tall screen.
+
+The fix duplicates `<CombatHud>` as a second instance rendered *outside*
+`.cbt-artboard`'s transform, in a new `.cbt-hud-dock` -- a real, unscaled,
+`position: fixed` bottom bar shown only under `pointer: coarse` (the
+in-artboard instance hides itself the same way). Inside the dock the HUD
+uses a bespoke 2-row grid (status+log on top, full-width single-row
+action bar below) instead of the desktop's 3-column layout, since a real
+phone is much narrower than the >=1600px the desktop grid assumes.
+Because the dock's height is real and not scaled, `useCanvasScale` and
+the artboard's own vertical placement had to learn about it too --
+otherwise the artboard (still sized to the *full* viewport height) simply
+rendered its lower half, where combatants actually stand, behind the
+opaque dock. A `ResizeObserver`-backed `useElementHeight` hook measures
+the dock's actual rendered height and feeds it into both the scale
+formula (`min(w/1600, (h - dockHeight)/900)`) and the artboard's `top`
+offset, so the letterboxed battle scene always fits entirely *above* the
+dock, never behind it. `dockHeight` is `0` on desktop (the dock is
+`display: none` there), so this is a no-op change for mouse users.
+
+**A second real bug found the same way**: the long-press popover render
+inside the `<button>` inherited the button's own inline
+`opacity: 0.4` (used to dim an ability that's on cooldown or unaffordable)
+-- CSS opacity below 1 composites an element's *entire subtree* as one
+translucent layer, so the popover came out visibly see-through against
+the status panel behind it, however far outside the button's box it was
+positioned. Fixed by wrapping the button in a `.cbt-skill-slot-wrap` div
+(the new home for the popover's `position: absolute` anchor and the
+outside-tap ref) and rendering the popover as the wrapper's second child
+-- a sibling of the dimmed button, not a descendant of it.
+
+Both bugs were only visible by actually measuring/screenshotting a real
+touch-viewport render (Playwright + CDP `Input.dispatchTouchEvent` for
+the long-press, same disposable-harness method as every prior mobile
+round in this project) -- neither showed up in a desktop-viewport check
+or from reading the CSS.
+
+**Honest trade-off**: on the iPhone 12 landscape test viewport (750x340,
+a realistically short real-world landscape height once Mobile Safari's
+own chrome is accounted for), the dock's status row + single-row action
+bar comes to 218px tall, leaving **~115px** for the visible battlefield
+above it -- down from using nearly the viewport's full height before this
+round. In exchange, action-bar buttons are genuinely 68x68 real screen
+pixels (not 68px-that-renders-at-32px), the HP/resource bars and log
+button are easily legible, and the ability popover is fully opaque and
+readable. This is the trade the user explicitly asked for; a taller
+landscape viewport (tablets, bigger phones) keeps proportionally more
+battlefield since the dock's height is fixed while the available height
+above it grows.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.tsx` (dock render, `useCanvasScale`
++ `useElementHeight`, artboard positioning),
+`apps/client/src/components/combat/CombatHud.tsx` (`LogScrollList`, log
+modal, `SkillSlot` long-press + popover wrapper),
+`apps/client/src/screens/CombatScreen.css` (`.cbt-hud-dock`,
+`.cbt-log-modal-*`, `.cbt-skill-popover`, `.cbt-skill-slot-wrap`, the
+`@media (pointer: coarse)` block's stacked mobile grid).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ACTION_BAR_SLOT_COUNT,
   currentCombatant,
@@ -80,22 +80,44 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
   return effects;
 }
 
-/** `scale = min(innerWidth/1600, innerHeight/900)` -- the handoff's own "contain" letterbox formula, recomputed on resize. */
-function useCanvasScale(): number {
-  const [scale, setScale] = useState(() => Math.min(window.innerWidth / 1600, window.innerHeight / 900));
+/**
+ * `scale = min(innerWidth/1600, innerHeight/900)` -- the handoff's own "contain" letterbox
+ * formula, recomputed on resize. `dockHeight` is the real, unscaled height of the mobile
+ * `.cbt-hud-dock` overlay (0 on desktop, where it's `display: none`) -- on touch devices the
+ * artboard must fit its 900 logical px into the viewport height *above* that dock, not the
+ * full viewport, or the battlefield's lower half (where combatants actually stand) renders
+ * behind the opaque dock instead of above it.
+ */
+function useCanvasScale(dockHeight: number): number {
+  const [scale, setScale] = useState(() => Math.min(window.innerWidth / 1600, (window.innerHeight - dockHeight) / 900));
   useEffect(() => {
     function measure() {
-      setScale(Math.min(window.innerWidth / 1600, window.innerHeight / 900));
+      setScale(Math.min(window.innerWidth / 1600, (window.innerHeight - dockHeight) / 900));
     }
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, []);
+  }, [dockHeight]);
   return scale;
 }
 
+/** Tracks a element's real rendered height (0 while unmounted/unset), via ResizeObserver. */
+function useElementHeight(ref: RefObject<HTMLElement | null>): number {
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => setHeight(entries[0].contentRect.height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return height;
+}
+
 export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, combatResult, onContinue }: CombatScreenProps) {
-  const scale = useCanvasScale();
+  const dockRef = useRef<HTMLDivElement | null>(null);
+  const dockHeight = useElementHeight(dockRef);
+  const scale = useCanvasScale(dockHeight);
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
   const [hoveredActionId, setHoveredActionId] = useState<string | null>(null);
@@ -280,7 +302,10 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
         <span className="cbt-rotate-glyph">⟳</span>
         <p>Rotate your device to landscape to continue the battle.</p>
       </div>
-      <div className="cbt-artboard" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div
+        className="cbt-artboard"
+        style={{ top: `calc(50% - ${dockHeight / 2}px)`, transform: `translate(-50%, -50%) scale(${scale})` }}
+      >
         <CombatHeader state={visualState} encounter={encounter} player={player} canAct={!!canAct} onFlee={handleFlee} />
         <CombatStage
           state={visualState}
@@ -318,6 +343,29 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
           />
         )}
       </div>
+      {/*
+       * `.cbt-artboard` is scaled as a single 1600x900 unit (see `scale` above), so any CSS size
+       * bump inside it (e.g. a bigger skill-slot) shrinks right back down on a short phone
+       * viewport -- an 84px button at scale 0.38 renders at ~32 real px, barely bigger than
+       * before. On touch devices this second HUD instance renders outside that transform, in
+       * real unscaled screen pixels, floating over the bottom of the battlefield instead of
+       * being squeezed inside it. CSS shows only one instance at a time (`pointer: coarse`).
+       */}
+      {(visualState.status === "active" || isAnimating) && (
+        <div className="cbt-hud-dock" ref={dockRef}>
+          <CombatHud
+            state={visualState}
+            player={player}
+            slots={actionBarSlots}
+            hoveredActionId={hoveredActionId}
+            pendingAction={pendingAction}
+            canAct={!!canAct}
+            onHoverAction={setHoveredActionId}
+            onSelectAction={handleSelectAction}
+            onEndTurn={handleEndTurn}
+          />
+        </div>
+      )}
     </div>
   );
 }

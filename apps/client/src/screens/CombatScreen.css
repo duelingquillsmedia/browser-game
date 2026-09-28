@@ -13,6 +13,13 @@
   overflow: hidden;
 }
 
+/* Real-pixel mobile HUD dock -- see the comment beside its JSX in CombatScreen.tsx for why this
+   duplicates CombatHud outside the scaled `.cbt-artboard`. Hidden on desktop/mouse; the in-artboard
+   HUD instance is hidden the other way round, under `@media (pointer: coarse)` below. */
+.cbt-hud-dock {
+  display: none;
+}
+
 /* Combat's battlefield is a fixed 1600x900 landscape design -- on a portrait phone,
    scaling it down to fit width shrinks every button and nameplate well past readable/
    tappable, so a narrow portrait viewport gets this prompt instead of a squished fight. */
@@ -532,6 +539,22 @@
   box-shadow: 0 0 6px var(--aow-frost);
 }
 
+/* The HUD's own HP/resource bars specifically (as opposed to the much thinner nameplate bars
+   on the battlefield, which set their own height inline via HpBar's `heightPx` prop) -- a
+   dedicated modifier class rather than an inline style so `pointer: coarse` can enlarge them
+   further below without an !important fight against inline styles. */
+.cbt-hp-track-hud {
+  height: 14px;
+}
+
+.cbt-hp-shield-hud {
+  height: 5px;
+}
+
+.cbt-resource-track-hud {
+  height: 11px;
+}
+
 .cbt-resource-track {
   position: relative;
   background: var(--aow-inset-deep);
@@ -993,6 +1016,16 @@
   cursor: default;
 }
 
+/* Wraps the button so its long-press popover (see .cbt-skill-popover) can anchor to a fully
+   opaque ancestor -- the button itself dims via inline `opacity` when an ability isn't ready,
+   and opacity < 1 forces its whole subtree into one composited (translucent) layer, which would
+   otherwise take the popover down with it even though the popover sits outside the button's own
+   box. */
+.cbt-skill-slot-wrap {
+  position: relative;
+  flex: none;
+}
+
 .cbt-slot-glyph {
   font: 400 30px var(--aow-font-runic), var(--aow-font-display);
 }
@@ -1098,6 +1131,110 @@
   color: var(--aow-muted);
 }
 
+/* The permanent log column's mobile replacement: a small button (hidden on desktop, shown
+   under `pointer: coarse` below) that pops the same log content open as a modal instead --
+   see CombatHud.tsx's `logOpen` state. */
+.cbt-log-toggle-button {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--aow-panel-border);
+  border-radius: 4px;
+  background: var(--aow-panel);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  font: 600 11px var(--aow-font-display);
+  letter-spacing: 0.1em;
+  color: var(--aow-secondary);
+}
+
+.cbt-log-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 28;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 9, 14, 0.72);
+}
+
+.cbt-log-modal-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(85%, 620px);
+  height: min(80%, 520px);
+}
+
+.cbt-log-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--aow-divider);
+}
+
+.cbt-log-modal-title {
+  border-bottom: none;
+  font-size: 13px;
+}
+
+.cbt-log-modal-close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font: 400 22px var(--aow-font-display);
+  line-height: 1;
+  color: var(--aow-muted);
+  cursor: pointer;
+}
+
+.cbt-log-modal-close:hover {
+  color: var(--aow-ink);
+}
+
+.cbt-log-modal-panel .cbt-log-scroll {
+  flex: 1;
+  height: auto;
+  font-size: 15px;
+}
+
+/* ---------- Ability press-and-hold popover (mobile) ---------- */
+
+.cbt-skill-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: 240px;
+  padding: 12px 14px;
+  background: var(--aow-panel);
+  border: 1px solid rgba(232, 200, 170, 0.18);
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  text-align: left;
+  white-space: normal;
+  cursor: default;
+}
+
+.cbt-skill-popover .cbt-info-name-row {
+  flex-wrap: wrap;
+}
+
+.cbt-skill-popover .cbt-info-warn {
+  display: block;
+  margin-top: 2px;
+}
+
 /* ---------- Result overlay ---------- */
 
 .cbt-result-overlay {
@@ -1189,4 +1326,164 @@
 
 .cbt-result-button:hover {
   background: var(--aow-ember);
+}
+
+/* ---------- Mobile HUD redesign ----------
+ * Touch phones get a deliberately different footer: the always-on combat log becomes a small
+ * button that opens it as a modal instead (see .cbt-log-toggle-button/.cbt-log-modal-* above),
+ * the hover-only ability description line disappears in favor of each skill's own press-and-
+ * hold popover (see .cbt-skill-popover above and CombatHud.tsx's SkillSlot), and both of those
+ * reclaimed budgets (the log column's whole width, the info line's text) go toward much bigger
+ * action-bar buttons and a legible HP/resource readout, per the user's explicit ask -- this
+ * pass deliberately spends some of the battlefield's own height on that legibility rather than
+ * chasing a zero-height-impact compromise the way earlier, smaller size bumps did.
+ */
+@media (pointer: coarse) {
+  /* The in-artboard HUD instance is replaced wholesale by the real-pixel `.cbt-hud-dock` copy
+     below -- see the comment on its JSX in CombatScreen.tsx for why a scaled-down copy inside
+     `.cbt-artboard` can never read as "much larger", no matter how big its own CSS gets. */
+  .cbt-artboard .cbt-hud {
+    display: none;
+  }
+
+  .cbt-hud-dock {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: rgba(5, 4, 7, 0.94);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--aow-panel-border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /*
+   * The desktop `.cbt-hud` is a single-row 3-column grid (status | actions | log), sized for a
+   * >=1600px-wide artboard. A real phone in landscape is much narrower and much shorter, so a
+   * single wide row of big touch targets wraps the skill bar across several rows and the dock
+   * blows past the viewport's own height (measured: 8 slots at 84px in a ~200px-wide column
+   * wrapped to 4 rows, a 440px-tall dock on a 340px-tall screen). The dock instead stacks status
+   * above actions, each spanning the full real width, so the skill bar lays out in one row.
+   */
+  .cbt-hud-dock .cbt-hud {
+    display: grid;
+    grid-template-columns: 1fr 52px;
+    grid-template-rows: auto auto;
+    grid-template-areas: "status log" "actions actions";
+    gap: 6px;
+    padding: 6px 8px;
+    border-top: none;
+    background: transparent;
+  }
+
+  .cbt-hud-dock .cbt-status-panel {
+    grid-area: status;
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .cbt-hud-dock .cbt-log-toggle-button {
+    grid-area: log;
+  }
+
+  .cbt-hud-dock .cbt-actions-panel {
+    grid-area: actions;
+    padding: 0;
+    gap: 4px;
+  }
+
+  .cbt-log-panel {
+    display: none;
+  }
+
+  .cbt-log-toggle-button {
+    display: flex;
+  }
+
+  .cbt-info-text,
+  .cbt-info-idle {
+    display: none;
+  }
+
+  .cbt-hud-dock .cbt-info-line {
+    justify-content: center;
+    min-height: 0;
+  }
+
+  .cbt-hud-dock .cbt-end-turn-button {
+    flex: none;
+    height: 32px;
+    min-width: 100px;
+    padding: 0 12px;
+  }
+
+  .cbt-hud-dock .cbt-end-turn-label {
+    font-size: 12px;
+  }
+
+  .cbt-hud-dock .cbt-skill-bar {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .cbt-hud-dock .cbt-skill-slot {
+    width: 68px;
+    height: 68px;
+    /* A long-press is meant to open the popover, not the browser's own text-selection/share
+       callout on the glyph underneath it. */
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  .cbt-hud-dock .cbt-slot-glyph {
+    font-size: 30px;
+  }
+
+  .cbt-hud-dock .cbt-slot-key,
+  .cbt-hud-dock .cbt-slot-ap,
+  .cbt-hud-dock .cbt-slot-mana {
+    font-size: 10px;
+  }
+
+  .cbt-hud-dock .cbt-level-diamond {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .cbt-hud-dock .cbt-status-bars {
+    gap: 4px;
+  }
+
+  .cbt-hud-dock .cbt-bar-label-row {
+    font-size: 11px;
+  }
+
+  .cbt-hud-dock .cbt-hp-track-hud {
+    height: 14px;
+  }
+
+  .cbt-hud-dock .cbt-hp-shield-hud {
+    height: 5px;
+  }
+
+  .cbt-hud-dock .cbt-resource-track-hud {
+    height: 11px;
+  }
+
+  .cbt-hud-dock .cbt-pip-label {
+    font-size: 10px;
+  }
+
+  .cbt-hud-dock .cbt-pip {
+    width: 12px;
+    height: 12px;
+  }
+
+  .cbt-hud-dock .cbt-pip-row {
+    gap: 4px;
+  }
 }
