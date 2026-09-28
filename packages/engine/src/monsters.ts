@@ -7,6 +7,8 @@ export interface MonsterTemplate {
   id: string;
   name: string;
   description: string;
+  /** Feeds the level-gap term of `computeLevelGapMissChance` (see stats.ts) on both sides of an attack roll -- a badly under-leveled party misses this monster far more, and vice versa. Hand-tuned against the encounters this monster actually appears in, not derived from any other stat. */
+  level: number;
   abilityScores: AbilityScores;
   /** A curated stat-block number, sized to the same Vitality-scaled economy as player characters (see stats.ts). */
   maxHp: number;
@@ -29,6 +31,7 @@ export interface Monster {
   id: string;
   templateId: string;
   name: string;
+  level: number;
   abilityScores: AbilityScores;
   maxHp: number;
   hp: number;
@@ -53,6 +56,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "goblin",
     name: "Goblin Raider",
     description: "A wiry raider out of the goblin port towns of Claw Bay, preying on travelers along the Tameless Shore.",
+    level: 1,
     abilityScores: { str: 8, dex: 14, vit: 10, int: 10, wis: 8 },
     maxHp: 75,
     armorRating: 0,
@@ -77,6 +81,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "direWolf",
     name: "Dire Wolf",
     description: "A pack hunter grown huge on the game trails of Tiuv Forest.",
+    level: 2,
     abilityScores: { str: 15, dex: 15, vit: 13, int: 3, wis: 12 },
     maxHp: 120,
     armorRating: 0,
@@ -109,6 +114,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "orcMarauder",
     name: "Orc Marauder",
     description: "A blooded warrior out of Collmhor Wood, where orcs and bugbears have fought over the old ruins for generations.",
+    level: 3,
     abilityScores: { str: 16, dex: 12, vit: 14, int: 9, wis: 9 },
     maxHp: 160,
     armorRating: 0,
@@ -133,6 +139,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "goblinSlinger",
     name: "Goblin Slinger",
     description: "A goblin skirmisher lobbing stones from behind its kin's shields, out of Claw Bay.",
+    level: 1,
     abilityScores: { str: 7, dex: 15, vit: 8, int: 9, wis: 9 },
     maxHp: 55,
     armorRating: 100,
@@ -156,6 +163,7 @@ export const MONSTER_TEMPLATES: Record<string, MonsterTemplate> = {
     id: "orcShaman",
     name: "Orc Shaman",
     description: "A bone-adorned spellcaster chanting curses from behind Collmhor Wood's warbands.",
+    level: 3,
     abilityScores: { str: 9, dex: 10, vit: 11, int: 10, wis: 15 },
     maxHp: 110,
     armorRating: 0,
@@ -194,6 +202,7 @@ export function createMonster(templateId: string, instanceId: string, rankOverri
     id: instanceId,
     templateId: template.id,
     name: template.name,
+    level: template.level,
     abilityScores: template.abilityScores,
     maxHp: template.maxHp,
     hp: template.maxHp,

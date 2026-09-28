@@ -10,6 +10,7 @@ import {
 } from "../combat.js";
 import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "../actions.js";
 import { createCharacter } from "../character.js";
+import { computeLevelGapMissChance } from "../stats.js";
 import {
   GUARANTEED_FAILURE,
   GUARANTEED_SUCCESS,
@@ -775,16 +776,51 @@ describe("multi-enemy ranks", () => {
   });
 });
 
+describe("computeLevelGapMissChance (WoW-style level-gap hit chance)", () => {
+  it("is 5% baseline miss when attacker and defender are the same level (0 skill gap)", () => {
+    expect(computeLevelGapMissChance(10, 10)).toBe(5);
+  });
+
+  it("adds 0.1% miss per skill point (level x5) the defender is ahead, up to a 10-point gap", () => {
+    expect(computeLevelGapMissChance(10, 11)).toBeCloseTo(5.5); // 1 level x5 skill = 5-point gap
+    expect(computeLevelGapMissChance(10, 12)).toBeCloseTo(6); // 2 levels x5 = 10-point gap, right at the breakpoint
+  });
+
+  it("steepens to 0.4% miss per skill point once the gap passes 10", () => {
+    // 3 levels x5 = 15-point gap -> 6 + (15-10)*0.4 = 8.
+    expect(computeLevelGapMissChance(10, 13)).toBeCloseTo(8);
+    // 5 levels x5 = 25-point gap -> 6 + (25-10)*0.4 = 12.
+    expect(computeLevelGapMissChance(10, 15)).toBeCloseTo(12);
+  });
+
+  it("drops below the 5% baseline when the attacker outlevels the defender", () => {
+    // -2 levels x5 = -10-point gap -> 5 + (-10)*0.1 = 4.
+    expect(computeLevelGapMissChance(12, 10)).toBeCloseTo(4);
+  });
+
+  it("feeds directly into previewAttack's hit chance for a level-mismatched fight", () => {
+    const hero = makeHero({ level: 12 });
+    const foe = makeFoe({ maxHp: 7, hp: 7, level: 10 });
+    const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
+    const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
+    // Same evasion math as the level-1-vs-level-1 case (100-5-5=90), but the attacker's
+    // 2-level edge drops the level-gap miss from 5% to 4%, so hit chance is 100-4-5=91.
+    expect(preview.hitChance).toBe(91);
+  });
+});
+
 describe("previewAttack", () => {
   it("computes hit/crit chance and a damage range matching resolveAttack's own formulas", () => {
     // Hero STR 16 (mod +3) x BASIC_ATTACK power 1 -> ability-scaled range round(16*0.85)-round(16*1.15) = 14-18.
-    // Foe DEX 10 -> evasion 5, so hit chance is 90-5=85; BASIC_ATTACK is a physical (str) action,
-    // so crit chance keys off hero's own DEX 14 -> 5+14*0.1=6.4.
+    // Neither fixture sets `level`, so computeHitChance's `?? 1` fallback treats both as level 1
+    // -- a 0-level-gap, its 5% baseline miss chance (see computeLevelGapMissChance). Foe DEX 10
+    // -> evasion 5, so hit chance is 100-5-5=90. BASIC_ATTACK is a physical (str) action, so crit
+    // chance keys off hero's own DEX 14 -> 5+14*0.1=6.4.
     const hero = makeHero();
     const foe = makeFoe({ maxHp: 7, hp: 7 });
     const state = startCombat([hero], [foe], sequenceRng([forD20(20), forD20(1)]));
     const preview = previewAttack(state, "hero", BASIC_ATTACK, "foe");
-    expect(preview.hitChance).toBe(85);
+    expect(preview.hitChance).toBe(90);
     expect(preview.critChance).toBeCloseTo(6.4);
     expect(preview.minDamage).toBe(14);
     expect(preview.maxDamage).toBe(18);

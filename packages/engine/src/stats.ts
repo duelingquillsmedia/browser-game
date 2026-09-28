@@ -113,10 +113,31 @@ export function computeCritChance(score: number): number {
   return clampPercent(5 + score * 0.1);
 }
 
-/** Baseline chance an attack connects before the defender's evasion is subtracted. */
-export const BASE_HIT_CHANCE = 90;
+/**
+ * WoW's own level-to-combat-skill conversion (a level-60 character trains to
+ * 300 Weapon Skill, a level-60 mob defends at 300 Defense Skill -- both
+ * exactly level x5), used only to feed the miss curve below.
+ */
+const SKILL_PER_LEVEL = 5;
 
-/** Floor/ceiling so evasion or a buff can never make a hit either guaranteed or impossible. */
+/**
+ * Baseline percent chance an attack misses outright, from the level gap
+ * between attacker and defender -- reproduces Classic WoW's Weapon Skill
+ * vs. Defense Skill table (Wowpedia/Warcraft Wiki, "Weapon skill" and
+ * "Miss"): 5% at even footing, +0.1% per point the defender's skill exceeds
+ * the attacker's for a gap up to 10 (two levels), then a much steeper
+ * +0.4%/point beyond that -- badly under-leveled misses climb fast. A
+ * negative gap (attacker the higher level) reduces miss below 5% the same
+ * way. This re-derives the shape of that table using `level` in place of
+ * WoW's own weapon/defense skill numbers; it isn't a byte-exact
+ * reproduction of any one patch's measured miss rates.
+ */
+export function computeLevelGapMissChance(attackerLevel: number, defenderLevel: number): number {
+  const gap = (defenderLevel - attackerLevel) * SKILL_PER_LEVEL;
+  return gap <= 10 ? 5 + gap * 0.1 : 6 + (gap - 10) * 0.4;
+}
+
+/** Floor/ceiling so the level gap, evasion, or a buff can never make a hit either guaranteed or impossible. */
 export const MIN_HIT_CHANCE = 10;
 export const MAX_HIT_CHANCE = 99;
 

@@ -2278,6 +2278,60 @@ now reads "+120 Armor · +3 Wisdom" everywhere the item appears.
 `__tests__/character.test.ts`); `apps/client/src/game/characterDisplay.ts`,
 `itemDisplay.ts`; `apps/client/src/screens/CharacterScreen.tsx` (+ `.css`).
 
+## Hit Chance: WoW-Style Level-Gap Formula
+
+The user asked how hit chance was calculated, then asked to redo it to
+match World of Warcraft's own system. Researched Classic WoW's actual
+mechanic (Wowpedia/Warcraft Wiki's "Weapon skill" and "Miss" pages): melee
+hit is driven by **Weapon Skill vs. Defense Skill**, not a stat like
+Dexterity -- 5% base miss at even skill, +0.1% per point the defender's
+skill exceeds the attacker's up to a 10-point gap, then a much steeper
++0.4%/point beyond it. Both skills are just level x5 under the hood.
+
+The catch: this engine had no monster levels at all (only a front/back
+rank), so there was nothing for a level-gap formula to compare against.
+Rather than guess, asked the user to pick a direction -- they chose adding
+real monster levels and building the full Classic-style curve, over a
+simpler Retail-style flat-penalty version or reusing existing stats as a
+stand-in.
+
+**`MonsterTemplate.level`** (new): hand-tuned per encounter tier rather
+than derived from HP/XP -- `goblin`/`goblinSlinger` 1, `direWolf` 2,
+`orcMarauder`/`orcShaman` 3, matching which of the three Ridgeton-frontier
+encounters each appears in. Threaded through `Monster` and `createMonster`,
+and `Combatant.level` (previously player-only, "monsters have no level
+concept") now carries it for both sides via `toCombatant`.
+
+**`computeLevelGapMissChance(attackerLevel, defenderLevel)`** (stats.ts):
+re-derives the WoW table's shape using `level` in place of weapon/defense
+skill (`gap = (defenderLevel - attackerLevel) x 5`, then the same two-piece
+5%/+0.1%/+0.4% curve) -- a homebrew reproduction of the *mechanic*, not a
+byte-exact match to any one patch's measured miss rates.
+
+**Layered, not swapped in**: this engine already has a real Dexterity/
+Armor-based Evasion stat with its own Character-sheet display, tooltip
+breakdown, and a whole ability (Defend, "+10% Evasion, Made Visible") built
+around it -- replacing hit chance with level-gap-only math would have
+silently gutted all of that. Instead the two stack, mirroring WoW's own
+attack table shape (a level-driven Miss bucket and a separate stat-driven
+Dodge/Parry-style avoidance bucket, both subtracted from 100): `hitChance =
+100 - levelGapMiss - evasion - guardReduction + rangedHitBonus`, clamped to
+the existing 10-99% floor/ceiling. `BASE_HIT_CHANCE` (a flat 90) is gone;
+`computeHitChance()` is the one place both the real roll and the
+`previewAttack` tooltip compute it now, so they can never drift.
+
+Verified against real game data end-to-end (character/monster creation,
+not just the formula in isolation): a level 1 hero vs. the goblin/dire
+wolf/orc encounters lands at 87-88% depending on each monster's own
+Dexterity-based evasion, and a level 5 hero's better skill noticeably
+narrows the gap against the level 3 orcs. New tests lock in the curve's
+three regions (baseline, linear, steepened) and its negative-gap case, plus
+an integration test through `previewAttack` itself.
+
+### Critical files
+`packages/engine/src/stats.ts`, `combat.ts`, `monsters.ts` (+
+`__tests__/combat.test.ts`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

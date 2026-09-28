@@ -9,7 +9,6 @@ import { applyDamageModifiers, type DamageType } from "./damage.js";
 import { getClassResource } from "./resources.js";
 import {
   ARMOR_EVASION_RATIO,
-  BASE_HIT_CHANCE,
   MAX_HIT_CHANCE,
   MIN_HIT_CHANCE,
   computeAttackPower,
@@ -17,6 +16,7 @@ import {
   computeCritChance,
   computeCritDamageMultiplier,
   computeEvasion,
+  computeLevelGapMissChance,
   computeResourceMax,
   computeResourceStart,
   computeSaveChance,
@@ -58,7 +58,7 @@ export interface Combatant {
   avatarId?: string;
   /** A monster's template (for UI purposes, e.g. picking a combat sprite); party members have none. */
   templateId?: string;
-  /** A party member's character level (for UI display, e.g. the Combat screen's "LV n"); monsters have no level concept. */
+  /** Character level (party) or template level (monster) -- shown in the Combat screen's "LV n" for a party member, and fed into `computeLevelGapMissChance` on both sides of every attack roll. */
   level?: number;
   abilityScores: AbilityScores;
   maxHp: number;
@@ -115,7 +115,7 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     classId: "classId" in source ? source.classId : undefined,
     avatarId: "classId" in source ? source.appearance?.avatarId : undefined,
     templateId: "templateId" in source ? source.templateId : undefined,
-    level: "classId" in source ? source.level : undefined,
+    level: source.level,
     abilityScores: source.abilityScores,
     maxHp: source.maxHp,
     hp: source.hp,
@@ -274,6 +274,25 @@ function rangedAttackBonuses(actor: Combatant, action: CombatActionDef): { hit: 
 /** Soldier's Readied / Rogue's Evasive Jab: a flat hit-chance reduction for one incoming attack. Doesn't consume the stack itself — see `consumeStatusStack`. */
 function guardHitChanceReduction(target: Combatant): number {
   return hasActiveEffectOfKind(target, "guard") ? 50 : 0;
+}
+
+/**
+ * Percent chance `actor`'s attack against `target` connects: 100% minus the
+ * level-gap miss chance (see stats.ts's `computeLevelGapMissChance` -- a
+ * WoW-style Weapon Skill vs. Defense Skill re-derivation), minus the
+ * target's own Dexterity/Armor-based Evasion, minus any active guard
+ * effect, plus a Ranger's Sharpshooter-style ranged bonus. This mirrors
+ * WoW's own attack table shape: a level-driven Miss chance and a
+ * stat-driven Dodge/Parry-style avoidance are separate terms subtracted
+ * from the same 100%, not one formula replacing the other. Shared by both
+ * the real roll and `previewAttack`'s tooltip so they can never drift.
+ */
+function computeHitChance(actor: Combatant, target: Combatant, action: CombatActionDef): number {
+  const levelGapMiss = computeLevelGapMissChance(actor.level ?? 1, target.level ?? 1);
+  const evasion = computeEvasion(target.abilityScores.dex) + effectiveEvasionBonus(target);
+  const guardReduction = action.kind === "attack" ? guardHitChanceReduction(target) : 0;
+  const rangedBonus = rangedAttackBonuses(actor, action);
+  return Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, 100 - levelGapMiss - evasion - guardReduction + rangedBonus.hit));
 }
 
 /** Warrior's Furious passive: a fraction of damage taken converted to resource, in place of a flat per-hit amount. */
@@ -441,12 +460,8 @@ export function previewAttack(
   const actor = findCombatant(state, actorId);
   const target = findCombatant(state, targetId);
 
-  const evasion = computeEvasion(target.abilityScores.dex) + effectiveEvasionBonus(target);
-  const guardReduction = action.kind === "attack" ? guardHitChanceReduction(target) : 0;
   const rangedBonus = rangedAttackBonuses(actor, action);
-  const hitChance = target.unconscious
-    ? 100
-    : Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion - guardReduction + rangedBonus.hit));
+  const hitChance = target.unconscious ? 100 : computeHitChance(actor, target, action);
   const critChance = target.unconscious
     ? 100
     : Math.max(0, Math.min(100, computeCritChance(critChanceAbilityScore(actor, action)) + rangedBonus.crit));
@@ -604,13 +619,7 @@ function resolveAttack(
   if (target.unconscious) {
     isCrit = true;
   } else {
-    const evasion = computeEvasion(target.abilityScores.dex) + effectiveEvasionBonus(target);
-    const guardReduction = guardHitChanceReduction(target);
-    const rangedBonus = rangedAttackBonuses(actor, action);
-    const hitChance = Math.max(
-      MIN_HIT_CHANCE,
-      Math.min(MAX_HIT_CHANCE, BASE_HIT_CHANCE - evasion - guardReduction + rangedBonus.hit)
-    );
+    const hitChance = computeHitChance(actor, target, action);
     const hits = rng() * 100 < hitChance;
     // Readied/Evasive Jab's guard is spent by the incoming attack whether it lands or not.
     consumeStatusStack(target, "guard");
@@ -622,6 +631,7 @@ function resolveAttack(
       });
       return { hit: false, crit: false };
     }
+    const rangedBonus = rangedAttackBonuses(actor, action);
     const critChance = Math.max(0, Math.min(100, computeCritChance(critChanceAbilityScore(actor, action)) + rangedBonus.crit));
     isCrit = rng() * 100 < critChance;
   }
