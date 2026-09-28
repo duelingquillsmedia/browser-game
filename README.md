@@ -2817,6 +2817,59 @@ wrapper divs around HEALTH/resource label+bar pairs),
 `apps/client/src/screens/CombatScreen.css` (`grid-template-areas` move for
 the log button, `.cbt-status-bars`'s mobile grid).
 
+## Mobile Combat: Shift-and-Crop for a Genuinely Bigger Battlefield
+
+The user asked directly for something the earlier failed overlay attempt
+hinted at but got wrong: render the battlefield at full (not reserved-
+space-shrunk) scale, and shift it up until the combatants clear the dock,
+accepting that some of the upper background crops off-screen. Explicitly:
+"shift the battle viewport up until the models are visible... I want to
+see what it looks like."
+
+**Why a plain shift-up works where the full overlay didn't.** The earlier
+overlay round discovered that combatants render in the lower half of the
+frame and get fully hidden by an overlay dock. Checking `CombatScreen.css`
+explains exactly why: `.cbt-player-column` uses `justify-content: flex-end`
+-- the player (and, similarly, the enemies) are anchored right at the
+stage's own bottom edge, not floating mid-frame. With the mobile HUD's
+in-artboard row hidden, that stage's bottom edge *is* the artboard's
+bottom edge. So the fix isn't an overlay at all -- it's rendering the
+artboard at full scale (`useCanvasScale` dropped back to the plain
+`min(w/1600, h/900)` formula, no longer reduced by the dock's height) and
+then shifting the whole thing up by exactly the dock's real measured
+height (`top: calc(50% - ${dockHeight}px)`, using the same `dockHeight`
+ResizeObserver from two rounds ago, just applied differently): the
+artboard's bottom edge lands exactly on the dock's top edge, `.cbt-
+letterbox`'s existing `overflow: hidden` crops whatever scrolls above the
+viewport's top, and the combatants -- anchored to that bottom edge --
+clear the dock with room to spare, screenshot-verified at three viewport
+heights (340/300/260px).
+
+**Side effect, fixed with its own small overlay.** Shifting up by a full
+dock-height crops off more than the desktop header's own height, so the
+encounter title, turn-order strip, round counter, and flee button
+disappeared entirely. Asked whether that was acceptable, the user asked
+to keep a minimal version instead. A new `.cbt-mobile-topbar` (round
+number + flee button only, skipping the title and turn-order strip) floats
+fixed to the real viewport's top edge, sized in real px like the bottom
+dock. It turned out to cost zero extra battlefield height: at every tested
+viewport, the top of the now-cropped scene is either plain background art
+or the empty letterbox margin beside a narrower-than-viewport artboard, so
+the floating bar (with its own soft top-down gradient) doesn't obscure
+anything that matters.
+
+Verified the same way as every round in this project: real touch-viewport
+screenshots at multiple heights, a log-modal and long-press-popover
+functional check after the artboard positioning changed, and a side-by-
+side desktop screenshot confirming zero regression there (desktop's
+`useCanvasScale` behavior and `.cbt-header` are untouched).
+
+### Critical files
+`apps/client/src/screens/CombatScreen.tsx` (`useCanvasScale` back to full
+scale, artboard's `top` shift, new `.cbt-mobile-topbar`),
+`apps/client/src/screens/CombatScreen.css` (`.cbt-mobile-topbar` +
+`.cbt-mobile-round-*` rules).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

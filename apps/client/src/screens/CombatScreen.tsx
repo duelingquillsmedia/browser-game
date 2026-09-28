@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ACTION_BAR_SLOT_COUNT,
   currentCombatant,
+  fleeChancePercent,
   isTargetable,
   previewTargetsForShape,
   type ActionRequest,
@@ -82,22 +83,23 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
 
 /**
  * `scale = min(innerWidth/1600, innerHeight/900)` -- the handoff's own "contain" letterbox
- * formula, recomputed on resize. `dockHeight` is the real, unscaled height of the mobile
- * `.cbt-hud-dock` overlay (0 on desktop, where it's `display: none`) -- on touch devices the
- * artboard must fit its 900 logical px into the viewport height *above* that dock, not the
- * full viewport, or the battlefield's lower half (where combatants actually stand) renders
- * behind the opaque dock instead of above it.
+ * formula, recomputed on resize. This is the *full*-viewport scale (not reduced for the mobile
+ * dock below) -- the dock now overlays the bottom of a full-size artboard rather than shrinking
+ * it, with the artboard shifted up (see `dockHeight`'s use on the artboard's `top` below) so the
+ * combatants -- who sit right at the stage's own bottom edge, not floating mid-frame -- clear the
+ * dock instead of rendering behind it. The trade explicitly asked for: some of the upper
+ * background (sky, header) crops off-screen so the battlefield itself can render bigger.
  */
-function useCanvasScale(dockHeight: number): number {
-  const [scale, setScale] = useState(() => Math.min(window.innerWidth / 1600, (window.innerHeight - dockHeight) / 900));
+function useCanvasScale(): number {
+  const [scale, setScale] = useState(() => Math.min(window.innerWidth / 1600, window.innerHeight / 900));
   useEffect(() => {
     function measure() {
-      setScale(Math.min(window.innerWidth / 1600, (window.innerHeight - dockHeight) / 900));
+      setScale(Math.min(window.innerWidth / 1600, window.innerHeight / 900));
     }
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [dockHeight]);
+  }, []);
   return scale;
 }
 
@@ -117,7 +119,7 @@ function useElementHeight(ref: RefObject<HTMLElement | null>): number {
 export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, combatResult, onContinue }: CombatScreenProps) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const dockHeight = useElementHeight(dockRef);
-  const scale = useCanvasScale(dockHeight);
+  const scale = useCanvasScale();
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
   const [hoveredActionId, setHoveredActionId] = useState<string | null>(null);
@@ -302,9 +304,28 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
         <span className="cbt-rotate-glyph">⟳</span>
         <p>Rotate your device to landscape to continue the battle.</p>
       </div>
+      {/*
+       * The desktop header (encounter name, turn order strip, round, flee) lives inside
+       * `.cbt-artboard` and is entirely cropped off-screen on mobile -- the shift that clears the
+       * combatants from behind `.cbt-hud-dock` (see the artboard's `top` below) moves up further
+       * than the header's own height. This real-pixel bar floats over the top of the (now cropped)
+       * battlefield with just the two pieces of that header actually needed mid-fight: the round
+       * counter and the flee button. CSS shows it only under `pointer: coarse`.
+       */}
+      {(visualState.status === "active" || isAnimating) && (
+        <div className="cbt-mobile-topbar">
+          <div className="cbt-mobile-round">
+            <span className="cbt-mobile-round-label">ROUND</span>
+            <span className="cbt-mobile-round-value">{visualState.round}</span>
+          </div>
+          <button type="button" className="cbt-flee-button" disabled={!canAct} onClick={handleFlee}>
+            FLEE <span className="cbt-flee-chance">{fleeChancePercent(player)}%</span>
+          </button>
+        </div>
+      )}
       <div
         className="cbt-artboard"
-        style={{ top: `calc(50% - ${dockHeight / 2}px)`, transform: `translate(-50%, -50%) scale(${scale})` }}
+        style={{ top: `calc(50% - ${dockHeight}px)`, transform: `translate(-50%, -50%) scale(${scale})` }}
       >
         <CombatHeader state={visualState} encounter={encounter} player={player} canAct={!!canAct} onFlee={handleFlee} />
         <CombatStage
@@ -346,10 +367,10 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
       {/*
        * `.cbt-artboard` is scaled as a single 1600x900 unit (see `scale` above), so any CSS size
        * bump inside it (e.g. a bigger skill-slot) shrinks right back down on a short phone
-       * viewport -- an 84px button at scale 0.38 renders at ~32 real px, barely bigger than
-       * before. On touch devices this second HUD instance renders outside that transform, in
-       * real unscaled screen pixels, floating over the bottom of the battlefield instead of
-       * being squeezed inside it. CSS shows only one instance at a time (`pointer: coarse`).
+       * viewport. On touch devices this second HUD instance renders outside that transform, in
+       * real unscaled screen pixels, as a fixed overlay on the bottom of the (now full-size,
+       * shifted-up-and-cropped) battlefield instead of being squeezed inside it. CSS shows only
+       * one instance at a time (`pointer: coarse`).
        */}
       {(visualState.status === "active" || isAnimating) && (
         <div className="cbt-hud-dock" ref={dockRef}>
