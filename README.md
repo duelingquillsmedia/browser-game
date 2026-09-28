@@ -2699,6 +2699,62 @@ modal, `SkillSlot` long-press + popover wrapper),
 `.cbt-log-modal-*`, `.cbt-skill-popover`, `.cbt-skill-slot-wrap`, the
 `@media (pointer: coarse)` block's stacked mobile grid).
 
+## Mobile Combat Dock: Responsive Sizing Instead of Fixed Pixels
+
+The user sent a real-device screenshot right after the previous round:
+the combat dock was correctly positioned and not overlapping anything,
+but the battlefield above it had shrunk to a tiny letterboxed rectangle
+with heavy black bars on every side -- much smaller than any of the
+Playwright-emulated viewports had shown.
+
+The dock's touch elements (skill slots, level diamond, bar thickness, end
+turn button) had all been tuned as **fixed pixel values** against one
+test viewport (a 340px-tall emulated landscape phone). The user's actual
+browser tab -- a regular Chrome tab with its own address bar still
+visible, not an installed fullscreen PWA -- left noticeably less real
+height than that. A fixed-px dock doesn't notice or adapt to that: it
+kept claiming the same ~218px regardless of how little was actually left
+above it, and since `useCanvasScale` (added last round specifically to
+keep the battlefield from rendering *behind* the dock) correctly reserves
+whatever height the dock measures, an oversized fixed dock on a short
+viewport meant almost nothing was left for the battlefield -- exactly
+what the screenshot showed. This wasn't the overlap bug from before; it
+was an honest, working reservation of way too much space.
+
+**Fix 1 -- responsive dock sizing (`CombatScreen.css`)**: every dock
+dimension that eats into the height budget (skill slot size, its glyph
+font, the level diamond, HP/resource bar thickness, the end-turn button)
+changed from a fixed px value to `clamp(floor, N svh, ceiling)`. The
+`svh`-based middle term is calibrated so a 340px-tall viewport -- the
+tallest case this was tuned against, already screenshotted and approved
+-- lands on exactly the same ceiling px as before (verified: identical
+68px slots, 218px total dock height at h=340, zero regression there). A
+shorter real viewport shrinks every one of those numbers smoothly toward
+a legible floor (44px for the tappable skill slots) instead of the fixed
+dock refusing to budge and crowding out the battlefield.
+
+**Fix 2 -- end turn moved inline**: the END TURN button sat in its own
+row stacked above the ability icons (mirroring desktop's layout), costing
+a whole extra row of height the dock can't spare on a short screen.
+`.cbt-hud-dock .cbt-actions-panel` switched from `flex-direction: column`
+to `row`, putting END TURN beside the skill bar instead of above it --
+it now shares the row's height rather than adding its own on top of it.
+Desktop's own `.cbt-actions-panel` (outside `.cbt-hud-dock`) was untouched
+and stays a column.
+
+Verified with a disposable Playwright harness across six synthetic
+viewport heights (340 down to 240px, well past any real device) rather
+than guessing: total dock height dropped from 218px to 182px at the same
+340px baseline just from the inline end-turn change, and the battlefield's
+share of the viewport rose from 36% to 47% there and from 27% to 40% at
+the shortest, most pessimistic 240px height -- with buttons shrinking
+gracefully (68px down to 48px) rather than the layout breaking or
+anything overlapping at any tested height.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.css` (`clamp()`-based dock sizing,
+`.cbt-hud-dock .cbt-actions-panel` row layout).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

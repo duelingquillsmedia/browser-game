@@ -1337,6 +1337,16 @@
  * action-bar buttons and a legible HP/resource readout, per the user's explicit ask -- this
  * pass deliberately spends some of the battlefield's own height on that legibility rather than
  * chasing a zero-height-impact compromise the way earlier, smaller size bumps did.
+ *
+ * The dock's own height-eating dimensions (skill slot, level diamond, bar thickness, end-turn
+ * button) are `clamp(floor, Nsvh, ceiling)` rather than fixed px: a real phone's landscape
+ * height varies a lot more than a single tuned test viewport suggested -- a browser tab with
+ * Chrome's own address bar showing (not an installed, fullscreen PWA) can leave noticeably less
+ * height than that, and a fixed-px dock doesn't notice, so it keeps claiming the same ~220px
+ * regardless of how little is actually left for the battlefield above it. The `svh`-based middle
+ * term is calibrated so a ~340px-tall viewport (the tallest case this was tuned against) lands on
+ * the exact same ceiling px value verified earlier; a shorter real viewport shrinks smoothly
+ * toward the floor instead of the battlefield being crushed to a sliver.
  */
 @media (pointer: coarse) {
   /* The in-artboard HUD instance is replaced wholesale by the real-pixel `.cbt-hud-dock` copy
@@ -1388,10 +1398,15 @@
     grid-area: log;
   }
 
+  /* Row, not column -- on desktop END TURN sits in its own row above the ability icons, which
+     costs a whole extra row of height the dock can't spare on a short screen. Placing it beside
+     the skill bar instead means it shares the row's height rather than adding to it. */
   .cbt-hud-dock .cbt-actions-panel {
     grid-area: actions;
+    flex-direction: row;
+    align-items: center;
     padding: 0;
-    gap: 4px;
+    gap: 6px;
   }
 
   .cbt-log-panel {
@@ -1408,30 +1423,33 @@
   }
 
   .cbt-hud-dock .cbt-info-line {
+    flex: none;
     justify-content: center;
     min-height: 0;
   }
 
   .cbt-hud-dock .cbt-end-turn-button {
     flex: none;
-    height: 32px;
-    min-width: 100px;
-    padding: 0 12px;
+    height: clamp(26px, 9.4svh, 32px);
+    min-width: 72px;
+    padding: 0 10px;
   }
 
   .cbt-hud-dock .cbt-end-turn-label {
-    font-size: 12px;
+    font-size: clamp(10px, 3.5svh, 12px);
   }
 
   .cbt-hud-dock .cbt-skill-bar {
+    flex: 1;
+    min-width: 0;
     flex-wrap: nowrap;
     justify-content: center;
     gap: 6px;
   }
 
   .cbt-hud-dock .cbt-skill-slot {
-    width: 68px;
-    height: 68px;
+    width: clamp(44px, 20svh, 68px);
+    height: clamp(44px, 20svh, 68px);
     /* A long-press is meant to open the popover, not the browser's own text-selection/share
        callout on the glyph underneath it. */
     -webkit-touch-callout: none;
@@ -1439,19 +1457,19 @@
   }
 
   .cbt-hud-dock .cbt-slot-glyph {
-    font-size: 30px;
+    font-size: clamp(20px, 8.8svh, 30px);
   }
 
   .cbt-hud-dock .cbt-slot-key,
   .cbt-hud-dock .cbt-slot-ap,
   .cbt-hud-dock .cbt-slot-mana {
-    font-size: 10px;
+    font-size: clamp(8px, 2.9svh, 10px);
   }
 
   .cbt-hud-dock .cbt-level-diamond {
-    width: 34px;
-    height: 34px;
-    font-size: 12px;
+    width: clamp(24px, 10svh, 34px);
+    height: clamp(24px, 10svh, 34px);
+    font-size: clamp(10px, 3.5svh, 12px);
   }
 
   .cbt-hud-dock .cbt-status-bars {
@@ -1459,28 +1477,28 @@
   }
 
   .cbt-hud-dock .cbt-bar-label-row {
-    font-size: 11px;
+    font-size: clamp(9px, 3.2svh, 11px);
   }
 
   .cbt-hud-dock .cbt-hp-track-hud {
-    height: 14px;
+    height: clamp(8px, 4.1svh, 14px);
   }
 
   .cbt-hud-dock .cbt-hp-shield-hud {
-    height: 5px;
+    height: clamp(3px, 1.5svh, 5px);
   }
 
   .cbt-hud-dock .cbt-resource-track-hud {
-    height: 11px;
+    height: clamp(7px, 3.2svh, 11px);
   }
 
   .cbt-hud-dock .cbt-pip-label {
-    font-size: 10px;
+    font-size: clamp(8px, 2.9svh, 10px);
   }
 
   .cbt-hud-dock .cbt-pip {
-    width: 12px;
-    height: 12px;
+    width: clamp(9px, 3.5svh, 12px);
+    height: clamp(9px, 3.5svh, 12px);
   }
 
   .cbt-hud-dock .cbt-pip-row {
