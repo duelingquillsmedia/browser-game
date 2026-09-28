@@ -77,6 +77,14 @@
   text-align: center;
 }
 
+/* Touch devices pinch to zoom and drag to pan (see WorldMapScreen.tsx's pointer handling) --
+   the +/-/Find Party button row is a mouse/desktop-only convenience on top of that. */
+@media (pointer: coarse) {
+  .aow-hexmap-zoom-controls {
+    display: none;
+  }
+}
+
 .aow-minimap {
   position: absolute;
   left: 12px;

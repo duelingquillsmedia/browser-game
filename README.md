@@ -2522,6 +2522,49 @@ smaller; they were already reasonably sized).
 replaces `.png`), `assets/world/eridan-map.jpg`,
 `assets/backgrounds/*.jpg` (all re-encoded in place).
 
+## World Map: Pinch-to-Zoom, Desktop-Only Zoom Buttons
+
+Follow-up to the mobile pass above: the user asked for the World Map's
+zoom to work as a real pinch gesture on touch devices, with the +/-/Find
+Party button row then removed there (it stays for desktop, which has no
+pinch to replace it with).
+
+**`WorldMapScreen.tsx`**: the hex viewport already tracked one pointer for
+click-and-drag panning; it now tracks every active pointer in a
+`Map<pointerId, {x,y}>`; a second finger landing hands off from panning to
+pinching -- any in-progress single-finger drag is explicitly cleared right
+then, rather than left to resolve as a (wrong) tap-to-select once its
+pointer eventually lifts. Each pinch move computes the new zoom as a ratio
+of the current finger distance to the distance the gesture *started* at
+(`nextZoom = startZoom * (dist / startDist)`), clamped to the same
+`ZOOM_MIN`/`ZOOM_MAX` as the old buttons -- ratio-based so it can't drift
+the way accumulating small per-frame deltas would. It reuses the exact
+same anchor trick `changeZoom` already used for the +/- buttons
+(`pendingCenterRef` + a `useLayoutEffect` on `[zoom]`), just anchored on
+the pinch's current midpoint instead of the viewport's center, so the map
+point between your fingers stays under them as it scales -- standard
+pinch-zoom feel. A tap-to-select still only fires for a genuine
+single-finger tap that never moved, never as fingers lift one-by-one out
+of a pinch.
+
+**`WorldMapScreen.css`**: `.aow-hexmap-zoom-controls` (the +/-/Find Party
+row) is hidden under `@media (pointer: coarse)` -- targeting touch-primary
+input specifically, not just narrow screens, so a touch laptop or tablet
+gets the same pinch-first treatment a phone does, while a mouse-driven
+desktop keeps the buttons exactly as before.
+
+Verified with a real Chromium driven via CDP's `Input.dispatchTouchEvent`
+(genuine multi-touch, unlike synthetic `PointerEvent`s, which can't
+satisfy `setPointerCapture`) against a temporary, untracked debug harness
+(deleted before finishing, same approach as the mobile pass above): pinch
+out grows the map content, pinch in shrinks it back, panning and tap-to-
+select both still work threaded through the same handlers, and the button
+row is confirmed hidden on a touch context and visible on a plain desktop
+one.
+
+### Critical files
+`apps/client/src/screens/WorldMapScreen.tsx` (+ `.css`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

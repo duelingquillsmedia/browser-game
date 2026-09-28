@@ -105,6 +105,10 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
     startScrollTop: number;
     moved: boolean;
   } | null>(null);
+  /** Every pointer currently touching the viewport, keyed by id -- a second one turns a pan into a pinch. */
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  /** Set for the duration of a two-finger gesture; the distance/zoom the pinch started at, so each move computes an absolute new zoom (ratio-based) rather than drifting from repeated small deltas. */
+  const pinchRef = useRef<{ startDist: number; startZoom: number } | null>(null);
   const pendingCenterRef = useRef<{ x: number; y: number } | null>(null);
   const didInitialCenter = useRef(false);
   const travel = mapState.travel;
@@ -233,10 +237,32 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
     };
   }
 
+  /** Distance between two touch points -- the pinch gesture's own "zoom slider" value. */
+  function pinchDistance(points: { x: number; y: number }[]): number {
+    const [a, b] = points;
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.button !== 0) return;
     const vp = viewportRef.current;
     if (!vp) return;
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    vp.setPointerCapture(e.pointerId);
+
+    if (activePointersRef.current.size === 2) {
+      // A second finger landed -- hand off from panning to pinch-zooming. Any single-finger
+      // drag in progress is stale the instant a pinch starts, so it's cleared here rather
+      // than left to resolve as a (wrong) tap-to-select once its pointer eventually lifts.
+      dragRef.current = null;
+      pinchRef.current = {
+        startDist: pinchDistance([...activePointersRef.current.values()]),
+        startZoom: zoom,
+      };
+      setHoverHexKey(null);
+      return;
+    }
+    if (activePointersRef.current.size > 2) return;
+    if (e.button !== 0) return;
     dragRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -245,11 +271,35 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
       startScrollTop: vp.scrollTop,
       moved: false,
     };
-    vp.setPointerCapture(e.pointerId);
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const vp = viewportRef.current;
+    if (!vp) return;
+
+    if (activePointersRef.current.has(e.pointerId)) {
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+
+    const pinch = pinchRef.current;
+    if (pinch && activePointersRef.current.size === 2) {
+      const points = [...activePointersRef.current.values()];
+      const dist = pinchDistance(points);
+      if (dist <= 0 || pinch.startDist <= 0) return;
+      const nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinch.startZoom * (dist / pinch.startDist)));
+      const midX = (points[0].x + points[1].x) / 2;
+      const midY = (points[0].y + points[1].y) / 2;
+      const rect = vp.getBoundingClientRect();
+      // Anchor on the midpoint's *current* image-space position (under today's zoom) so the
+      // spot between the two fingers stays put as the map scales, same trick `changeZoom` uses.
+      pendingCenterRef.current = {
+        x: (midX - rect.left + vp.scrollLeft) / zoom,
+        y: (midY - rect.top + vp.scrollTop) / zoom,
+      };
+      if (nextZoom !== zoom) setZoom(nextZoom);
+      return;
+    }
+
     const drag = dragRef.current;
     if (vp && drag && drag.pointerId === e.pointerId) {
       const dx = e.clientX - drag.startX;
@@ -272,8 +322,13 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
     const vp = viewportRef.current;
     const drag = dragRef.current;
-    if (vp && drag && vp.hasPointerCapture(e.pointerId)) vp.releasePointerCapture(e.pointerId);
-    if (drag && !drag.moved) {
+    const wasPinching = pinchRef.current !== null;
+    if (vp && vp.hasPointerCapture(e.pointerId)) vp.releasePointerCapture(e.pointerId);
+    activePointersRef.current.delete(e.pointerId);
+    if (activePointersRef.current.size < 2) pinchRef.current = null;
+    // A tap-to-select still only fires for a genuine single-finger tap, never as fingers
+    // lift one-by-one out of a pinch.
+    if (drag && !drag.moved && !wasPinching) {
       const coords = imageCoordsFromEvent(e);
       if (coords) setSelectedHexKey(hexKey(pixelToHex(coords.x, coords.y)));
     }
@@ -438,6 +493,7 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
               onPointerLeave={() => setHoverHexKey(null)}
               onScroll={syncViewportRect}
             >
