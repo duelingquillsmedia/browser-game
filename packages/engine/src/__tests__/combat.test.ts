@@ -534,15 +534,15 @@ describe("weapon damage", () => {
     const state = startCombat([warrior], [foe], sequenceRng([forD20(15), forD20(5)]));
 
     // Level 2: str 10 base + Human's odd-level growth at level 1 (+1) + Warrior's own even-level
-    // growth at level 2 (+2) = 13 -- Attack Power 26 -> +round(26*0.15) = +4 flat bonus, same
-    // homebrew formula as before this pass (Cleave has no percentOfAbility of its own, and isn't
-    // a Basic Attack, so it's untouched by the Basic-Attack-only replacement above).
+    // growth at level 2 (+2) = 13 -- Attack Power 26 -> +round(26*0.15) = +4 flat bonus, plus
+    // Cleave's own percentOfAbility 0.4 (Class Style Sheet: "30 damage + 20% attack power",
+    // doubled) -> +round(13*0.4) = +5.
     const result = submitPlayerAction(
       state,
       { actorId: warrior.id, actionId: "cleave", targetId: "foe" },
       sequenceRng([GUARANTEED_SUCCESS, GUARANTEED_FAILURE, GUARANTEED_SUCCESS])
     );
-    expect(result.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 18); // weapon min 14 + 4
+    expect(result.combatants.find((c) => c.id === "foe")!.hp).toBe(1000 - 23); // weapon min 14 + 4 + 5
   });
 });
 

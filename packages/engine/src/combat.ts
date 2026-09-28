@@ -668,11 +668,11 @@ function resolveAttack(
 /**
  * Ranger's Barbed Arrow: consumes one "primed" stack on `actor` and, if one
  * was spent, applies a bleed to the target they just hit, scaled off the
- * ability that landed the attack -- "5% of Attack Power" per the Character
- * Stats Style Sheet, i.e. 10% of the raw ability score (see
+ * ability that landed the attack -- "10% of Attack Power" per the Class
+ * Style Sheet, i.e. 20% of the raw ability score (see
  * `StatusApplication.power`'s own doc comment on this ×2 convention).
  */
-const BARBED_BLEED_ABILITY_PERCENT = 0.1;
+const BARBED_BLEED_ABILITY_PERCENT = 0.2;
 
 function resolveProc(state: CombatState, actor: Combatant, target: Combatant, action: CombatActionDef): void {
   if (!consumeStatusStack(actor, "proc")) return;

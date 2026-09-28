@@ -2332,6 +2332,52 @@ an integration test through `previewAttack` itself.
 `packages/engine/src/stats.ts`, `combat.ts`, `monsters.ts` (+
 `__tests__/combat.test.ts`).
 
+## Class Style Sheet Rebalance: Toned-Down Ability Damage (2026-09-28)
+
+The user revised the Class Style Sheet (Google Drive) to tone down several
+abilities' damage/healing numbers, then asked for those changes carried into
+`classes.ts`. Re-fetched the sheet and diffed it line by line against the
+existing implementation, following this file's own established transcription
+conventions (`percentOfAbility`/`StatusApplication.power` store double the
+sheet's stated Attack/Spell Power percentage; a weapon-scaled ability's flat
+number is dropped in favor of the real weapon roll, with only its percent
+surviving as `percentOfAbility` -- the existing Evasive Jab precedent).
+
+**Flat/percent reductions** (`flatBase`/`percentOfAbility` unless noted):
+- **Mend** (Cleric): 50 → 40 flat (+10% Spell Power unchanged).
+- **Radiant Beam** (Cleric): 100 → 40 flat (+20% Spell Power unchanged).
+- **Nature's Remedy** (Ranger): 50 → 30 flat, 10% → 20% Spell Power.
+- **Wylde Healing** (Druid): 50 → 40 flat, 10% → 20% Spell Power.
+- **Wylde Wrath** (Druid): 75 → 60 flat (+25% Spell Power unchanged).
+- **Elemental Shard** (Wizard): 65 → 35 flat (+20% Spell Power unchanged).
+
+**Missing weapon-scaling bonus added** (the sheet's own "X damage + Y%
+Attack Power" phrasing for these two was never wired up to a
+`percentOfAbility`, so they were quietly hitting for weapon damage alone):
+- **Cleave** (Warrior): added `percentOfAbility: 0.4` (20% Attack Power).
+- **Topple** (Soldier): added `percentOfAbility: 0.4` (20% Attack Power).
+
+**Bleed/poison ticks doubled** (the sheet doubled these from 5% to 10% of
+Attack Power): **Serrated Blade**'s bleed (`weaponPercent` 0.05 → 0.1, a
+literal fraction of weapon damage, not doubled the way ability-score-based
+fields are -- see `StatusApplication.weaponPercent`'s own doc comment),
+**Poisoned Throw**'s poison (`power` 0.1 → 0.2), and **Barbed Arrow**'s bleed
+(`combat.ts`'s `BARBED_BLEED_ABILITY_PERCENT` 0.1 → 0.2 -- this one lives
+outside `classes.ts` entirely, in the dedicated `resolveProc` function that
+consumes its two-charge buff).
+
+Everything else -- resource costs, AP costs, unlock levels, both Basic
+Attack variants per class, Enrage/Arcane Barrier's Vitality/Spell-Power-based
+buffs, Evasive Jab, and all seven classes' Basic Attack resource generation
+(resources.ts) -- was already correct and untouched. Updated the one
+existing test whose hand-traced damage math assumed Cleave had no
+`percentOfAbility` (`combat.test.ts`, "still applies the homebrew Attack
+Power bonus... (Cleave)").
+
+### Critical files
+`packages/engine/src/classes.ts`, `combat.ts` (+
+`__tests__/combat.test.ts`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
