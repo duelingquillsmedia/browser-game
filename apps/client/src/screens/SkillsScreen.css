@@ -42,7 +42,8 @@
   padding: 0;
 }
 
-.aow-action-bar-slot:hover {
+.aow-action-bar-slot:hover,
+.aow-action-bar-slot:active {
   border-color: var(--aow-ember);
 }
 
@@ -191,5 +192,12 @@
 .aow-skill-detail-panel .aow-button-primary,
 .aow-skill-detail-panel .aow-button-ghost {
   margin-top: 14px;
+}
+
+@media (max-width: 700px) {
+  .aow-skills-list-panel,
+  .aow-skill-detail-panel {
+    flex: 1 1 100%;
+  }
 }
 

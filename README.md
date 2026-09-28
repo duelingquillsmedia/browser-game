@@ -2413,6 +2413,115 @@ is generic to any class resource with `gainOnBeingStruckPercent` set.
 `apps/client/src/screens/CombatScreen.tsx` (+ `.css`),
 `components/combat/CombatStage.tsx`.
 
+## Mobile Optimization Pass (2026-09-28)
+
+The client was built and tuned entirely against desktop layouts; the user
+asked for it to feel like a real installable mobile app, not just a
+responsive webpage. Audited every screen (fixed layouts, hover-only
+interactions, touch target sizes, viewport units, scroll/zoom behavior,
+asset weight, PWA scaffolding) before touching anything. Confirmed with the
+user: Combat/World Map keep their existing pixel-perfect landscape layout
+as-is rather than a portrait redesign (a "rotate your device" prompt covers
+the gap), and this goes all the way to a full installable PWA rather than
+stopping at responsive/touch polish.
+
+**Installability** (`index.html`, `vite.config.ts`, `public/icons/`):
+upgraded the viewport meta (`viewport-fit=cover`, `maximum-scale=1`,
+`user-scalable=no` -- app-like, no accidental pinch/double-tap-zoom on game
+chrome), added `theme-color`/`apple-mobile-web-app-*` tags, and generated
+192/512/512-maskable PNG icons from the existing `favicon.svg`'s star mark
+(redrawn with Pillow -- no SVG renderer was available in this environment,
+so the path's coordinates were hand-transcribed into a polygon). Added
+`vite-plugin-pwa` (`generateSW` mode): the manifest, a service worker that
+precaches only the JS/CSS/HTML/font app shell (~692KB) for an instant cold
+launch, and a `CacheFirst` runtime rule for images so background art caches
+lazily as it's actually seen. Supabase requests match no caching rule at
+all, so auth/character data always hits the network live, same as with no
+service worker.
+
+**Touch parity for hover-only interactions**: `components/Tooltip.tsx`
+(used for item/stat tooltips) gained a touch code path -- tap opens it at
+the touch point, tap-outside closes it -- without ever calling
+`preventDefault()`, so a trigger that's also a real button (an inventory
+slot) still gets its own click alongside the preview. `CombatHud.tsx`'s
+skill-bar info line now updates `onTouchStart` too. `CombatStage.tsx`'s
+enemy-targeting preview (previously hover-only, meaning a tap committed to
+a target with no preview ever shown) now requires a first tap to preview a
+target and a second tap on that same target to commit, matching what
+hovering already does on desktop.
+
+**Touch targets & responsive layout**: bumped several under-44px controls
+(`.back-button`, `.tab-button`, `.action-button` in `App.css`,
+`.aow-nav-item` in `GameShell.css`) to a proper tap-height via `min-height`
+rather than changing their visual size. Added the missing stacking
+breakpoint (the same `max-width: 700px` pattern already used elsewhere) to
+`HomeScreen.css`, `InventoryScreen.css`, and `SkillsScreen.css`, none of
+which had one. `GameShell`'s nav gained a third tier: the existing
+820px "wrapped top row" now further collapses, below 600px, into a fixed
+bottom tab bar with safe-area padding -- the standard native-app pattern,
+reachable one-handed, with keycap badges hidden since they're meaningless
+on touch.
+
+**A real bug, not just new work**: the phone-width bottom bar's `position:
+fixed; bottom: 0` was rendering ~600px tall (nearly the whole screen)
+instead of a slim strip. The sticky-sidebar rule's own `top: calc(56px +
+safe-area)` was never cleared by either breakpoint, so with `bottom: 0`
+also set, CSS's normal behavior for a positioned element with **both** top
+and bottom specified and `height: auto` is to stretch to fill the gap
+between them (exactly the same rule that correctly stretches the bar's
+*width* between `left: 0`/`right: 0` -- just not one I'd accounted for on
+the vertical axis). Fixed by explicitly setting `top: auto` in the
+600px block. A second, separate bug: `.aow-main` overflowed the viewport
+horizontally on **World Map** specifically (`scrollWidth` 1320px against a
+390px phone) -- when `.aow-body` switches to `flex-direction: column` at
+≤820px, its `align-items: flex-start` no longer stretches `.aow-main` to
+fill the (now-horizontal) cross axis, so it was shrink-wrapping to its
+widest descendant instead of the viewport -- invisible on every other
+screen since none of their content is wider than a phone, but World Map's
+hex canvas very much is. Fixed with an explicit `width: 100%` in that same
+breakpoint. Both were caught by scripting a real Chromium (Playwright,
+`/opt/pw-browsers`) against a temporary, untracked debug harness
+(`mobile-debug.html`/`.tsx`, deleted before finishing) that rendered each
+screen directly with a mock character -- real Supabase auth isn't reachable
+from this sandbox's egress proxy, so this was the only way to actually
+drive the app rather than just read the CSS and hope.
+
+**Combat/World Map orientation**: added a `.cbt-rotate-prompt` overlay to
+`CombatScreen.tsx`/`.css`, shown via a pure CSS `@media (orientation:
+portrait) and (max-width: 900px)` query -- no JS orientation-lock API
+needed, and it resolves the instant the phone turns sideways. World Map
+deliberately did **not** get the same treatment: it already has its own
+pan/zoom viewport (confirmed working in portrait during the audit), so a
+rotate demand there would have been a regression, not a fix. Landscape
+combat's existing letterbox scaling was left as-is per the user's choice;
+worth noting for anyone revisiting this that on a small phone specifically
+(landscape viewport as short as ~375-390px), the action-bar buttons scale
+down to roughly 20px -- readable, but tighter to tap than the 44px
+guideline. Fixing that fully would mean a phone-specific combat layout,
+out of scope for this pass.
+
+**Asset weight**: `assets/ui/combat-bg.png` (1.19MB, fully opaque despite
+being a PNG, and loaded as the `body` background on **every** screen, not
+just combat) was re-encoded as `combat-bg.jpg` at quality 85 -- 1.19MB to
+80KB, a 93% cut on the single highest-impact asset in the app.
+`assets/world/eridan-map.jpg` was re-encoded in place (same filename, same
+dimensions -- the World Map's zoom and hex-coordinate math are both defined
+against this image's pixel size) at quality 80: 1.69MB to 665KB. The four
+encounter backdrops got a lighter pass at quality 82 (each only 6-8%
+smaller; they were already reasonably sized).
+
+### Critical files
+`apps/client/index.html`, `vite.config.ts`, `src/index.css`,
+`src/main.tsx`, `src/vite-env.d.ts`; `public/icons/*` (new);
+`src/components/GameShell.tsx`+`.css`, `Tooltip.tsx`;
+`src/components/combat/CombatHud.tsx`, `CombatStage.tsx`;
+`src/screens/CombatScreen.tsx`+`.css`, `WorldMapScreen.css`,
+`HomeScreen.css`, `InventoryScreen.css`, `SkillsScreen.css`,
+`CharacterScreen.css`, `TitleScreen.css`, `CharacterSelectScreen.css`,
+`CharacterCreationScreen.css`, `App.css`; `assets/ui/combat-bg.jpg` (new,
+replaces `.png`), `assets/world/eridan-map.jpg`,
+`assets/backgrounds/*.jpg` (all re-encoded in place).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

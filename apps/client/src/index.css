@@ -15,6 +15,10 @@
 
 * {
   box-sizing: border-box;
+  /* Removes the gray tap-flash and kills the ~300ms double-tap-to-zoom delay on every
+     tappable element, so buttons/cards react like a native app's instead of a webpage's. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 html,
@@ -23,14 +27,27 @@ body,
   height: 100%;
 }
 
+html {
+  /* Stops iOS Safari's rubber-band bounce from revealing background past the page edges. */
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   background:
     radial-gradient(circle at top, rgba(34, 26, 44, 0.55) 0%, rgba(18, 13, 24, 0.8) 65%),
-    url("./assets/ui/combat-bg.png");
+    url("./assets/ui/combat-bg.jpg");
   background-size: cover;
   background-attachment: fixed;
   color: var(--text);
+}
+
+@media (pointer: coarse) {
+  body {
+    /* `background-attachment: fixed` is unreliably supported (and a known scroll-jank
+       source) on mobile Safari/Chrome -- let the backdrop scroll with the page there instead. */
+    background-attachment: scroll;
+  }
 }
 
 button {

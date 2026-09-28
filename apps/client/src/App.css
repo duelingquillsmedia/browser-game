@@ -5,7 +5,9 @@
 }
 
 .back-button {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   margin-bottom: 1rem;
   padding: 0.35rem 0.9rem;
   font-size: 0.85rem;
@@ -317,6 +319,7 @@ button.ghost {
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-muted);
+  min-height: 44px;
   padding: 0.5rem 0.9rem;
   font-size: 0.9rem;
   text-transform: uppercase;
@@ -324,7 +327,8 @@ button.ghost {
   cursor: pointer;
 }
 
-.tab-button:hover {
+.tab-button:hover,
+.tab-button:active {
   color: var(--text);
 }
 
@@ -560,10 +564,12 @@ button.ghost {
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 6px;
+  min-height: 44px;
   padding: 0.5rem 1rem;
 }
 
-.action-button:hover:not(:disabled) {
+.action-button:hover:not(:disabled),
+.action-button:active:not(:disabled) {
   border-color: var(--accent);
 }
 

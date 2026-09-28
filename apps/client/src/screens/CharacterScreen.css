@@ -407,11 +407,13 @@
   margin: 0 -4px;
 }
 
-.aow-stat-row-hoverable:hover {
+.aow-stat-row-hoverable:hover,
+.aow-stat-row-hoverable:active {
   background: var(--aow-inset);
 }
 
-.aow-stat-row-hoverable:hover span:first-child {
+.aow-stat-row-hoverable:hover span:first-child,
+.aow-stat-row-hoverable:active span:first-child {
   color: var(--aow-ember);
 }
 

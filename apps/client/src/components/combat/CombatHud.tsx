@@ -305,6 +305,7 @@ function SkillSlot({
       }}
       onMouseEnter={() => onHover(action.id)}
       onMouseLeave={() => onHover(null)}
+      onTouchStart={() => onHover(action.id)}
       onClick={() => onSelect(action)}
     >
       <span className="cbt-slot-glyph" style={{ color, textShadow: `0 0 10px ${color}` }}>

@@ -7,6 +7,15 @@ import type { Encounter } from "../../game/lore";
 import portraitFrameParty from "../../assets/ui/portrait-frame-party.png";
 import portraitFrameEnemy from "../../assets/ui/portrait-frame-enemy.png";
 
+/**
+ * True on a touch-capable device. Targeting has no hover to show a preview
+ * before committing there, so `renderEnemy` below uses this to require a
+ * first tap to preview a target (same as hovering does on desktop) and a
+ * second tap on that same target to actually commit to it.
+ */
+const IS_TOUCH_DEVICE =
+  typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
 /** A momentary visual reaction to a combat event, keyed so React replays the animation on every occurrence. */
 export interface CombatantEffect {
   kind: "attacking" | "hit" | "heal" | "buff" | "resource";
@@ -270,7 +279,15 @@ export function CombatStage({
               }}
               onMouseEnter={() => onHoverEnemy(combatant.id)}
               onMouseLeave={() => onHoverEnemy(null)}
-              onClick={() => onPickTarget(combatant.id)}
+              onClick={() => {
+                // First tap previews (mirrors hover); a second tap on the same,
+                // already-previewed target is what actually commits to it.
+                if (IS_TOUCH_DEVICE && hoveredEnemyId !== combatant.id) {
+                  onHoverEnemy(combatant.id);
+                  return;
+                }
+                onPickTarget(combatant.id);
+              }}
               aria-label={`Target ${combatant.name}`}
             />
           )}

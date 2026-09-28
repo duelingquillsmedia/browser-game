@@ -232,7 +232,8 @@
   text-align: left;
 }
 
-.aow-town-hub-building:hover {
+.aow-town-hub-building:hover,
+.aow-town-hub-building:active {
   border-color: var(--aow-ember);
 }
 
@@ -326,7 +327,8 @@
   font-size: 12px;
 }
 
-.aow-map-place-row:hover {
+.aow-map-place-row:hover,
+.aow-map-place-row:active {
   background: var(--aow-inset);
 }
 

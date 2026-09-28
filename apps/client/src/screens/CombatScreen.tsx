@@ -276,6 +276,10 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
 
   return (
     <div className="cbt-letterbox">
+      <div className="cbt-rotate-prompt">
+        <span className="cbt-rotate-glyph">⟳</span>
+        <p>Rotate your device to landscape to continue the battle.</p>
+      </div>
       <div className="cbt-artboard" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
         <CombatHeader state={visualState} encounter={encounter} player={player} canAct={!!canAct} onFlee={handleFlee} />
         <CombatStage

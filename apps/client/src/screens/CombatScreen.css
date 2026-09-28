@@ -13,6 +13,58 @@
   overflow: hidden;
 }
 
+/* Combat's battlefield is a fixed 1600x900 landscape design -- on a portrait phone,
+   scaling it down to fit width shrinks every button and nameplate well past readable/
+   tappable, so a narrow portrait viewport gets this prompt instead of a squished fight. */
+.cbt-rotate-prompt {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .cbt-rotate-prompt {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 0 32px;
+    text-align: center;
+    background: var(--aow-bg);
+  }
+  .cbt-rotate-glyph {
+    font-size: 56px;
+    color: var(--aow-ember);
+    text-shadow: 0 0 20px rgba(224, 138, 114, 0.6);
+    animation: cbt-rotate-hint 1.6s ease-in-out infinite;
+  }
+  .cbt-rotate-prompt p {
+    margin: 0;
+    max-width: 360px;
+    font-family: var(--aow-font-display);
+    font-size: 15px;
+    color: var(--aow-secondary);
+  }
+}
+
+@keyframes cbt-rotate-hint {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-90deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cbt-rotate-glyph {
+    animation: none;
+  }
+}
+
 .cbt-artboard {
   position: absolute;
   left: 50%;

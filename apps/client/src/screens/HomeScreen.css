@@ -161,3 +161,17 @@
   max-width: 720px;
   margin-top: 6px;
 }
+
+@media (max-width: 700px) {
+  .aow-card-character,
+  .aow-card-map,
+  .aow-card-small {
+    flex: 1 1 100%;
+  }
+  .aow-attr-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .aow-mini-bag {
+    flex-wrap: wrap;
+  }
+}

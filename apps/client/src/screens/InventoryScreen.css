@@ -111,3 +111,10 @@
   color: var(--aow-faint);
   margin: 0 0 12px;
 }
+
+@media (max-width: 700px) {
+  .aow-bag-panel,
+  .aow-item-panel {
+    flex: 1 1 100%;
+  }
+}

@@ -1,5 +1,6 @@
 .aow-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--aow-bg);
 }
 
@@ -7,11 +8,13 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  box-sizing: content-box;
   height: 56px;
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 0 18px;
+  padding-top: env(safe-area-inset-top);
   background: rgba(11, 9, 14, 0.88);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--aow-divider);
@@ -77,10 +80,11 @@
 
 .aow-nav {
   position: sticky;
-  top: 56px;
+  top: calc(56px + env(safe-area-inset-top));
   width: 196px;
   flex: none;
-  height: calc(100vh - 56px);
+  height: calc(100vh - 56px - env(safe-area-inset-top));
+  height: calc(100dvh - 56px - env(safe-area-inset-top));
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -92,6 +96,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   padding: 9px 10px;
   background: none;
   border: none;
@@ -167,6 +172,63 @@
     flex-direction: column;
   }
   .aow-main {
+    /* `.aow-body`'s own `align-items: flex-start` only stretches a flex child to fill the
+       cross axis when the container is a row -- now that it's a column, `.aow-main` would
+       otherwise shrink-wrap to its widest descendant (World Map's hex canvas is far wider
+       than any phone) instead of the viewport, causing page-wide horizontal scroll. */
+    width: 100%;
     padding: 16px 12px 86px;
+  }
+}
+
+/* Phone width: the wrapped top row above becomes a fixed bottom tab bar instead -- the
+   standard native-app navigation pattern, and reachable one-handed. */
+@media (max-width: 600px) {
+  .aow-nav {
+    position: fixed;
+    /* Without this, the sidebar rule's own `top` (56px + safe area) survives from the
+       base rule and, combined with `bottom: 0` below, CSS stretches an auto-height fixed
+       element to fill the whole gap between them instead of sizing to its content. */
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    padding: 4px 2px calc(4px + env(safe-area-inset-bottom));
+    background: rgba(11, 9, 14, 0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: none;
+    border-top: 1px solid var(--aow-divider);
+  }
+  .aow-nav-item {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 6px 2px;
+    border-left: none;
+    border-top: 2px solid transparent;
+  }
+  .aow-nav-item.active {
+    border-left-color: transparent;
+    border-top-color: var(--aow-ember);
+  }
+  .aow-nav-label {
+    flex: none;
+    font-size: 9px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .aow-keycap {
+    display: none;
+  }
+  .aow-main {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
   }
 }
