@@ -132,5 +132,7 @@ describe("class resource pools", () => {
     );
     // foe str 10 * power 1 * variance 1.0 = 10, doubled to 15 on the crit -> round(15 * 0.25) = 4 Fury.
     expect(state.combatants.find((c) => c.id === warrior.id)!.resource).toBe(4);
+    // Logged as its own "resource-gain" event (distinct from the "hit" entry) so a UI can pop a "+4 Fury" indicator.
+    expect(state.log.some((e) => e.kind === "resource-gain" && e.targetId === warrior.id && e.amount === 4)).toBe(true);
   });
 });

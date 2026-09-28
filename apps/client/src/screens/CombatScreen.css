@@ -668,6 +668,14 @@
   text-shadow: 0 0 12px var(--aow-frost), 0 2px 0 #000;
 }
 
+/* A passive resource gain from being struck (Warrior's Furious, so far) -- the same
+   ember tone as the Fury bar's own fill (see .cbt-resource-fury), so the popup reads
+   as "that hit fed your Fury" rather than another flavor of damage/heal number. */
+.cbt-float-resource {
+  color: var(--aow-hp);
+  text-shadow: 0 0 12px var(--aow-hp), 0 2px 0 #000;
+}
+
 .cbt-hit-flash {
   position: absolute;
   inset: 0;

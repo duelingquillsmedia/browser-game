@@ -73,6 +73,8 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
     };
   } else if (entry.targetId && entry.kind === "miss") {
     effects[entry.targetId] = { kind: "hit", text: "Miss", key: keyBase + 1 };
+  } else if (entry.targetId && entry.kind === "resource-gain") {
+    effects[entry.targetId] = { kind: "resource", text: `+${entry.amount}`, key: keyBase + 1 };
   }
 
   return effects;

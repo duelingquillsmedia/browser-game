@@ -2378,6 +2378,41 @@ Power bonus... (Cleave)").
 `packages/engine/src/classes.ts`, `combat.ts` (+
 `__tests__/combat.test.ts`).
 
+## Furious: A Visible "+N Fury" Popup on Being Struck
+
+The user tested a Warrior and reported Fury didn't seem to build when they
+were hit, despite the sheet's "Fury generated is equal to x0.25 of the
+damage taken." Traced the mechanic directly (a real Goblin repeatedly
+hitting a level-1 Warrior via `startCombat`/`submitPlayerAction`) and
+confirmed it already worked exactly as specified -- the actual gap was
+visibility: unlike every other combat event (hits, heals, buffs), a
+passive resource gain from being struck never got a log entry of its own,
+so the client's floating-text system had nothing to key a popup off, and a
+couple of points added to a 100-point bar is easy to miss mid-fight.
+
+**`combat.ts`**: added a `"resource-gain"` `CombatEventKind` and
+`applyBeingStruckResourceGain`, which wraps the existing
+`beingStruckResourceGain` + `gainResource` calls and logs the amount as its
+own event (`{ kind: "resource-gain", targetId, amount }`), placed right
+after the hit/save-fail/save-succeed log entry so it reads as a
+consequence of that blow rather than out of order. Both call sites
+(`resolveAttack`, `resolveSave`) now go through it.
+
+**Client**: `CombatantEffect` gained a `"resource"` kind; `effectsForEntry`
+(`CombatScreen.tsx`) turns a `"resource-gain"` log entry into a `+N`
+floating popup, same mechanism as the existing hit/heal/buff indicators.
+Styled in the Fury bar's own ember tone (`--aow-hp`, `.cbt-float-resource`
+in `CombatScreen.css`) so it reads as "that hit fed your Fury," not another
+flavor of damage number.
+
+Warrior's Furious is the only passive using this today, but the mechanism
+is generic to any class resource with `gainOnBeingStruckPercent` set.
+
+### Critical files
+`packages/engine/src/combat.ts` (+ `__tests__/resources.test.ts`);
+`apps/client/src/screens/CombatScreen.tsx` (+ `.css`),
+`components/combat/CombatStage.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

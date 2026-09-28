@@ -9,7 +9,7 @@ import portraitFrameEnemy from "../../assets/ui/portrait-frame-enemy.png";
 
 /** A momentary visual reaction to a combat event, keyed so React replays the animation on every occurrence. */
 export interface CombatantEffect {
-  kind: "attacking" | "hit" | "heal" | "buff";
+  kind: "attacking" | "hit" | "heal" | "buff" | "resource";
   text?: string;
   key: number;
 }

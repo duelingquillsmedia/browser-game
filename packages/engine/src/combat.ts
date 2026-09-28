@@ -170,7 +170,8 @@ export type CombatEventKind =
   | "defend"
   | "flee-success"
   | "flee-fail"
-  | "down";
+  | "down"
+  | "resource-gain";
 
 export interface CombatLogEntry {
   round: number;
@@ -180,7 +181,7 @@ export interface CombatLogEntry {
   /** The combatant this event happened to, if any (for a UI to animate a hit/heal reaction). */
   targetId?: string;
   kind?: CombatEventKind;
-  /** Damage dealt or HP restored by this event, if any. */
+  /** Damage dealt, HP restored, or resource gained by this event, if any. */
   amount?: number;
   crit?: boolean;
 }
@@ -300,6 +301,24 @@ function beingStruckResourceGain(target: Combatant, damageTaken: number): number
   const percent = getClassResource(target.classId)?.gainOnBeingStruckPercent;
   if (!percent) return undefined;
   return Math.round(damageTaken * percent);
+}
+
+/**
+ * Applies `beingStruckResourceGain` (Furious, today) and logs it as its own
+ * "resource-gain" event distinct from the hit/save event that caused it --
+ * without a log entry of its own, a UI has nothing to key a "+N Fury" popup
+ * off of, and a couple of points added to a 100-point bar is easy to miss.
+ */
+function applyBeingStruckResourceGain(state: CombatState, target: Combatant, damageTaken: number): void {
+  const amount = beingStruckResourceGain(target, damageTaken);
+  if (!amount) return;
+  gainResource(target, amount);
+  const resourceName = getClassResource(target.classId)!.name;
+  log(state, `${target.name} generates ${amount} ${resourceName} from the blow.`, {
+    kind: "resource-gain",
+    targetId: target.id,
+    amount,
+  });
 }
 
 /**
@@ -646,7 +665,6 @@ function resolveAttack(
 
   const hpBefore = target.hp;
   target.hp = Math.max(0, target.hp - finalDamage);
-  gainResource(target, beingStruckResourceGain(target, finalDamage));
 
   const crit = isCrit ? " Critical hit!" : "";
   const shieldNote = absorbed > 0 ? ` (${absorbed} absorbed by its Ward)` : "";
@@ -656,6 +674,7 @@ function resolveAttack(
     `${actor.name} hits ${target.name} with ${action.name} for ${finalDamage} ${damageType} damage.${shieldNote}${crit}${fell}`,
     { kind: "hit", actorId: actor.id, targetId: target.id, amount: finalDamage, crit: isCrit }
   );
+  applyBeingStruckResourceGain(state, target, finalDamage);
 
   if (target.side === "party") handlePartyDamageOutcome(state, target, finalDamage, hpBefore);
   if (target.hp > 0) {
@@ -708,7 +727,6 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
 
     const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - finalDamage);
-    gainResource(target, beingStruckResourceGain(target, finalDamage));
     const shieldNote = absorbed > 0 ? ` (${absorbed} absorbed by its Ward)` : "";
     log(
       state,
@@ -721,6 +739,7 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
         amount: finalDamage,
       }
     );
+    applyBeingStruckResourceGain(state, target, finalDamage);
     if (target.side === "party") handlePartyDamageOutcome(state, target, finalDamage, hpBefore);
     if (target.hp > 0) resolveApplyStatus(state, actor, target, action, rng);
   }
