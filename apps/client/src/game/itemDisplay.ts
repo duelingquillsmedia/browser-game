@@ -1,4 +1,4 @@
-import { getItem, isMagicalAbility, type Character, type ItemSlot, type ItemTemplate } from "@eridan/engine";
+import { ABILITY_NAMES, getItem, isMagicalAbility, type AbilityKey, type Character, type ItemSlot, type ItemTemplate } from "@eridan/engine";
 
 export function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -39,6 +39,9 @@ export function formatItemStats(item: ItemTemplate): string | null {
     parts.push(`${item.damageMin}-${item.damageMax} Damage · ${capitalize(damageType)} (${powerLabel(item)})`);
   }
   if (item.armorRating) parts.push(`+${item.armorRating} Armor`);
+  for (const [key, amount] of Object.entries(item.abilityBonuses ?? {}) as [AbilityKey, number][]) {
+    parts.push(`+${amount} ${ABILITY_NAMES[key]}`);
+  }
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 

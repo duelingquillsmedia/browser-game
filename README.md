@@ -2262,10 +2262,21 @@ had no opinion on them at all. New pieces:
   from growth alone, which would have silently dropped any equipped gear
   bonus on every level-up. Now goes through the same gear-aware path.
 
+**Fix: gear bonuses weren't showing up on item tooltips.** The Attributes
+panel's new `(+3)` badge came straight from `equipmentAbilityBonuses`, but
+`itemDisplay.ts`'s `formatItemStats` -- the shared "stat line" every item
+tooltip and detail panel actually renders (Character screen's equipment
+slots, the Inventory bag's tooltips, and its own Item detail panel) -- only
+ever listed `damageMin`/`damageMax` and `armorRating`. It had no idea
+`abilityBonuses` existed, so a Ring of Warding's tooltip showed "+120
+Armor" and stopped there, with no mention of its +3 Wisdom at all. Added
+an `+N {Ability}` segment per bonus to that same shared formatter, so it
+now reads "+120 Armor · +3 Wisdom" everywhere the item appears.
+
 ### Critical files
 `packages/engine/src/items.ts`, `character.ts` (+
-`__tests__/character.test.ts`); `apps/client/src/game/characterDisplay.ts`;
-`apps/client/src/screens/CharacterScreen.tsx` (+ `.css`).
+`__tests__/character.test.ts`); `apps/client/src/game/characterDisplay.ts`,
+`itemDisplay.ts`; `apps/client/src/screens/CharacterScreen.tsx` (+ `.css`).
 
 ## Lore
 
