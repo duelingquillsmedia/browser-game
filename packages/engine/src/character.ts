@@ -216,8 +216,13 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
   };
 }
 
-/** A Half-elf substitutes their own `HalfElfChoice` for a race's (otherwise empty) `oddLevelAbilityGrowth` table. */
-function raceAbilityGrowth(race: Race, raceChoice: HalfElfChoice | undefined): Partial<Record<AbilityKey, number>> {
+/**
+ * A Half-elf substitutes their own `HalfElfChoice` for a race's (otherwise
+ * empty) `oddLevelAbilityGrowth` table. Exported so the client can show a
+ * character's actual resolved racial growth (Character screen's Traits
+ * panel) without duplicating the Half-elf resolution logic.
+ */
+export function raceAbilityGrowth(race: Race, raceChoice: HalfElfChoice | undefined): Partial<Record<AbilityKey, number>> {
   if (race.id !== "halfElf" || !raceChoice) return race.oddLevelAbilityGrowth;
   const growth: Partial<Record<AbilityKey, number>> = { [raceChoice.doubleAbility]: 2 };
   for (const key of raceChoice.singleAbilities) {

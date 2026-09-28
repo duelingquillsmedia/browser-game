@@ -12,12 +12,32 @@ import {
   getClassResource,
   getItem,
   magicalAttackAbility,
+  raceAbilityGrowth,
   PLAYER_AP_PER_TURN,
   type AbilityKey,
   type Character,
+  type CharacterClass,
   type DamageType,
   type ItemTemplate,
+  type Race,
 } from "@eridan/engine";
+
+/** "+2 Wisdom, +1 Strength, +1 Vitality every even level." Same formatting for a race's odd-level growth and a class's even-level growth -- undefined when there's nothing to show (a raceless Half-elf edge case that shouldn't occur in practice). */
+function formatStatGrowth(growth: Partial<Record<AbilityKey, number>>, frequency: "odd" | "even"): string | undefined {
+  const entries = Object.entries(growth) as [AbilityKey, number][];
+  if (entries.length === 0) return undefined;
+  const parts = entries.map(([key, amount]) => `+${amount} ${ABILITY_NAMES[key]}`);
+  return `${parts.join(", ")} every ${frequency} level.`;
+}
+
+/** A character's actual racial ability growth, resolving a Half-elf's own creation-time pick rather than the (empty) generic table on `Race` itself. */
+export function racialStatGrowthText(character: Character, race: Race): string | undefined {
+  return formatStatGrowth(raceAbilityGrowth(race, character.raceChoice), "odd");
+}
+
+export function classStatGrowthText(cls: CharacterClass): string | undefined {
+  return formatStatGrowth(cls.evenLevelAbilityGrowth, "even");
+}
 
 /**
  * The design handoff colors equipment-slot tiles by item rarity (common/uncommon/

@@ -2175,6 +2175,40 @@ project (`grhwedkojxidqrtzwdtd`). `apps/client/src/game/roster.ts` and
 `screens/CharacterSelectScreen.tsx`'s own doc comments were updated to
 describe it.
 
+## Character Screen: Racial/Class Boxes Show Actual Stat Growth
+
+The Traits panel showed race and class passives (Spellcasters, Furious,
+...) as one flat, unlabeled grid -- no indication of which came from race
+vs. class, and no visibility at all into the numeric per-level ability
+growth those two Style Sheets define (Race's `oddLevelAbilityGrowth`,
+Class's `evenLevelAbilityGrowth` -- see "Race/Class Style Sheet: Per-Level
+Attribute Growth"). The user asked to split it into a labeled Racial box
+and a labeled box for the character's own class, each showing its passive
+*and* its stat gains, so a player can actually see where their growth is
+coming from.
+
+Reused `.aow-skill-stat-group-label` (the same full-width group-label
+treatment the Skills page already uses to split Basic Attack into
+Melee/Ranged) to head each half of the grid: **RACIAL**, then the
+character's own class name (**CLERIC**, **WARRIOR**, ...) -- matching the
+user's own naming rather than a generic "CLASS" label. Each half gets a new
+"Stat Growth" trait card alongside its existing passive card(s), reading
+e.g. "+2 Wisdom, +1 Strength, +1 Vitality every even level." for a Cleric.
+
+The one wrinkle was a Half-elf: `Race.oddLevelAbilityGrowth` is empty for
+that entry (their real growth comes from the player's own creation-time
+`HalfElfChoice` instead -- see races.ts), and that resolution logic
+(`raceAbilityGrowth`) lived as a private helper inside `character.ts`'s
+`computeAbilityScores`. Exported it rather than re-deriving the same
+double/single-ability math client-side, so a Half-elf's box correctly shows
+their own chosen growth (e.g. "+2 Wisdom, +1 Vitality, +1 Intellect every
+odd level.") instead of an empty one.
+
+### Critical files
+`packages/engine/src/character.ts` (exports `raceAbilityGrowth`);
+`apps/client/src/game/characterDisplay.ts` (new `racialStatGrowthText`/
+`classStatGrowthText`); `apps/client/src/screens/CharacterScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

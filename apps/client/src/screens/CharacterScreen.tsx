@@ -15,7 +15,14 @@ import {
   type Character,
   type ItemSlot,
 } from "@eridan/engine";
-import { combatStatGroups, equipmentTileStyle, resistanceRows, type CombatStatRow } from "../game/characterDisplay";
+import {
+  classStatGrowthText,
+  combatStatGroups,
+  equipmentTileStyle,
+  racialStatGrowthText,
+  resistanceRows,
+  type CombatStatRow,
+} from "../game/characterDisplay";
 import { getAvatarById } from "../game/avatars";
 import { ItemIcon } from "../components/ItemIcon";
 import { ItemSlotIcon } from "../components/ItemSlotIcon";
@@ -364,6 +371,7 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
       <div className="aow-panel aow-full-width">
         <div className="aow-panel-header">TRAITS</div>
         <div className="aow-card-body aow-trait-grid">
+          <div className="aow-skill-stat-group-label">Racial</div>
           {race?.id === "halfElf" && character.racePassiveId && RACE_PASSIVE_DETAILS[character.racePassiveId] ? (
             <div className="aow-trait-card">
               <h3>{RACE_PASSIVE_DETAILS[character.racePassiveId].name}</h3>
@@ -377,12 +385,26 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
               </div>
             ))
           )}
+          {race && racialStatGrowthText(character, race) && (
+            <div className="aow-trait-card">
+              <h3>Stat Growth</h3>
+              <p>{racialStatGrowthText(character, race)}</p>
+            </div>
+          )}
+
+          <div className="aow-skill-stat-group-label">{cls?.name ?? character.classId}</div>
           {cls?.passives.map((passive) => (
             <div key={passive.name} className="aow-trait-card">
               <h3>{passive.name}</h3>
               <p>{passive.description}</p>
             </div>
           ))}
+          {cls && classStatGrowthText(cls) && (
+            <div className="aow-trait-card">
+              <h3>Stat Growth</h3>
+              <p>{classStatGrowthText(cls)}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
