@@ -1381,7 +1381,7 @@
     display: grid;
     grid-template-columns: 1fr 52px;
     grid-template-rows: auto auto;
-    grid-template-areas: "status log" "actions actions";
+    grid-template-areas: "status status" "actions log";
     gap: 6px;
     padding: 6px 8px;
     border-top: none;
@@ -1390,8 +1390,34 @@
 
   .cbt-hud-dock .cbt-status-panel {
     grid-area: status;
-    padding: 6px 10px;
+    padding: 4px 10px;
     gap: 8px;
+  }
+
+  /* Freed up by moving HEALTH and the resource bar side by side below (see .cbt-bar-group-*) --
+     the status row no longer needs two stacked bar+label pairs, so it can be noticeably shorter. */
+  .cbt-hud-dock .cbt-status-bars {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "hp resource" "ap ap" "chips chips";
+    column-gap: 14px;
+    row-gap: 2px;
+  }
+
+  .cbt-hud-dock .cbt-bar-group-hp {
+    grid-area: hp;
+  }
+
+  .cbt-hud-dock .cbt-bar-group-resource {
+    grid-area: resource;
+  }
+
+  .cbt-hud-dock .cbt-pip-group {
+    grid-area: ap;
+  }
+
+  .cbt-hud-dock .cbt-status-chip-row-hud {
+    grid-area: chips;
   }
 
   .cbt-hud-dock .cbt-log-toggle-button {
@@ -1470,10 +1496,6 @@
     width: clamp(24px, 10svh, 34px);
     height: clamp(24px, 10svh, 34px);
     font-size: clamp(10px, 3.5svh, 12px);
-  }
-
-  .cbt-hud-dock .cbt-status-bars {
-    gap: 4px;
   }
 
   .cbt-hud-dock .cbt-bar-label-row {

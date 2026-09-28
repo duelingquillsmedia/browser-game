@@ -2755,6 +2755,68 @@ anything overlapping at any tested height.
 `apps/client/src/screens/CombatScreen.css` (`clamp()`-based dock sizing,
 `.cbt-hud-dock .cbt-actions-panel` row layout).
 
+## Mobile Combat Dock: Overlay Attempt, Reverted, and a Real Slimdown Instead
+
+The user sent a second real-device screenshot: buttons were now genuinely
+bigger and the dock wasn't overlapping anything, but the battlefield still
+read as small. Asked whether to try floating the HUD semi-transparently
+over the bottom of a full-size battlefield instead of reserving space
+below it, the user said yes -- so that was built and tested first, using
+the same disposable-Playwright-harness method as every prior round in
+this project.
+
+**The overlay made the actual combat invisible.** This game's battle
+scenes put the player and every enemy in the lower half of the frame
+(ground level), with sky/background art filling the upper half. A dock
+tall enough for legible touch controls has to cover roughly the bottom
+half of the screen, which is exactly where the combatants stand --
+verified with a screenshot showing an empty beach, not a single
+character or enemy visible, because they were all rendered directly
+behind the opaque dock. This was caught before pushing: the change was
+reverted via `git checkout` back to the last-good commit, and the finding
+(with the screenshot) was shown to the user rather than shipping it. Given
+the choice between that and continuing to shrink the reserved-space dock,
+the user asked instead for two smaller, concrete layout changes.
+
+**1. Move the LOG button down to the action row.** In
+`.cbt-hud-dock .cbt-hud`'s grid, `grid-template-areas` changed from
+`"status log" / "actions actions"` to `"status status" / "actions log"` --
+the log button's own `grid-area: log` didn't need to change at all, only
+where "log" sits in the template. It now shares the bottom row with the
+action bar instead of occupying the top-right corner, appearing beside the
+last ability slot exactly as asked.
+
+**2. Slim the status row by going wide instead of tall
+(`CombatHud.tsx` + `CombatScreen.css`).** HEALTH's label+bar and the
+resource's label+bar were two separate stacked pairs directly inside
+`.cbt-status-bars` (a flex column) -- four stacked lines total. Each pair
+was wrapped in a new `.cbt-bar-group` div (`.cbt-bar-group-hp` /
+`.cbt-bar-group-resource`); desktop's plain flex-column stacking is
+completely unaffected by this (an unstyled wrapper around two already-
+adjacent children doesn't change how they flow), but on mobile
+`.cbt-status-bars` becomes a 2-column grid (`"hp resource" / "ap ap" /
+"chips chips"`), putting HEALTH and the resource bar **side by side**
+instead of stacked. Freed further by the LOG button move giving the status
+row the full row width to spread into (no more 52px column reserved out
+of it). The status row went from a multi-line block down to essentially
+one bar-height row plus the AP pips beneath it.
+
+Verified the same way as every round before it: measured across three
+viewport heights (340/300/260px) via a disposable Playwright harness
+before deleting it. At 340px, dock height dropped from 182px to 142px and
+the battlefield's share of the screen rose from 47% to **58%** -- on top
+of the two previous rounds' improvements, not instead of them. Screenshots
+confirmed the log modal, tap-away-to-close, and the long-press ability
+popover all still work correctly after the restructure, and a side-by-side
+desktop screenshot confirmed the desktop layout is pixel-identical to
+before (the status-bars grid only applies under `pointer: coarse`).
+
+### Critical files
+`apps/client/src/components/combat/CombatHud.tsx` (`.cbt-bar-group`
+wrapper divs around HEALTH/resource label+bar pairs),
+`apps/client/src/screens/CombatScreen.css` (`grid-template-areas` move for
+the log button, `.cbt-status-bars`'s mobile grid).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

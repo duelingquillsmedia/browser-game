@@ -128,21 +128,27 @@ export function CombatHud({
           <span>{player.level ?? "?"}</span>
         </div>
         <div className="cbt-status-bars">
-          <div className="cbt-bar-label-row">
-            <span>HEALTH</span>
-            <span className="cbt-bar-label-value">
-              {Math.max(0, player.hp)} / {player.maxHp}
-              {shield > 0 ? ` +${shield}` : ""}
-            </span>
-          </div>
-          <div className="cbt-hp-track cbt-hp-track-hud">
-            <div className="cbt-hp-fill" style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
-            {shield > 0 && (
-              <div className="cbt-hp-shield cbt-hp-shield-hud" style={{ width: `${Math.min(100, (shield / player.maxHp) * 100)}%` }} />
-            )}
+          {/* Wrapped so mobile can place HEALTH and the resource bar side by side instead of
+              stacked -- see .cbt-bar-group-hp/-resource's `pointer: coarse` rule. Desktop's plain
+              flex-column stacking is unaffected: an unstyled wrapper div around two already-
+              adjacent children doesn't change how they lay out. */}
+          <div className="cbt-bar-group cbt-bar-group-hp">
+            <div className="cbt-bar-label-row">
+              <span>HEALTH</span>
+              <span className="cbt-bar-label-value">
+                {Math.max(0, player.hp)} / {player.maxHp}
+                {shield > 0 ? ` +${shield}` : ""}
+              </span>
+            </div>
+            <div className="cbt-hp-track cbt-hp-track-hud">
+              <div className="cbt-hp-fill" style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
+              {shield > 0 && (
+                <div className="cbt-hp-shield cbt-hp-shield-hud" style={{ width: `${Math.min(100, (shield / player.maxHp) * 100)}%` }} />
+              )}
+            </div>
           </div>
           {resource && resourceMax !== undefined && (
-            <>
+            <div className="cbt-bar-group cbt-bar-group-resource">
               <div className="cbt-bar-label-row">
                 <span>{resource.name.toUpperCase()}</span>
                 <span className="cbt-bar-label-value">
@@ -155,7 +161,7 @@ export function CombatHud({
                   style={{ width: `${Math.max(0, Math.min(100, ((player.resource ?? 0) / resourceMax) * 100))}%` }}
                 />
               </div>
-            </>
+            </div>
           )}
           {player.apMax !== undefined && (
             <div className="cbt-pip-group">
