@@ -2565,6 +2565,42 @@ one.
 ### Critical files
 `apps/client/src/screens/WorldMapScreen.tsx` (+ `.css`).
 
+## Combat HUD: Bigger Action-Bar Buttons and HP/Resource Bars
+
+Follow-up to the mobile pass: the user agreed the action-bar buttons and
+the bottom-left HP/resource bars read a bit small, and asked for them
+enlarged without shrinking the battlefield view above. The footer (status
+panel, action bar, combat log) sits in the artboard's `grid-template-rows:
+60px minmax(0, 1fr) auto` as the `auto` row -- growing anything in it
+grows the whole row, which comes directly out of the battlefield's `1fr`
+share of the fixed 900px-tall artboard. So every size increase here was
+paired with an equal-or-greater trim elsewhere in the same footer, never
+just added on top of it.
+
+**`CombatHud.tsx`**: the HP bar went from 9px to 14px thick (its shield
+sliver 3px to 5px) and the resource bar from 7px to 11px.
+
+**`CombatScreen.css`**: `.cbt-skill-slot` (the action-bar buttons) grew
+from 52px to 60px square, with its glyph font and the header/action-bar
+divider bumped to match. Paid for by trimming `.cbt-info-line`'s reserved
+height (50px to 42px -- the info line's real minimum is set by the End
+Turn button's own 48px height regardless, so this recovered 2px, not the
+full 8), `.cbt-actions-panel`'s internal gap (10px to 8px), and
+`.cbt-status-panel`'s padding and internal row gap (10px to 8px, 6px to
+5px) to absorb the HP/resource bars' own growth.
+
+Verified by literally measuring `.cbt-stage`'s (the battlefield) rendered
+height before and after via a temporary debug harness (same
+render-directly-with-mock-data approach as the mobile pass, deleted before
+finishing) rather than trusting the arithmetic: **662px in both cases,
+unchanged to the pixel** -- the trims fully offset the growth. Screenshots
+at both a flat 1600x900 render and a realistic 1366x768 laptop viewport
+confirm the bigger controls read clearly with no cramping or overflow.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.css`,
+`components/combat/CombatHud.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -100,10 +100,10 @@ export function CombatHud({
               {shield > 0 ? ` +${shield}` : ""}
             </span>
           </div>
-          <div className="cbt-hp-track" style={{ height: 9 }}>
+          <div className="cbt-hp-track" style={{ height: 14 }}>
             <div className="cbt-hp-fill" style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
             {shield > 0 && (
-              <div className="cbt-hp-shield" style={{ width: `${Math.min(100, (shield / player.maxHp) * 100)}%`, height: 3 }} />
+              <div className="cbt-hp-shield" style={{ width: `${Math.min(100, (shield / player.maxHp) * 100)}%`, height: 5 }} />
             )}
           </div>
           {resource && resourceMax !== undefined && (
@@ -114,7 +114,7 @@ export function CombatHud({
                   {player.resource ?? 0} / {resourceMax}
                 </span>
               </div>
-              <div className={`cbt-resource-track cbt-resource-${resource.key}`} style={{ height: 7 }}>
+              <div className={`cbt-resource-track cbt-resource-${resource.key}`} style={{ height: 11 }}>
                 <div
                   className="cbt-resource-fill"
                   style={{ width: `${Math.max(0, Math.min(100, ((player.resource ?? 0) / resourceMax) * 100))}%` }}

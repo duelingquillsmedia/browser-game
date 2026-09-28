@@ -769,7 +769,7 @@
 .cbt-status-panel {
   display: flex;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .cbt-level-diamond {
@@ -802,7 +802,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .cbt-bar-label-row {
@@ -863,7 +863,7 @@
 .cbt-actions-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 12px;
 }
 
@@ -871,7 +871,9 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  min-height: 50px;
+  /* Trimmed from 50px to offset the larger .cbt-skill-slot/HP-bar sizing below, so the
+     footer's total (and therefore the battlefield row above it) doesn't grow at all. */
+  min-height: 42px;
 }
 
 .cbt-info-text {
@@ -968,8 +970,8 @@
 
 .cbt-skill-slot {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
   padding: 0;
   border: 1px solid rgba(232, 200, 170, 0.16);
   border-radius: 3px;
@@ -992,7 +994,7 @@
 }
 
 .cbt-slot-glyph {
-  font: 400 26px var(--aow-font-runic), var(--aow-font-display);
+  font: 400 30px var(--aow-font-runic), var(--aow-font-display);
 }
 
 .cbt-slot-key {
@@ -1037,7 +1039,7 @@
 .cbt-hud-divider {
   flex: none;
   width: 1px;
-  height: 40px;
+  height: 48px;
   background: rgba(232, 200, 170, 0.12);
 }
 
