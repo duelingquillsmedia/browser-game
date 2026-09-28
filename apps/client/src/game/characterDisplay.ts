@@ -9,6 +9,7 @@ import {
   computeAttackPower,
   computeCritChance,
   computeEvasion,
+  equipmentAbilityBonuses,
   getClassResource,
   getItem,
   magicalAttackAbility,
@@ -18,6 +19,7 @@ import {
   type Character,
   type CharacterClass,
   type DamageType,
+  type ItemSlot,
   type ItemTemplate,
   type Race,
 } from "@eridan/engine";
@@ -37,6 +39,37 @@ export function racialStatGrowthText(character: Character, race: Race): string |
 
 export function classStatGrowthText(cls: CharacterClass): string | undefined {
   return formatStatGrowth(cls.evenLevelAbilityGrowth, "even");
+}
+
+const EQUIPMENT_SLOT_LABELS: Record<ItemSlot, string> = {
+  meleeWeapon: "Melee Weapon",
+  rangedWeapon: "Ranged Weapon",
+  armor: "Armor",
+  accessory: "Accessory",
+};
+
+/** How much of a character's current ability score comes from equipped gear -- 0 when nothing equipped grants it (see `Attributes` panel, which hides its gear badge entirely in that case). */
+export function gearAbilityBonus(character: Character, key: AbilityKey): number {
+  return equipmentAbilityBonuses(character.equipment)[key] ?? 0;
+}
+
+/** Per-item breakdown of a gear-granted ability bonus, for the Attributes panel's hover tooltip (reuses the same `StatBreakdown`/`StatBreakdownTooltipContent` the Combat panel's stat rows already use). */
+export function gearAbilityBreakdown(character: Character, key: AbilityKey): StatBreakdown {
+  const factors: StatBreakdownFactor[] = [];
+  let total = 0;
+  for (const [slot, itemId] of Object.entries(character.equipment) as [ItemSlot, string | undefined][]) {
+    if (!itemId) continue;
+    const amount = getItem(itemId).abilityBonuses?.[key];
+    if (!amount) continue;
+    factors.push({ label: `${getItem(itemId).name} (${EQUIPMENT_SLOT_LABELS[slot]})`, value: `+${amount}` });
+    total += amount;
+  }
+  return {
+    formula: "Sum of equipped gear's bonuses to this attribute",
+    factors,
+    total: `+${total}`,
+    hint: "Equip gear with a bonus to this attribute to increase it further.",
+  };
 }
 
 /**

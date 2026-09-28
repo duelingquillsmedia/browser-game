@@ -182,7 +182,50 @@ function generateBasicAttacks(character: Character, cls: CharacterClass): Combat
   return attacks;
 }
 
-/** Recomputes evasion, resistances, and actions from base stats plus race traits, class passives, level, and whatever's equipped. */
+/**
+ * Sums every equipped item's `abilityBonuses` (any slot -- today only
+ * accessories have any, but a future weapon/armor bonus works the same
+ * way). Exported so the Character screen's Traits/Attributes panels can
+ * show a player exactly how much of a score comes from their gear, broken
+ * down by item, rather than just the combined total baked into
+ * `abilityScores`.
+ */
+export function equipmentAbilityBonuses(equipment: Character["equipment"]): Partial<Record<AbilityKey, number>> {
+  const total: Partial<Record<AbilityKey, number>> = {};
+  for (const itemId of Object.values(equipment)) {
+    if (!itemId) continue;
+    const bonuses = getItem(itemId).abilityBonuses;
+    if (!bonuses) continue;
+    for (const [key, amount] of Object.entries(bonuses) as [AbilityKey, number][]) {
+      total[key] = (total[key] ?? 0) + amount;
+    }
+  }
+  return total;
+}
+
+/**
+ * Race/class growth (see `computeAbilityScores`) plus whatever's currently
+ * equipped -- the actual scores a character plays with. `level` defaults to
+ * the character's current one; `gainExperience` passes the new post-level-up
+ * value instead, since it computes this before `character.level` itself is
+ * updated.
+ */
+function abilityScoresWithGear(character: Character, race: Race, cls: CharacterClass, level: number = character.level): AbilityScores {
+  const grown = computeAbilityScores(character.baseAbilityScores, race, character.raceChoice, cls, level);
+  const gearBonuses = equipmentAbilityBonuses(character.equipment);
+  for (const [key, amount] of Object.entries(gearBonuses) as [AbilityKey, number][]) {
+    grown[key] += amount;
+  }
+  return grown;
+}
+
+/**
+ * Recomputes ability scores (growth plus gear), evasion, max HP, resistances,
+ * and actions from base stats plus race traits, class passives, level, and
+ * whatever's equipped. Ability scores are rebuilt from `baseAbilityScores`
+ * every time rather than adjusted incrementally, so equipping/unequipping
+ * repeatedly can never compound or leave a stale gear bonus behind.
+ */
 function applyEquipmentEffects(character: Character, cls: CharacterClass, race: Race): Character {
   const armor = character.equipment.armor ? getItem(character.equipment.armor) : undefined;
   const accessory = character.equipment.accessory ? getItem(character.equipment.accessory) : undefined;
@@ -191,7 +234,11 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
 
   const armorRating = (armor?.armorRating ?? 0) + (accessory?.armorRating ?? 0) + (cls.passiveArmorRating ?? 0);
 
-  const basicAttacks = generateBasicAttacks(character, cls);
+  const abilityScores = abilityScoresWithGear(character, race, cls);
+  const maxHp = computeMaxHealth(abilityScores, cls.id, character.level);
+  const withScores: Character = { ...character, abilityScores };
+
+  const basicAttacks = generateBasicAttacks(withScores, cls);
   // Enforces each ability's Class Style Sheet unlock level; a character below it simply
   // doesn't know that action yet (see classes.ts -- there's no leveling system to raise
   // `character.level` yet, so today this mostly just gates a level-1 character's kit
@@ -204,6 +251,9 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
 
   return {
     ...character,
+    abilityScores,
+    maxHp,
+    hp: Math.min(character.hp, maxHp),
     armorRating,
     actions,
     meleeWeaponDamageMin: meleeWeapon?.damageMin,
@@ -407,7 +457,7 @@ export function gainExperience(character: Character, amount: number): Experience
   const cls = getClass(character.classId);
   const race = getRace(character.raceId);
 
-  const newAbilityScores = computeAbilityScores(character.baseAbilityScores, race, character.raceChoice, cls, level);
+  const newAbilityScores = abilityScoresWithGear(character, race, cls, level);
   const oldResourceMax = computeResourceMax(character.abilityScores, cls.id, startLevel);
   const newMaxHp = computeMaxHealth(newAbilityScores, cls.id, level);
   const hpDelta = newMaxHp - character.maxHp;

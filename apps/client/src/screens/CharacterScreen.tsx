@@ -4,7 +4,6 @@ import {
   CLASSES,
   LEVEL_CAP,
   RACES,
-  abilityMod,
   computeResourceMax,
   equipItem,
   getClassResource,
@@ -19,6 +18,8 @@ import {
   classStatGrowthText,
   combatStatGroups,
   equipmentTileStyle,
+  gearAbilityBonus,
+  gearAbilityBreakdown,
   racialStatGrowthText,
   resistanceRows,
   type CombatStatRow,
@@ -266,19 +267,33 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
           <div className="aow-panel aow-attributes-panel">
             <div className="aow-panel-header aow-panel-header-plain">ATTRIBUTES</div>
             <div className="aow-attr-list">
-              {ABILITY_KEYS.map((key) => (
-                <div key={key} className="aow-attr-row">
-                  <span className="aow-attr-abbr">{key.toUpperCase()}</span>
-                  <div className="aow-attr-row-mid">
-                    <div className="aow-attr-row-name">{ABILITY_NAMES[key]}</div>
-                    <div className="aow-attr-row-hint">{ABILITY_HINTS[key]}</div>
+              {ABILITY_KEYS.map((key) => {
+                const gearBonus = gearAbilityBonus(character, key);
+                return (
+                  <div key={key} className="aow-attr-row">
+                    <span className="aow-attr-abbr">{key.toUpperCase()}</span>
+                    <div className="aow-attr-row-mid">
+                      <div className="aow-attr-row-name">{ABILITY_NAMES[key]}</div>
+                      <div className="aow-attr-row-hint">{ABILITY_HINTS[key]}</div>
+                    </div>
+                    <div className="aow-attr-row-value">
+                      <div className="aow-attr-row-total">{character.abilityScores[key]}</div>
+                      {gearBonus !== 0 && (
+                        <Tooltip
+                          content={
+                            <StatBreakdownTooltipContent
+                              label={`${ABILITY_NAMES[key]} from Gear`}
+                              breakdown={gearAbilityBreakdown(character, key)}
+                            />
+                          }
+                        >
+                          <div className="aow-attr-row-gear">({formatModifier(gearBonus)})</div>
+                        </Tooltip>
+                      )}
+                    </div>
                   </div>
-                  <div className="aow-attr-row-value">
-                    <div className="aow-attr-row-total">{character.abilityScores[key]}</div>
-                    <div className="aow-attr-row-mod">{formatModifier(abilityMod(character, key))}</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

@@ -2209,6 +2209,64 @@ odd level.") instead of an empty one.
 `apps/client/src/game/characterDisplay.ts` (new `racialStatGrowthText`/
 `classStatGrowthText`); `apps/client/src/screens/CharacterScreen.tsx`.
 
+## Ability Score Growth Audit + Gear-Granted Ability Bonuses
+
+The user asked us to double check the Traits panel's new stat-growth math
+against their own level 4 half-elf Cleric, whose Wisdom (doubled racial
+growth + Cleric's own +2/even-level growth) they expected at +6 total but
+saw a "+4" next to it. Traced it against the real character row in
+Supabase: Wisdom was correctly 18 (10 base + 4 from two racial growth ticks
+at levels 1/3, doubled since Wisdom was their chosen ability, + 4 from two
+Cleric growth ticks at levels 2/4) -- exactly what `computeAbilityScores`
+and its own dedicated test already lock in. The "+4" wasn't a growth total
+at all: it was the classic D&D **ability modifier** (`floor((score-10)/2)`)
+the Attributes panel showed next to every score, coincidentally reading
+"+4" for an 18. Nothing was broken; the modifier badge was just easy to
+misread as "how much this grew."
+
+Since that badge measured something a player has little reason to care
+about turn-to-turn (it isn't used in any of this engine's own math -- see
+dice.ts's `abilityModifier`, kept only for the ability-check-style rolls
+this system doesn't use), the user asked to replace it with something
+actually actionable: **how much of this score comes from equipped gear**,
+shown as a green `(+N)` badge that's hidden entirely when gear contributes
+nothing, with a hover tooltip (reusing the Combat panel's own
+`StatBreakdownTooltipContent`) breaking the total down per item.
+
+**This meant actually wiring gear into ability scores for the first time**
+-- previously equipment only touched armor rating, weapon damage, and
+resistances; ability scores were purely race growth + class growth, gear
+had no opinion on them at all. New pieces:
+- **`ItemTemplate.abilityBonuses`** (items.ts): a flat per-ability bonus
+  while equipped, any slot. Given to the two existing "probably magic"
+  accessories that had flavor text but no mechanical hook yet: **Ring of
+  Warding** (+3 Wisdom) and **Lucky Charm** (+1 Dexterity) -- homebrew
+  values, not from any design doc, picked to actually exercise the new
+  mechanic on gear players already own rather than shipping it dead.
+- **`equipmentAbilityBonuses`** (character.ts, exported): sums every
+  equipped slot's `abilityBonuses` into one `Partial<Record<AbilityKey,
+  number>>`. Used both by the engine (below) and the client's new
+  `gearAbilityBonus`/`gearAbilityBreakdown` (characterDisplay.ts) for the
+  badge and its tooltip.
+- **`applyEquipmentEffects`** (the function `equipItem`/`unequipItem`/
+  `withStartingGearIfMissing`/`createCharacter` all funnel through) now
+  rebuilds `abilityScores` from scratch on every call -- race/class growth
+  via the existing `computeAbilityScores`, plus current gear bonuses on
+  top -- rather than never touching ability scores at all. Rebuilding from
+  `baseAbilityScores` each time (not adjusting incrementally) means
+  repeated equip/unequip cycles can never compound or leave a stale bonus
+  behind. It also now recomputes `maxHp` and clamps current `hp` to it, so
+  a future Vitality-granting item stays correct immediately rather than
+  waiting for the next level-up.
+- **`gainExperience`** (leveling up) previously recomputed `abilityScores`
+  from growth alone, which would have silently dropped any equipped gear
+  bonus on every level-up. Now goes through the same gear-aware path.
+
+### Critical files
+`packages/engine/src/items.ts`, `character.ts` (+
+`__tests__/character.test.ts`); `apps/client/src/game/characterDisplay.ts`;
+`apps/client/src/screens/CharacterScreen.tsx` (+ `.css`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

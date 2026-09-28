@@ -156,11 +156,12 @@
   color: var(--aow-ink);
 }
 
-.aow-attr-row-mod {
+.aow-attr-row-gear {
   margin-top: 3px;
   font-family: var(--aow-font-mono);
   font-size: 10px;
-  color: var(--aow-muted);
+  color: var(--aow-green);
+  cursor: help;
 }
 
 /* -- Equipment -- */

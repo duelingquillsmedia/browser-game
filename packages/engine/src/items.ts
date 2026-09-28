@@ -26,6 +26,8 @@ export interface ItemTemplate {
   damageType?: DamageType;
   /** A weapon sub-type a race passive can key off of (e.g. a Dwarf's Axe-wielders bonus damage) -- see combat.ts. */
   weaponCategory?: "axe";
+  /** Flat ability score bonus while this item is equipped (any slot) -- e.g. a Ring of Warding's +3 Wisdom. Summed into `Character.abilityScores` alongside race/class growth (see character.ts's `equipmentAbilityBonuses`). */
+  abilityBonuses?: Partial<Record<AbilityKey, number>>;
   /** Price in gold pieces: what the General Store/Blacksmith charge to buy it (see character.ts's buyItem/sellItem). */
   value: number;
   /** Present only on a drinkable/usable item (a potion); see character.ts's useConsumable. Absent on equipment. */
@@ -161,6 +163,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     description: "A worn coin on a leather cord — probably does nothing. Probably.",
     slot: "accessory",
     armorRating: 60,
+    abilityBonuses: { dex: 1 },
     value: 8,
   },
   ringOfWarding: {
@@ -169,6 +172,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     description: "A plain silver band, faintly warm to the touch.",
     slot: "accessory",
     armorRating: 120,
+    abilityBonuses: { wis: 3 },
     value: 25,
   },
   radiance: {

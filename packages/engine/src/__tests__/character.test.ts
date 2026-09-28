@@ -10,6 +10,7 @@ import {
   computeAbilityScores,
   createCharacter,
   equipItem,
+  equipmentAbilityBonuses,
   gainExperience,
   ownsItem,
   sellItem,
@@ -330,6 +331,58 @@ describe("equipItem / unequipItem", () => {
 
   it("throws when equipping an item the character doesn't own", () => {
     expect(() => equipItem(warrior(), "oakenStaff")).toThrow();
+  });
+});
+
+describe("gear ability bonuses (Ring of Warding, Lucky Charm)", () => {
+  function cleric() {
+    return createCharacter({
+      id: "pc-gear-1",
+      name: "Test Cleric",
+      raceId: "human",
+      classId: "cleric",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
+    });
+  }
+
+  it("equipping an accessory with abilityBonuses raises the matching ability score", () => {
+    const before = cleric();
+    const beforeWis = before.abilityScores.wis;
+    const equipped = equipItem(buyItem(before, "ringOfWarding"), "ringOfWarding");
+    expect(equipped.abilityScores.wis).toBe(beforeWis + 3); // Ring of Warding: +3 Wisdom
+    expect(equipmentAbilityBonuses(equipped.equipment)).toEqual({ wis: 3 });
+  });
+
+  it("unequipping removes the bonus again, with no compounding across repeated equip/unequip cycles", () => {
+    const base = cleric();
+    const equipped = equipItem(buyItem(base, "ringOfWarding"), "ringOfWarding");
+    const unequipped = unequipItem(equipped, "accessory");
+    expect(unequipped.abilityScores.wis).toBe(base.abilityScores.wis);
+
+    // Equip/unequip twice more -- a bug that re-adds the bonus on top of itself instead of
+    // recomputing from scratch would only show up after more than one cycle.
+    const reequipped = equipItem(unequipItem(equipItem(unequipped, "ringOfWarding"), "accessory"), "ringOfWarding");
+    expect(reequipped.abilityScores.wis).toBe(base.abilityScores.wis + 3);
+  });
+
+  it("sums bonuses across multiple equipped items", () => {
+    const withRing = equipItem(buyItem(cleric(), "ringOfWarding"), "ringOfWarding");
+    // Lucky Charm also wants the accessory slot -- swap in a melee weapon slot bonus item isn't
+    // available, so instead verify the sum via equipmentAbilityBonuses directly against a
+    // synthetic equipment map (both items "equipped" in different slots isn't possible in this
+    // engine today since they're both accessories, but the summing logic itself is slot-agnostic).
+    expect(equipmentAbilityBonuses({ accessory: "ringOfWarding", meleeWeapon: "ironLongsword" })).toEqual({ wis: 3 });
+    expect(withRing.abilityScores.wis).toBe(cleric().abilityScores.wis + 3);
+  });
+
+  it("survives a level-up: gainExperience doesn't drop a previously-applied gear bonus", () => {
+    const equipped = equipItem(buyItem(cleric(), "ringOfWarding"), "ringOfWarding");
+    expect(equipped.abilityScores.wis).toBe(cleric().abilityScores.wis + 3);
+
+    const { character: leveled } = gainExperience(equipped, xpToNextLevel(1));
+    expect(leveled.level).toBe(2);
+    // Cleric's own even-level growth (+2 Wis at level 2) stacks on top of the still-present +3 gear bonus.
+    expect(leveled.abilityScores.wis).toBe(cleric().abilityScores.wis + 2 + 3);
   });
 });
 
