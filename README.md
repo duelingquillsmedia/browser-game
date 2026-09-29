@@ -3090,6 +3090,45 @@ avatars/cleric-human-{male,female}-{black,brown,blonde,red}-hair[-se]
 .png` (16 new files, extracted and renamed from the root-level
 `Human_Cleric_*` folders the user dropped in, which were removed after).
 
+## Avatar Picker: Gated by Race, Not Just Class (2026-09-29)
+
+With two visually distinct pixel models now sharing the Cleric avatar
+list (Elf/Half-elf-modeled and Human-modeled, 8 options each), the
+Appearance step was showing all 16 regardless of the character's chosen
+race -- a Human player could pick the pointy-eared Elf-modeled look and
+vice versa. The user asked for this gated: picking Human + Cleric
+should surface only the Human Cleric portraits.
+
+`AvatarOption` gained a `raceIds: string[]` field naming which race(s)
+each look is offered for (`avatars.ts`) -- the Elf-modeled set lists
+`["elf", "halfElf"]` since, per the original request that started this
+avatar work, Half-elf intentionally reuses the Elf pixel model to cut
+down on art; the Human-modeled set lists `["human"]`. `getAvatarsForClass`
+was replaced with `getAvatarsForRaceClass(raceId, classId)`, filtering
+on both instead of just class, and `CharacterCreationScreen.tsx`'s
+Appearance step now calls it with the character's already-chosen race.
+Since avatar options depend on race now too, `pickRace` resets `avatarId`
+on change, same as `pickClass` already did, so a stale pick from a
+different race's list can't survive a step back.
+
+This only reaches the picker -- `getAvatarById` (used everywhere an
+already-chosen avatar is displayed: Character Select, the Character
+screen, combat sprites) is untouched and still matches by id alone, so
+no existing character's saved look is affected.
+
+Verified in a temporary debug harness (deleted after) across all four
+races with a Cleric option available: Human shows only the 8 Human
+portraits, Elf shows only the 8 Elf portraits, Half-elf shows that same
+Elf set (shared model, as intended), and Dwarf -- with no pixel art of
+its own yet -- correctly falls through to palette-only, same as before
+this change.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (`raceIds` field, all 16 entries
+tagged, `getAvatarsForClass` -> `getAvatarsForRaceClass`);
+`apps/client/src/screens/CharacterCreationScreen.tsx` (Appearance step
+filters by race now, `pickRace` resets `avatarId`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

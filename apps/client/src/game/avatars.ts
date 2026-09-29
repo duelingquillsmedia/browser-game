@@ -34,6 +34,8 @@ import clericHumanMaleRedHairSe from "../assets/avatars/cleric-human-male-red-ha
 export interface AvatarOption {
   id: string;
   label: string;
+  /** Which race(s) this look is offered for on Character Creation's Appearance step -- the source art depicts a specific race's model, so (unlike class) this one does gate selection. A look modeled on Elf art is offered to Half-elf too, since they share the same pixel model. */
+  raceIds: string[];
   /** The south (front-facing) portrait -- used for Character Creation and the Character screen. */
   image: string;
   /** A south-east facing pose, used in combat instead of `image` so the party member visibly faces the enemies to their right. Falls back to `image` when a variant doesn't have one. */
@@ -42,11 +44,11 @@ export interface AvatarOption {
 
 /**
  * Player-selectable pixel-art portraits, offered on Character Creation's
- * Appearance step -- keyed by class id, independent of the character's
- * chosen race (the source art may depict a specific race, but the avatar
- * itself is just a look any player of that class can pick). Sourced from
- * the Google Drive "Character and NPC Sprites" folder; only Cleric has
- * options so far, with more classes/options to follow as more art arrives.
+ * Appearance step -- keyed by class id, then filtered down to the ones
+ * matching the character's chosen race (see `raceIds` above and
+ * `getAvatarsForRaceClass`). Sourced from the Google Drive "Character and
+ * NPC Sprites" folder; only Cleric has options so far, with more
+ * classes/options to follow as more art arrives.
  *
  * Ids are never renamed once shipped -- a saved character's `avatarId`
  * only matches by id, so an id change silently loses that character's
@@ -60,104 +62,121 @@ export const AVATARS_BY_CLASS: Record<string, AvatarOption[]> = {
     {
       id: "cleric-male-black-hair",
       label: "Elf Male Black Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericMaleBlackHair,
       combatImage: clericMaleBlackHairSe,
     },
     {
       id: "cleric-male-brown-hair",
       label: "Elf Male Brown Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericMaleBrownHair,
       combatImage: clericMaleBrownHairSe,
     },
     {
       id: "cleric-male-blonde-hair",
       label: "Elf Male Blonde Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericMaleBlondeHair,
       combatImage: clericMaleBlondeHairSe,
     },
     {
       id: "cleric-male-red-hair",
       label: "Elf Male Red Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericMaleRedHair,
       combatImage: clericMaleRedHairSe,
     },
     {
       id: "cleric-female-black-hair",
       label: "Elf Female Black Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericFemaleBlackHair,
       combatImage: clericFemaleBlackHairSe,
     },
     {
       id: "cleric-female-brown-hair",
       label: "Elf Female Brown Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericFemaleBrownHair,
       combatImage: clericFemaleBrownHairSe,
     },
     {
       id: "cleric-female-blonde-hair",
       label: "Elf Female Blonde Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericFemaleBlondeHair,
       combatImage: clericFemaleBlondeHairSe,
     },
     {
       id: "cleric-female-red-hair",
       label: "Elf Female Red Hair",
+      raceIds: ["elf", "halfElf"],
       image: clericFemaleRedHair,
       combatImage: clericFemaleRedHairSe,
     },
     {
       id: "cleric-human-male-black-hair",
       label: "Human Male Black Hair",
+      raceIds: ["human"],
       image: clericHumanMaleBlackHair,
       combatImage: clericHumanMaleBlackHairSe,
     },
     {
       id: "cleric-human-male-brown-hair",
       label: "Human Male Brown Hair",
+      raceIds: ["human"],
       image: clericHumanMaleBrownHair,
       combatImage: clericHumanMaleBrownHairSe,
     },
     {
       id: "cleric-human-male-blonde-hair",
       label: "Human Male Blonde Hair",
+      raceIds: ["human"],
       image: clericHumanMaleBlondeHair,
       combatImage: clericHumanMaleBlondeHairSe,
     },
     {
       id: "cleric-human-male-red-hair",
       label: "Human Male Red Hair",
+      raceIds: ["human"],
       image: clericHumanMaleRedHair,
       combatImage: clericHumanMaleRedHairSe,
     },
     {
       id: "cleric-human-female-black-hair",
       label: "Human Female Black Hair",
+      raceIds: ["human"],
       image: clericHumanFemaleBlackHair,
       combatImage: clericHumanFemaleBlackHairSe,
     },
     {
       id: "cleric-human-female-brown-hair",
       label: "Human Female Brown Hair",
+      raceIds: ["human"],
       image: clericHumanFemaleBrownHair,
       combatImage: clericHumanFemaleBrownHairSe,
     },
     {
       id: "cleric-human-female-blonde-hair",
       label: "Human Female Blonde Hair",
+      raceIds: ["human"],
       image: clericHumanFemaleBlondeHair,
       combatImage: clericHumanFemaleBlondeHairSe,
     },
     {
       id: "cleric-human-female-red-hair",
       label: "Human Female Red Hair",
+      raceIds: ["human"],
       image: clericHumanFemaleRedHair,
       combatImage: clericHumanFemaleRedHairSe,
     },
   ],
 };
 
-export function getAvatarsForClass(classId: string): AvatarOption[] {
-  return AVATARS_BY_CLASS[classId] ?? [];
+/** Avatar options for Character Creation's Appearance step: class-matched, then narrowed to the ones offered for the chosen race (see `AvatarOption.raceIds`). */
+export function getAvatarsForRaceClass(raceId: string, classId: string): AvatarOption[] {
+  return (AVATARS_BY_CLASS[classId] ?? []).filter((o) => o.raceIds.includes(raceId));
 }
 
 export function getAvatarById(avatarId: string | undefined): AvatarOption | undefined {

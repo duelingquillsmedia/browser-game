@@ -17,7 +17,7 @@ import {
   type Race,
 } from "@eridan/engine";
 import { APPEARANCE_PRESETS, NAME_POOLS } from "../game/appearance";
-import { getAvatarById, getAvatarsForClass } from "../game/avatars";
+import { getAvatarById, getAvatarsForRaceClass } from "../game/avatars";
 import { HOME_TOWN_NAME } from "../game/lore";
 import "../theme/aow-theme.css";
 import "./CharacterCreationScreen.css";
@@ -123,7 +123,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
   const resourceConfig = getClassResource(classId ?? undefined);
   const looks = race ? APPEARANCE_PRESETS[race.id] : [];
   const chosenLook = looks[lookIndex];
-  const avatarOptions = classId ? getAvatarsForClass(classId) : [];
+  const avatarOptions = raceId && classId ? getAvatarsForRaceClass(raceId, classId) : [];
   const chosenAvatar = getAvatarById(avatarId);
 
   const raceChoice: HalfElfChoice | undefined =
@@ -192,12 +192,14 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
     }
   }
 
+  /** Avatar options are per-race-and-class, so an old pick wouldn't necessarily be valid for a newly chosen race. */
   function pickRace(id: string) {
     setRaceId(id);
     setLookIndex(0);
+    setAvatarId(undefined);
   }
 
-  /** Avatar options are per-class, so an old pick wouldn't necessarily be valid for a newly chosen class. */
+  /** Avatar options are per-race-and-class, so an old pick wouldn't necessarily be valid for a newly chosen class. */
   function pickClass(id: string) {
     setClassId(id);
     setAvatarId(undefined);
