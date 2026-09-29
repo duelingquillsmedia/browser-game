@@ -3343,6 +3343,49 @@ aow design system); `apps/client/src/screens/AuthScreen.css` (new);
 comment); `apps/client/src/App.css` (removed orphaned `.auth-*`/
 `.google-button` rules).
 
+## Character Select: Condensed for Mobile (2026-09-29)
+
+Reported bug: on a portrait phone, Character Select ran wider than the
+viewport and required scrolling right to see the rest of the screen.
+Measured with a temporary debug harness at a 390px viewport: the page's
+actual content was 640px wide against a 390px viewport, entirely from
+`.aow-select-header` and `.aow-select-footer` -- both fixed-height flex
+rows with `flex-wrap` never set, sized for desktop. The header carried a
+full wordmark, a divider, a spacer, and a slot-count label all in one
+row; the footer carried a redundant second "‹ TITLE" button (the header
+already has one), a keyboard-only "DEL" keycap, a keyboard-only "ENTER"
+keycap, a row of slot pips, a "1-3 SELECT" hint, and a 240px-min-width
+play button -- none of which shrink or wrap on their own.
+
+**Fix**: a new `@media (max-width: 600px)` block in
+`CharacterSelectScreen.css`, following this app's existing phone
+breakpoint convention from `GameShell.css`. On header/footer: drop the
+divider, spacer, slot-count label, the duplicate "‹ TITLE" button, the
+pips, the hint text, and both keycaps (all keyboard/desktop-only or
+redundant with the header's own back link), leaving one condensed
+header row and a footer of just Delete + a flex-filling primary button.
+On cards: shrink portrait height, name/heading font sizes, the level
+and empty-state diamonds, and internal padding so three slots read as a
+condensed, list-like stack instead of a squeezed copy of the desktop
+grid. Footer padding uses `env(safe-area-inset-bottom)` per the same
+notch/home-indicator convention used elsewhere in the app.
+
+Verified with a temporary debug harness (deleted after) rendering the
+real screen at a 390x844 viewport: `document.documentElement.scrollWidth`
+now equals `clientWidth` (390, down from 640 before the fix). Because
+`loadRoster()`'s Supabase call hangs rather than resolving in this
+sandbox, that first pass only exercised the loading-placeholder cards;
+a second temporary harness rendered the actual `SlotCard` component
+directly with fabricated roster data (one filled slot with a long name,
+race/class, XP bar, and location/day/gold tiles, plus two empty slots)
+to confirm the real empty- and filled-card layouts also fit cleanly at
+390px with no overflow, before the harness and its temporary export
+were removed.
+
+### Critical files
+`apps/client/src/screens/CharacterSelectScreen.css` (new
+`@media (max-width: 600px)` block; no `.tsx`/logic changes).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

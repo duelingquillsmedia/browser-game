@@ -562,3 +562,156 @@
     grid-template-columns: minmax(0, 420px);
   }
 }
+
+/* Phone width: the header and footer were each sized for a desktop row
+   (back link + logo/wordmark + a slot-count label; a second back link +
+   delete + pips + a keyboard hint + a 240px-min play button) and neither
+   wrapped, so together they forced the whole page to scroll sideways --
+   confirmed at 390px viewport width (640px of actual content). Both get
+   the same treatment GameShell's own header/nav already use at this
+   breakpoint: keep the one primary affordance, drop everything that's
+   either secondary or duplicated elsewhere on the screen. Card art is
+   also shrunk so three stacked slots read as a compact list rather than
+   three nearly-full-screen panels. */
+@media (max-width: 600px) {
+  .aow-select-header {
+    height: 52px;
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  /* The slot count repeats what the footer's pips + each card's own
+     SLOT/SELECTED tag already show, so it's the first thing to go. */
+  .aow-select-header-divider,
+  .aow-select-header-spacer,
+  .aow-select-header-count {
+    display: none;
+  }
+
+  .aow-select-header .aow-wordmark {
+    font-size: 13px;
+    letter-spacing: 0.12em;
+  }
+
+  .aow-select-main {
+    padding: 18px 14px 14px;
+    gap: 16px;
+  }
+
+  .aow-select-heading {
+    gap: 4px;
+  }
+
+  .aow-select-heading .aow-h1 {
+    font-size: 21px;
+  }
+
+  .aow-select-subtitle {
+    font-size: 13px;
+  }
+
+  .aow-select-grid {
+    min-height: 0;
+    gap: 14px;
+  }
+
+  .aow-select-card-loading {
+    min-height: 200px;
+  }
+
+  /* Filled card: condensed portrait/stat sizing so a stacked slot reads
+     as a compact list row instead of a near-full-screen panel. */
+  .aow-select-portrait {
+    min-height: 140px;
+  }
+
+  .aow-select-portrait-glyph {
+    font-size: 44px;
+  }
+
+  .aow-select-level-diamond {
+    width: 38px;
+    height: 38px;
+  }
+
+  .aow-select-identity {
+    left: 14px;
+    right: 14px;
+    bottom: 10px;
+  }
+
+  .aow-select-name {
+    font-size: 19px;
+  }
+
+  .aow-select-stats {
+    padding: 10px 14px 12px;
+    gap: 8px;
+  }
+
+  /* Empty card: same idea, smaller diamond/type so it matches the
+     condensed filled-card height instead of standing out taller. */
+  .aow-select-card-empty {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .aow-select-empty-diamond {
+    width: 48px;
+    height: 48px;
+  }
+
+  .aow-select-empty-diamond span {
+    font-size: 20px;
+  }
+
+  .aow-select-empty-title {
+    font-size: 15px;
+  }
+
+  .aow-select-empty-sub {
+    font-size: 12px;
+  }
+
+  /* Footer: the header already has a "back to Title" link, so its own
+     duplicate goes; the keyboard hint and keycaps have nothing to press
+     on a touchscreen; the pips duplicate the SLOT/SELECTED tag already on
+     each stacked card. What's left -- Delete and the primary action --
+     comfortably shares one row. */
+  .aow-select-footer {
+    height: auto;
+    gap: 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .aow-select-footer > .aow-button-ghost,
+  .aow-select-hint,
+  .aow-select-pips {
+    display: none;
+  }
+
+  .aow-select-delete-button {
+    height: 44px;
+    padding: 0 14px;
+    font-size: 11px;
+  }
+
+  .aow-select-delete-button .aow-keycap {
+    display: none;
+  }
+
+  .aow-select-play-button {
+    flex: 1;
+    min-width: 0;
+    height: 46px;
+    padding: 0 14px;
+  }
+
+  .aow-select-play-keycap {
+    display: none;
+  }
+
+  .aow-select-confirm {
+    padding: 22px 20px;
+  }
+}
