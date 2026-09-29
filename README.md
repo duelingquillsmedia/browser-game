@@ -3039,6 +3039,57 @@ new small number.
 values); `packages/engine/src/__tests__/character.test.ts` (two
 hardcoded expectations updated to match).
 
+## Human Cleric Avatars: 8 More Variants, This Time Racially Distinct (2026-09-29)
+
+The user dropped 8 more pixel-art folders straight into the repo (no
+Drive round-trip needed this time) -- the same 4-female/4-male hair-color
+pattern as the Elf/Half-elf Cleric set, but modeled on Human instead
+(`Human_Cleric_{Male,Female}_Fair-skinned_{Black,Brown,Blonde,Red}_Hair`,
+each a full 8-direction "mannequin" export same as before). Unlike the
+Elf/Half-elf case, this pixel model is visibly different, not a shared
+asset -- rounder face, different armor shading -- so it couldn't just
+extend the existing 8 `AVATARS_BY_CLASS.cleric` entries in place.
+
+**Ids don't get renamed once shipped.** A character's chosen avatar is
+stored as a plain `avatarId` string on `Character.appearance`, matched
+by exact id in `getAvatarById` -- there's no race field on the avatar
+option itself for it to key off. Renaming the existing `cleric-male-
+black-hair`-style ids to something like `cleric-elf-male-black-hair`
+would have been the cleaner naming scheme, but would silently orphan
+any already-created character's saved look (this app now has real
+Supabase-backed player data, not just local fixtures). So the original
+8 ids stay exactly as they were; only their *labels* got an "Elf "
+prefix (label is display-only, safe to change freely). The new Human
+set got fresh `cleric-human-<gender>-<color>-hair` ids and "Human
+"-prefixed labels, landing in the same flat `AVATARS_BY_CLASS.cleric`
+list -- 16 options total now, still class-keyed rather than
+race-gated, so a Human Cleric can still pick the Elf-modeled look and
+vice versa if they want to.
+
+Only `south.png`/`south-east.png` were pulled from each folder's
+`Idle/rotations/`, per this project's standing avatar convention (the
+remaining 6 directions and each `metadata.json` were the tail of the
+same "mannequin" export format already established for pixel-art
+avatars, and were deleted rather than kept at the repo root once their
+two usable frames were extracted). Confirmed via PIL that all 16
+south/south-east PNGs decoded as clean 64x64 RGBA before wiring
+anything in -- git transferred these exactly, the way it did for the
+two Drive-corrupted files recovered a round ago, so no verify-and-retry
+loop was needed this time either.
+
+Verified with the same temporary debug-harness approach as every prior
+avatar round (deleted after): driving Character Creation through
+Human -> Cleric -> Appearance shows all 16 portraits rendering
+distinctly and correctly labeled by race, and selecting a Human
+variant shows the right combat-pose preview.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (8 new imports/entries, "Elf "
+prefix added to the original 8 labels); `apps/client/src/assets/
+avatars/cleric-human-{male,female}-{black,brown,blonde,red}-hair[-se]
+.png` (16 new files, extracted and renamed from the root-level
+`Human_Cleric_*` folders the user dropped in, which were removed after).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
