@@ -92,7 +92,7 @@ function App() {
     return (
       <TitleScreen
         gameName={GAME_NAME}
-        tagline={`A turn-based chronicle of ${WORLD_NAME}`}
+        tagline={`A turn-based RPG in the world of ${WORLD_NAME}`}
         onContinue={goToCharacterSelectOrAuth}
         onNewGame={goToCharacterSelectOrAuth}
       />
