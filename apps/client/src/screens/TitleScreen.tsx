@@ -5,13 +5,12 @@ import "./TitleScreen.css";
 export interface TitleScreenProps {
   gameName: string;
   tagline: string;
+  /** Whether the player already has a signed-in session -- swaps the primary button between "Continue" (resume) and "New Game" (their first visit, or signed out). */
+  isReturningPlayer: boolean;
   onContinue: () => void;
-  onNewGame: () => void;
 }
 
-const STUB_ITEMS = ["LOAD GAME", "SETTINGS"];
-
-export function TitleScreen({ gameName, tagline, onContinue, onNewGame }: TitleScreenProps) {
+export function TitleScreen({ gameName, tagline, isReturningPlayer, onContinue }: TitleScreenProps) {
   const [toast, setToast] = useState<string | null>(null);
 
   function handleStub(label: string) {
@@ -29,17 +28,12 @@ export function TitleScreen({ gameName, tagline, onContinue, onNewGame }: TitleS
 
         <div className="aow-title-menu">
           <button type="button" className="aow-title-item primary" onClick={onContinue}>
-            <span>CONTINUE</span>
-            <span className="aow-title-item-sub">Resume your journey</span>
+            <span>{isReturningPlayer ? "CONTINUE" : "NEW GAME"}</span>
+            <span className="aow-title-item-sub">{isReturningPlayer ? "Resume your journey" : "Begin your journey"}</span>
           </button>
-          <button type="button" className="aow-title-item" onClick={onNewGame}>
-            NEW GAME
+          <button type="button" className="aow-title-item" onClick={() => handleStub("SETTINGS")}>
+            SETTINGS
           </button>
-          {STUB_ITEMS.map((label) => (
-            <button key={label} type="button" className="aow-title-item" onClick={() => handleStub(label)}>
-              {label}
-            </button>
-          ))}
         </div>
       </div>
 

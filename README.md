@@ -3263,6 +3263,43 @@ warrior-*.png` / `warrior-human-*.png` / `warrior-dwarf-*.png` (48 new
 files, extracted and renamed from the 24 root-level scaffold folders,
 removed after).
 
+## Title Screen: One Button, Not Three (2026-09-29)
+
+The Title screen had three menu items -- Continue, New Game, and a
+"Load Game" stub that only ever showed a toast. Looking at `App.tsx`
+made the redundancy obvious: Continue and New Game were wired to the
+exact same handler (`goToCharacterSelectOrAuth`), which checks for a
+Supabase session and routes to Character Select if one exists, Auth if
+not -- so the two buttons already did the identical thing given the
+same account state. The user asked to drop Load Game outright and
+collapse Continue/New Game into a single button that reads "Continue"
+for a returning (already signed-in) player and "New Game" for
+everyone else.
+
+Doing this required App.tsx to know the session state *before*
+rendering the Title screen, not just at click time (the existing
+handler checked it lazily, which was fine when both buttons did the
+same thing but not once the label itself needs to depend on it). Added
+a `hasSession` state, populated once via `supabase.auth.getSession()`
+on mount and kept in sync by the existing `onAuthStateChange`
+listener's SIGNED_IN/SIGNED_OUT branches. `TitleScreen` now takes a
+single `isReturningPlayer` boolean plus one `onContinue` handler
+instead of separate `onContinue`/`onNewGame` props, and renders one
+primary button whose label and subtext ("Continue / Resume your
+journey" vs. "New Game / Begin your journey") switch on that flag --
+Settings is the only other menu item now.
+
+Verified with a temporary debug harness rendering `TitleScreen`
+directly with both boolean states (real Supabase auth isn't reachable
+from this sandbox, per this project's established pattern) -- deleted
+after confirming both labels, subtext, and styling render correctly
+and Load Game no longer appears in either state.
+
+### Critical files
+`apps/client/src/App.tsx` (`hasSession` state, single `TitleScreen`
+prop set); `apps/client/src/screens/TitleScreen.tsx` (one primary
+button instead of three menu items).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

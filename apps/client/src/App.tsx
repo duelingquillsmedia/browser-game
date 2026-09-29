@@ -37,6 +37,14 @@ function App() {
     screenRef.current = screen;
   }, [screen]);
 
+  // Drives the Title screen's primary button: "Continue" for a returning
+  // (already signed-in) player, "New Game" otherwise. Checked once up front
+  // and kept in sync by the auth listener below.
+  const [hasSession, setHasSession] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session));
+  }, []);
+
   // Picks up sign-ins that complete via a full-page redirect (Google OAuth,
   // email confirmation links) — those land back here with no in-memory
   // screen state, so without this the user would be stuck looking at
@@ -45,10 +53,14 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" && (screenRef.current.kind === "intro" || screenRef.current.kind === "auth")) {
-        setScreen({ kind: "characterSelect" });
+      if (event === "SIGNED_IN") {
+        setHasSession(true);
+        if (screenRef.current.kind === "intro" || screenRef.current.kind === "auth") {
+          setScreen({ kind: "characterSelect" });
+        }
       }
       if (event === "SIGNED_OUT") {
+        setHasSession(false);
         setScreen({ kind: "intro" });
       }
     });
@@ -80,9 +92,10 @@ function App() {
     );
   }
 
-  // Both Title screen buttons land on Character Select now -- there's no
-  // path that skips it, so the account's three-slot cap holds structurally
-  // (Character Creation is only reachable from an empty slot there).
+  // The Title screen's one button lands on Character Select now -- there's
+  // no path that skips it, so the account's three-slot cap holds
+  // structurally (Character Creation is only reachable from an empty slot
+  // there).
   async function goToCharacterSelectOrAuth() {
     const { data } = await supabase.auth.getSession();
     setScreen({ kind: data.session ? "characterSelect" : "auth" });
@@ -93,8 +106,8 @@ function App() {
       <TitleScreen
         gameName={GAME_NAME}
         tagline={`A turn-based RPG in the world of ${WORLD_NAME}`}
+        isReturningPlayer={hasSession}
         onContinue={goToCharacterSelectOrAuth}
-        onNewGame={goToCharacterSelectOrAuth}
       />
     );
   }
