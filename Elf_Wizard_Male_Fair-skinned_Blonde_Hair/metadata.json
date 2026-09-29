@@ -1,0 +1,36 @@
+{
+  "group_id": "b5bb1ecb-3ce1-4492-8d5b-3d30ab3dcee1",
+  "states": [
+    {
+      "character": {
+        "id": "079863aa-a372-4823-a422-2f8717c38c8c",
+        "name": "Idle",
+        "prompt": "A male elf wizard with fair-skin and blonde hair. He is wearing blue robe and holding a staff.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T04:42:45.057663+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T04:50:02.876196"
+}
