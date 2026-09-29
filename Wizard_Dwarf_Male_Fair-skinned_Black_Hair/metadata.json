@@ -1,0 +1,36 @@
+{
+  "group_id": "49ba5482-3b0c-4e1a-8efe-a6f7f1727544",
+  "states": [
+    {
+      "character": {
+        "id": "c90a74ce-aace-4375-8c0f-ac4d4ba2f254",
+        "name": "Idle",
+        "prompt": "A male dwarf wizard with fair-skin and black hair and black beard. He is wearing blue robe and holding a staff.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T05:12:17.366240+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T05:20:43.087198"
+}
