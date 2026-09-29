@@ -1,0 +1,36 @@
+{
+  "group_id": "1b93b9b2-7b24-488f-be9b-a475ecf65be7",
+  "states": [
+    {
+      "character": {
+        "id": "e1cbb7dc-6e2d-40ff-aadc-64697cb9b22a",
+        "name": "Idle",
+        "prompt": "A female dwarf barbarian with fair skin and blonde hair. She is heavyset like a dwarf. She is wearing minimal leather armor. She is wielding a two-handed axe.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T06:48:03.253820+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T06:55:59.257695"
+}

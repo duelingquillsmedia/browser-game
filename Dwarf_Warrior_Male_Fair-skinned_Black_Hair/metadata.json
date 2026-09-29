@@ -1,0 +1,36 @@
+{
+  "group_id": "1985d1ef-515b-4d90-987f-a816e9a4c94b",
+  "states": [
+    {
+      "character": {
+        "id": "c965b23d-8463-4de6-b70d-c15767eebed9",
+        "name": "Idle",
+        "prompt": "A male dwarf barbarian with fair skin and black hair and a black beard. He is wearing minimal leather armor. He is wielding a two-handed axe.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T06:37:03.925357+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T06:55:49.665971"
+}
