@@ -3129,6 +3129,39 @@ tagged, `getAvatarsForClass` -> `getAvatarsForRaceClass`);
 `apps/client/src/screens/CharacterCreationScreen.tsx` (Appearance step
 filters by race now, `pickRace` resets `avatarId`).
 
+## Dwarf Cleric Avatars: Third Race Slots Straight Into the Existing Gate (2026-09-29)
+
+The user dropped 8 more folders into the repo -- `Dwarf_Cleric_
+{Male,Female}_Fair-skinned_{Black,Brown,Blonde,Red}_Hair`, same
+"mannequin" 8-direction export as the Elf/Half-elf and Human sets
+before it -- and asked for them wired in gated by race and class, same
+as the last round already established.
+
+Because the race-gating work landed just before this drop, adding a
+third race was mechanically identical to adding the second: verify all
+16 south/south-east PNGs decode as clean 64x64 RGBA (they did -- no
+corruption, git transfer again), move them into `assets/avatars/` as
+`cleric-dwarf-<gender>-<color>-hair[-se].png`, add 8 new
+`AvatarOption` entries with `raceIds: ["dwarf"]` and "Dwarf "-prefixed
+labels, delete the scaffold folders. No changes to `getAvatarsForRaceClass`,
+`CharacterCreationScreen.tsx`, or the gating logic itself were needed --
+that infrastructure already generalizes to any number of races per
+class, it just didn't have a third one to filter yet.
+
+Verified with the same temporary debug harness as every prior avatar
+round (deleted after): Dwarf + Cleric shows exactly its own 8
+portraits (bearded, stockier build, clearly distinct from both other
+sets), selecting one previews correctly with its combat pose, and a
+quick count confirmed Human/Elf/Half-elf still show zero Dwarf-labeled
+cards -- the three sets don't leak into each other.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (8 new imports/entries, `raceIds:
+["dwarf"]`); `apps/client/src/assets/avatars/cleric-dwarf-
+{male,female}-{black,brown,blonde,red}-hair[-se].png` (16 new files,
+extracted and renamed from the root-level `Dwarf_Cleric_*` folders,
+removed after).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

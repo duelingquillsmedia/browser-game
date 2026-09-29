@@ -30,6 +30,22 @@ import clericHumanMaleBlondeHair from "../assets/avatars/cleric-human-male-blond
 import clericHumanMaleBlondeHairSe from "../assets/avatars/cleric-human-male-blonde-hair-se.png";
 import clericHumanMaleRedHair from "../assets/avatars/cleric-human-male-red-hair.png";
 import clericHumanMaleRedHairSe from "../assets/avatars/cleric-human-male-red-hair-se.png";
+import clericDwarfFemaleBlackHair from "../assets/avatars/cleric-dwarf-female-black-hair.png";
+import clericDwarfFemaleBlackHairSe from "../assets/avatars/cleric-dwarf-female-black-hair-se.png";
+import clericDwarfFemaleBrownHair from "../assets/avatars/cleric-dwarf-female-brown-hair.png";
+import clericDwarfFemaleBrownHairSe from "../assets/avatars/cleric-dwarf-female-brown-hair-se.png";
+import clericDwarfFemaleBlondeHair from "../assets/avatars/cleric-dwarf-female-blonde-hair.png";
+import clericDwarfFemaleBlondeHairSe from "../assets/avatars/cleric-dwarf-female-blonde-hair-se.png";
+import clericDwarfFemaleRedHair from "../assets/avatars/cleric-dwarf-female-red-hair.png";
+import clericDwarfFemaleRedHairSe from "../assets/avatars/cleric-dwarf-female-red-hair-se.png";
+import clericDwarfMaleBlackHair from "../assets/avatars/cleric-dwarf-male-black-hair.png";
+import clericDwarfMaleBlackHairSe from "../assets/avatars/cleric-dwarf-male-black-hair-se.png";
+import clericDwarfMaleBrownHair from "../assets/avatars/cleric-dwarf-male-brown-hair.png";
+import clericDwarfMaleBrownHairSe from "../assets/avatars/cleric-dwarf-male-brown-hair-se.png";
+import clericDwarfMaleBlondeHair from "../assets/avatars/cleric-dwarf-male-blonde-hair.png";
+import clericDwarfMaleBlondeHairSe from "../assets/avatars/cleric-dwarf-male-blonde-hair-se.png";
+import clericDwarfMaleRedHair from "../assets/avatars/cleric-dwarf-male-red-hair.png";
+import clericDwarfMaleRedHairSe from "../assets/avatars/cleric-dwarf-male-red-hair-se.png";
 
 export interface AvatarOption {
   id: string;
@@ -170,6 +186,62 @@ export const AVATARS_BY_CLASS: Record<string, AvatarOption[]> = {
       raceIds: ["human"],
       image: clericHumanFemaleRedHair,
       combatImage: clericHumanFemaleRedHairSe,
+    },
+    {
+      id: "cleric-dwarf-male-black-hair",
+      label: "Dwarf Male Black Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfMaleBlackHair,
+      combatImage: clericDwarfMaleBlackHairSe,
+    },
+    {
+      id: "cleric-dwarf-male-brown-hair",
+      label: "Dwarf Male Brown Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfMaleBrownHair,
+      combatImage: clericDwarfMaleBrownHairSe,
+    },
+    {
+      id: "cleric-dwarf-male-blonde-hair",
+      label: "Dwarf Male Blonde Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfMaleBlondeHair,
+      combatImage: clericDwarfMaleBlondeHairSe,
+    },
+    {
+      id: "cleric-dwarf-male-red-hair",
+      label: "Dwarf Male Red Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfMaleRedHair,
+      combatImage: clericDwarfMaleRedHairSe,
+    },
+    {
+      id: "cleric-dwarf-female-black-hair",
+      label: "Dwarf Female Black Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfFemaleBlackHair,
+      combatImage: clericDwarfFemaleBlackHairSe,
+    },
+    {
+      id: "cleric-dwarf-female-brown-hair",
+      label: "Dwarf Female Brown Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfFemaleBrownHair,
+      combatImage: clericDwarfFemaleBrownHairSe,
+    },
+    {
+      id: "cleric-dwarf-female-blonde-hair",
+      label: "Dwarf Female Blonde Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfFemaleBlondeHair,
+      combatImage: clericDwarfFemaleBlondeHairSe,
+    },
+    {
+      id: "cleric-dwarf-female-red-hair",
+      label: "Dwarf Female Red Hair",
+      raceIds: ["dwarf"],
+      image: clericDwarfFemaleRedHair,
+      combatImage: clericDwarfFemaleRedHairSe,
     },
   ],
 };
