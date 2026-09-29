@@ -45,10 +45,10 @@ function App() {
     supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session));
   }, []);
 
-  // Picks up sign-ins that complete via a full-page redirect (Google OAuth,
-  // email confirmation links) — those land back here with no in-memory
-  // screen state, so without this the user would be stuck looking at
-  // whatever screen the page happened to load on.
+  // Picks up sign-ins that complete via Google's full-page OAuth redirect --
+  // that lands back here with no in-memory screen state, so without this
+  // the user would be stuck looking at whatever screen the page happened
+  // to load on.
   useEffect(() => {
     const {
       data: { subscription },
@@ -114,7 +114,7 @@ function App() {
 
   if (screen.kind === "auth") {
     return (
-      <AuthScreen onAuthenticated={() => setScreen({ kind: "characterSelect" })} onBack={() => setScreen({ kind: "intro" })} />
+      <AuthScreen onBack={() => setScreen({ kind: "intro" })} />
     );
   }
 

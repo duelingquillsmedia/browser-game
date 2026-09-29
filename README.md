@@ -103,7 +103,7 @@ client-server milestone (combat is still resolved in the browser for now).
   between a longsword with a chain shirt or with lighter studded leather).
   Whichever's picked comes already equipped, plus a spare accessory to try
   swapping in.
-- Real accounts (email/password via Supabase Auth) and server-side character
+- Real accounts (Google OAuth via Supabase Auth) and server-side character
   storage (Postgres via Supabase, row-level security scoped to the signed-in
   user) — see [Backend](#backend).
 - **Cut from the interface (solo game for now)**: the Misfit Six companion
@@ -262,11 +262,11 @@ directly from the client via `@supabase/supabase-js` — no custom server yet.
   against Postgres (simulating both the owning user and another user) that
   a user can fully manage their own characters and can't read, edit, or
   delete anyone else's.
-- **Auth**: email/password and Google OAuth via Supabase Auth (`AuthScreen`).
-  New email sign-ups may require confirmation depending on the project's
-  auth settings — the UI handles both the "signed in immediately" and
-  "check your email" cases. Google requires one-time setup outside this
-  repo (see below) before the button works.
+- **Auth**: Google OAuth only via Supabase Auth (`AuthScreen`) -- the same
+  button both signs up a first-time player and signs a returning one back
+  in, since Supabase creates the account automatically on first Google
+  sign-in. Requires one-time setup outside this repo (see below) before the
+  button works.
 - **Env vars**: `apps/client/.env` (gitignored) needs `VITE_SUPABASE_URL`
   and `VITE_SUPABASE_PUBLISHABLE_KEY`; see `.env.example`.
 
@@ -3299,6 +3299,49 @@ and Load Game no longer appears in either state.
 `apps/client/src/App.tsx` (`hasSession` state, single `TitleScreen`
 prop set); `apps/client/src/screens/TitleScreen.tsx` (one primary
 button instead of three menu items).
+
+## Auth: Google-Only, Restyled to Match the Rest of the App (2026-09-29)
+
+Two asks: drop email/password sign-up entirely (Google-only for now,
+more SSO providers later), and restyle the Auth screen, which the user
+pointed out "still has the old design's CSS" -- true: `AuthScreen.tsx`
+was still using the pre-redesign global classes from `App.css`
+(`--accent`/`--bg-panel`/etc.), never migrated to the `--aow-*` design
+system the rest of the out-of-combat screens (Title, Character Select,
+Character Creation, ...) were rebuilt in over earlier rounds.
+
+**Removed**: the email/password form, its `mode` state (sign-in vs.
+sign-up), the "or" divider, and the confirmation-email info message --
+all of it was only reachable through that form. `onAuthenticated` also
+came out of `AuthScreenProps` entirely: it was already dead for the
+Google path even before this change (a successful Google redirect
+navigates away from the page; `App.tsx`'s `onAuthStateChange` listener
+is what actually picks the session back up on return, not a callback
+from this component), and email sign-in was its only real caller.
+
+**Restyled**: rebuilt as its own `aow-auth` screen modeled on Title's
+centered-ring composition (same radial background/ring treatment, same
+runic divider glyph, `Cinzel` heading) rather than Character Select's
+header/footer layout, since Auth is a single focused action the same
+way Title is. Copy changed from mode-dependent "Welcome Back"/"Create
+an Account" to one neutral "Sign In" / "Continue with Google to create
+or access your account" -- accurate now that the same button both
+creates a first-time account and signs a returning player back in.
+Deleted the now-orphaned `.auth-*`/`.google-button` rules from
+`App.css` once nothing referenced them anymore.
+
+Verified with a temporary debug harness rendering `AuthScreen` directly
+(deleted after; real Google OAuth can't complete inside this sandbox
+regardless): the redesigned screen renders correctly, matches the
+ring/typography treatment used elsewhere, and the back link returns to
+Title without error.
+
+### Critical files
+`apps/client/src/screens/AuthScreen.tsx` (Google-only, rebuilt on the
+aow design system); `apps/client/src/screens/AuthScreen.css` (new);
+`apps/client/src/App.tsx` (dropped `onAuthenticated` prop, updated
+comment); `apps/client/src/App.css` (removed orphaned `.auth-*`/
+`.google-button` rules).
 
 ## Lore
 

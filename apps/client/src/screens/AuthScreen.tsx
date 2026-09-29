@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { BackButton } from "../components/BackButton";
+import "../theme/aow-theme.css";
+import "./AuthScreen.css";
 
 function GoogleIcon() {
   return (
@@ -26,29 +27,15 @@ function GoogleIcon() {
 }
 
 export interface AuthScreenProps {
-  onAuthenticated: () => void;
   onBack: () => void;
 }
 
-type Mode = "sign-in" | "sign-up";
-
-export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
-  const [mode, setMode] = useState<Mode>("sign-in");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export function AuthScreen({ onBack }: AuthScreenProps) {
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  function switchMode() {
-    setMode((m) => (m === "sign-in" ? "sign-up" : "sign-in"));
-    setError(null);
-    setInfo(null);
-  }
 
   async function handleGoogleSignIn() {
     setError(null);
-    setInfo(null);
     setSubmitting(true);
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -63,85 +50,25 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
     // redirect via supabase.auth.onAuthStateChange.
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setInfo(null);
-    setSubmitting(true);
-
-    try {
-      if (mode === "sign-up") {
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-        if (signUpError) throw signUpError;
-        if (data.session) {
-          onAuthenticated();
-        } else {
-          setInfo("Account created — check your email to confirm it, then sign in.");
-          setMode("sign-in");
-        }
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw signInError;
-        onAuthenticated();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
-    <div className="screen auth-screen">
-      <BackButton onClick={onBack} />
-      <h1>{mode === "sign-in" ? "Welcome Back" : "Create an Account"}</h1>
-      <p className="subtitle">
-        {mode === "sign-in" ? "Sign in to see your heroes." : "One account, every hero you forge in Eridan."}
-      </p>
-
-      <button type="button" className="google-button" disabled={submitting} onClick={handleGoogleSignIn}>
-        <GoogleIcon />
-        Continue with Google
+    <div className="aow aow-auth">
+      <div className="aow-auth-rings" />
+      <button type="button" className="aow-auth-nav-link" onClick={onBack}>
+        ‹ TITLE
       </button>
 
-      <div className="auth-divider">
-        <span>or</span>
-      </div>
+      <div className="aow-auth-content">
+        <div className="aow-auth-divider">᛭ ᛭ ᛭</div>
+        <h1 className="aow-auth-heading">Sign In</h1>
+        <p className="aow-auth-subtitle">Continue with Google to create or access your account.</p>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span>Email</span>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>Password</span>
-          <input
-            type="password"
-            required
-            minLength={6}
-            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-
-        {error && <p className="auth-error">{error}</p>}
-        {info && <p className="auth-info">{info}</p>}
-
-        <button type="submit" className="primary" disabled={submitting}>
-          {submitting ? "Please wait…" : mode === "sign-in" ? "Sign In" : "Sign Up"}
+        <button type="button" className="aow-auth-google-button" disabled={submitting} onClick={handleGoogleSignIn}>
+          <GoogleIcon />
+          {submitting ? "Redirecting…" : "Continue with Google"}
         </button>
-      </form>
 
-      <button type="button" className="ghost" onClick={switchMode}>
-        {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-      </button>
+        {error && <p className="aow-warning aow-auth-error">{error}</p>}
+      </div>
     </div>
   );
 }
