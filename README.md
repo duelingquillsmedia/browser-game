@@ -2943,6 +2943,37 @@ source images -- female red hair's front portrait, female blonde hair's
 combat pose -- remain corrupted at the Drive source and are not yet
 addable).
 
+## Female Red Hair Cleric Avatar: Recovered via GitHub Instead of Drive (2026-09-29)
+
+The previous round left two source images corrupted at the Drive end
+(confirmed by repeated identical-byte re-fetches all failing PNG
+CRC/zlib checks): Female Red Hair's front portrait and Female Blonde
+Hair's combat pose. Told about this, the user pushed the two Female Red
+Hair images (`south.png`/`south-east.png`, re-exported outside Drive)
+directly into this repo instead of back through Drive.
+
+That sidesteps the whole problem class from the previous round, not just
+this one instance of it: pulling a binary file through `git fetch`/`git
+pull` is exact by construction, with no base64-through-the-model-context
+transcription step to corrupt -- unlike `download_file_content`, which
+returns the file as a base64 string that then has to be reproduced
+byte-for-byte into a `Write` call, the failure mode the last round spent
+most of its effort working around. Confirmed both files decoded to
+exactly the expected byte sizes (4674 / 4171, matching what Drive had
+reported for this same variant) and opened cleanly as 64x64 RGBA with
+PIL before wiring them in -- this time on the first try, no corruption.
+`cleric-female-red-hair` is now a complete entry (portrait + combat
+pose) in `AVATARS_BY_CLASS.cleric`, bringing Elf/Half-elf Cleric to all
+8 of the originally-requested hair-color variants; Female Blonde Hair's
+combat pose is still outstanding and would benefit from the same
+git-drop approach if the user re-exports it.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (new import + `cleric-female-red-hair`
+entry); `apps/client/src/assets/avatars/cleric-female-red-hair.png` +
+`cleric-female-red-hair-se.png` (moved and renamed from the root-level
+files the user dropped into the branch).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
