@@ -130,7 +130,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Leather Armor",
     description: "Boiled leather, light enough not to slow a rogue down.",
     slot: "armor",
-    armorRating: 60,
+    armorRating: 5,
     value: 10,
   },
   studdedLeather: {
@@ -138,7 +138,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Studded Leather",
     description: "Leather reinforced with iron studs at the joints.",
     slot: "armor",
-    armorRating: 120,
+    armorRating: 8,
     value: 20,
   },
   chainShirt: {
@@ -146,7 +146,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Chain Shirt",
     description: "A shirt of fine riveted mail, heavier but reliable.",
     slot: "armor",
-    armorRating: 180,
+    armorRating: 12,
     value: 35,
   },
   travelersRobe: {
@@ -154,7 +154,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Traveler's Robe",
     description: "Warded cloth that turns a glancing blow without hampering spellcraft.",
     slot: "armor",
-    armorRating: 60,
+    armorRating: 5,
     value: 8,
   },
   luckyCharm: {
@@ -162,7 +162,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Lucky Charm",
     description: "A worn coin on a leather cord — probably does nothing. Probably.",
     slot: "accessory",
-    armorRating: 60,
+    armorRating: 3,
     abilityBonuses: { dex: 1 },
     value: 8,
   },
@@ -171,7 +171,7 @@ export const ITEM_TEMPLATES: Record<string, ItemTemplate> = {
     name: "Ring of Warding",
     description: "A plain silver band, faintly warm to the touch.",
     slot: "accessory",
-    armorRating: 120,
+    armorRating: 7,
     abilityBonuses: { wis: 3 },
     value: 25,
   },

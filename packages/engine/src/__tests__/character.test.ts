@@ -46,8 +46,8 @@ describe("createCharacter", () => {
     expect(character.maxHp).toBe(240);
     expect(character.hp).toBe(character.maxHp);
 
-    // Starting gear: Hunter's Shortbow (no armor rating) + Leather Armor (+60)
-    expect(character.armorRating).toBe(60);
+    // Starting gear: Hunter's Shortbow (no armor rating) + Leather Armor (+5)
+    expect(character.armorRating).toBe(5);
 
     expect(character.proficiencyBonus).toBe(2);
     // At level 1, only the generated Basic Attack (Rogue's own leveled abilities start at lvl 2) plus Defend/Flee are known.
@@ -187,7 +187,7 @@ describe("equipItem / unequipItem", () => {
     const after = equipItem(before, "luckyCharm");
 
     expect(after.equipment.accessory).toBe("luckyCharm");
-    expect(after.armorRating).toBe(before.armorRating + 60);
+    expect(after.armorRating).toBe(before.armorRating + 3);
     // Equipping doesn't consume the item from inventory.
     expect(ownsItem(after, "luckyCharm")).toBe(true);
   });
@@ -197,7 +197,7 @@ describe("equipItem / unequipItem", () => {
     const unequipped = unequipItem(equipped, "accessory");
 
     expect(unequipped.equipment.accessory).toBeUndefined();
-    expect(unequipped.armorRating).toBe(equipped.armorRating - 60);
+    expect(unequipped.armorRating).toBe(equipped.armorRating - 3);
   });
 
   it("names and scales each Basic Attack variant from the class's own definition, and reverts when unequipped", () => {

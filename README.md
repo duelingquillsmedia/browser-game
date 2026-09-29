@@ -2996,6 +2996,49 @@ both a front portrait and a combat pose.
 female-blonde-hair-se.png` (moved and renamed from the root-level file
 the user dropped into the branch).
 
+## Starting Gear: Armor Numbers Rescaled to Match Weapon Damage (2026-09-29)
+
+The user wanted armor ratings on starting gear brought down to roughly
+the same scale as weapon damage numbers (e.g. "leather armor = 5 armor;
+studded leather = 8 armor") instead of the old 60-180 range, specifically
+so there's room to scale up into meaningfully bigger numbers on better
+gear later. This also applied to accessories -- Ring of Warding's armor
+needed to land below 10.
+
+**The catch, surfaced before touching anything:** armor rating isn't
+displayed raw -- it feeds Evasion% at a fixed 5% conversion rate (the
+Character Stats Style Sheet's "Evasion = 50% of Dexterity + 5% of armor
+rating", `ARMOR_EVASION_RATIO` in `stats.ts`). Shrinking Leather Armor
+from 60 to 5 without touching that conversion drops its Evasion
+contribution from 3% to 0.25% -- armor becomes nearly cosmetic at these
+starting-gear numbers. Asked directly whether to also rescale the
+conversion (keeping armor's actual combat weight roughly where it is
+today) or leave the 5% formula alone (accepting that starting armor is
+now a much smaller factor, by design, until better gear raises the raw
+numbers back up), the user chose to leave the formula alone -- the
+Style Sheet's stat math is intentional and out of scope here; only the
+item catalog's numbers were being asked to change.
+
+New `armorRating` values (`packages/engine/src/items.ts`): Leather
+Armor 60->5, Studded Leather 120->8, Chain Shirt 180->12, Traveler's
+Robe 60->5, Lucky Charm 60->3, Ring of Warding 120->7 (all now below
+10, as asked). Weapon damage numbers (4-20 across the starting
+catalog) were left untouched -- they were already the scale being
+matched against. Two engine tests hardcoded the old absolute numbers
+(a level-1 Rogue's starting Leather Armor rating, and the Lucky Charm's
+equip/unequip delta) and were updated to match; a third test comparing
+a migrated character's armor rating against a freshly-created one
+needed no change since it's self-referential. All 157 engine tests
+pass, and the Character screen's Armor stat (confirmed via a temporary
+debug harness, deleted after) now reads `+12` for a Warrior's starting
+Chain Shirt instead of `+180`, with Evasion computed correctly off the
+new small number.
+
+### Critical files
+`packages/engine/src/items.ts` (all six armor/accessory `armorRating`
+values); `packages/engine/src/__tests__/character.test.ts` (two
+hardcoded expectations updated to match).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
