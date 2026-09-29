@@ -3,6 +3,7 @@ import clericFemaleBlackHairSe from "../assets/avatars/cleric-female-black-hair-
 import clericFemaleBrownHair from "../assets/avatars/cleric-female-brown-hair.png";
 import clericFemaleBrownHairSe from "../assets/avatars/cleric-female-brown-hair-se.png";
 import clericFemaleBlondeHair from "../assets/avatars/cleric-female-blonde-hair.png";
+import clericFemaleBlondeHairSe from "../assets/avatars/cleric-female-blonde-hair-se.png";
 import clericMaleBlackHair from "../assets/avatars/cleric-male-black-hair.png";
 import clericMaleBlackHairSe from "../assets/avatars/cleric-male-black-hair-se.png";
 import clericMaleBrownHair from "../assets/avatars/cleric-male-brown-hair.png";
@@ -73,6 +74,7 @@ export const AVATARS_BY_CLASS: Record<string, AvatarOption[]> = {
       id: "cleric-female-blonde-hair",
       label: "Female Blonde Hair",
       image: clericFemaleBlondeHair,
+      combatImage: clericFemaleBlondeHairSe,
     },
     {
       id: "cleric-female-red-hair",

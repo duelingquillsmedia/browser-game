@@ -2974,6 +2974,28 @@ entry); `apps/client/src/assets/avatars/cleric-female-red-hair.png` +
 `cleric-female-red-hair-se.png` (moved and renamed from the root-level
 files the user dropped into the branch).
 
+## Female Blonde Hair Cleric Combat Pose: Last Gap Closed (2026-09-29)
+
+The user dropped Female Blonde Hair's `south-east.png` (its combat pose,
+the one file left corrupted at the Drive source from two rounds ago)
+into the repo the same way as Female Red Hair. Decoded to exactly the
+expected 4339 bytes and opened cleanly as 64x64 RGBA -- no corruption,
+same git-transfer approach as last time. Moved into
+`apps/client/src/assets/avatars/cleric-female-blonde-hair-se.png` and
+added as `combatImage` on the existing `cleric-female-blonde-hair`
+entry (previously portrait-only, silently falling back to the front
+portrait in combat). Confirmed via the build output that the two
+images now bundle as genuinely separate assets rather than one file
+serving both roles. This was the last missing piece: all 8 originally-
+requested Elf/Half-elf Cleric hair-color variants are now complete with
+both a front portrait and a combat pose.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (new import + `combatImage` on
+`cleric-female-blonde-hair`); `apps/client/src/assets/avatars/cleric-
+female-blonde-hair-se.png` (moved and renamed from the root-level file
+the user dropped into the branch).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
