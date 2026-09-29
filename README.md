@@ -3228,6 +3228,41 @@ wizard-*.png` / `wizard-human-*.png` / `wizard-dwarf-*.png` (48 new
 files, extracted and renamed from the 24 root-level scaffold folders,
 removed after).
 
+## Warrior Avatars: Third Class, Consistent Folder Naming This Time (2026-09-29)
+
+24 more pixel-art folders, this time for Warrior -- same full coverage
+as Cleric and Wizard (Elf/Half-elf, Human, Dwarf x 4 hair colors x 2
+genders). Unlike the Wizard drop, this one used one consistent naming
+pattern throughout (`Race_Warrior_Gender_Fair-skinned_Color_Hair` for
+all 24, no swapped word order to work around). Metadata's `prompt`
+field describes each as "a ... barbarian ... wielding a two-handed
+axe" in minimal leather armor -- flavor text for the visual archetype,
+not a different class; these are still Warrior-class avatars (the
+engine's Warrior is the Fury-generating melee class from the classes.ts
+rewrite).
+
+Same mechanical process as Wizard: verified all 48 south/south-east
+PNGs decoded as clean 64x64 RGBA (no corruption, git transfer), moved
+into `assets/avatars/` as `warrior-*.png` (Elf/Half-elf, plain ids),
+`warrior-human-*.png`, and `warrior-dwarf-*.png`, added a `warrior` key
+to `AVATARS_BY_CLASS` with the same 24-entry shape and `raceIds` gating
+as Cleric/Wizard, deleted the 24 scaffold folders. No changes needed to
+`getAvatarsForRaceClass` or any other gating logic.
+
+Verified with the usual temporary debug harness (deleted after): Human,
+Elf, and Dwarf + Warrior each show exactly their own 8 axe-wielding
+portraits; Half-elf + Warrior shows all 16. Cleric and Wizard's own
+avatar lists are confirmed unaffected by every prior round's regression
+checks using this same pattern, so no new regression check was needed
+here beyond the build/typecheck passing clean.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (48 new imports, new `warrior` key in
+`AVATARS_BY_CLASS` with 24 entries); `apps/client/src/assets/avatars/
+warrior-*.png` / `warrior-human-*.png` / `warrior-dwarf-*.png` (48 new
+files, extracted and renamed from the 24 root-level scaffold folders,
+removed after).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -94,6 +94,54 @@ import wizardDwarfFemaleBlondeHair from "../assets/avatars/wizard-dwarf-female-b
 import wizardDwarfFemaleBlondeHairSe from "../assets/avatars/wizard-dwarf-female-blonde-hair-se.png";
 import wizardDwarfFemaleRedHair from "../assets/avatars/wizard-dwarf-female-red-hair.png";
 import wizardDwarfFemaleRedHairSe from "../assets/avatars/wizard-dwarf-female-red-hair-se.png";
+import warriorMaleBlackHair from "../assets/avatars/warrior-male-black-hair.png";
+import warriorMaleBlackHairSe from "../assets/avatars/warrior-male-black-hair-se.png";
+import warriorMaleBrownHair from "../assets/avatars/warrior-male-brown-hair.png";
+import warriorMaleBrownHairSe from "../assets/avatars/warrior-male-brown-hair-se.png";
+import warriorMaleBlondeHair from "../assets/avatars/warrior-male-blonde-hair.png";
+import warriorMaleBlondeHairSe from "../assets/avatars/warrior-male-blonde-hair-se.png";
+import warriorMaleRedHair from "../assets/avatars/warrior-male-red-hair.png";
+import warriorMaleRedHairSe from "../assets/avatars/warrior-male-red-hair-se.png";
+import warriorFemaleBlackHair from "../assets/avatars/warrior-female-black-hair.png";
+import warriorFemaleBlackHairSe from "../assets/avatars/warrior-female-black-hair-se.png";
+import warriorFemaleBrownHair from "../assets/avatars/warrior-female-brown-hair.png";
+import warriorFemaleBrownHairSe from "../assets/avatars/warrior-female-brown-hair-se.png";
+import warriorFemaleBlondeHair from "../assets/avatars/warrior-female-blonde-hair.png";
+import warriorFemaleBlondeHairSe from "../assets/avatars/warrior-female-blonde-hair-se.png";
+import warriorFemaleRedHair from "../assets/avatars/warrior-female-red-hair.png";
+import warriorFemaleRedHairSe from "../assets/avatars/warrior-female-red-hair-se.png";
+import warriorHumanMaleBlackHair from "../assets/avatars/warrior-human-male-black-hair.png";
+import warriorHumanMaleBlackHairSe from "../assets/avatars/warrior-human-male-black-hair-se.png";
+import warriorHumanMaleBrownHair from "../assets/avatars/warrior-human-male-brown-hair.png";
+import warriorHumanMaleBrownHairSe from "../assets/avatars/warrior-human-male-brown-hair-se.png";
+import warriorHumanMaleBlondeHair from "../assets/avatars/warrior-human-male-blonde-hair.png";
+import warriorHumanMaleBlondeHairSe from "../assets/avatars/warrior-human-male-blonde-hair-se.png";
+import warriorHumanMaleRedHair from "../assets/avatars/warrior-human-male-red-hair.png";
+import warriorHumanMaleRedHairSe from "../assets/avatars/warrior-human-male-red-hair-se.png";
+import warriorHumanFemaleBlackHair from "../assets/avatars/warrior-human-female-black-hair.png";
+import warriorHumanFemaleBlackHairSe from "../assets/avatars/warrior-human-female-black-hair-se.png";
+import warriorHumanFemaleBrownHair from "../assets/avatars/warrior-human-female-brown-hair.png";
+import warriorHumanFemaleBrownHairSe from "../assets/avatars/warrior-human-female-brown-hair-se.png";
+import warriorHumanFemaleBlondeHair from "../assets/avatars/warrior-human-female-blonde-hair.png";
+import warriorHumanFemaleBlondeHairSe from "../assets/avatars/warrior-human-female-blonde-hair-se.png";
+import warriorHumanFemaleRedHair from "../assets/avatars/warrior-human-female-red-hair.png";
+import warriorHumanFemaleRedHairSe from "../assets/avatars/warrior-human-female-red-hair-se.png";
+import warriorDwarfMaleBlackHair from "../assets/avatars/warrior-dwarf-male-black-hair.png";
+import warriorDwarfMaleBlackHairSe from "../assets/avatars/warrior-dwarf-male-black-hair-se.png";
+import warriorDwarfMaleBrownHair from "../assets/avatars/warrior-dwarf-male-brown-hair.png";
+import warriorDwarfMaleBrownHairSe from "../assets/avatars/warrior-dwarf-male-brown-hair-se.png";
+import warriorDwarfMaleBlondeHair from "../assets/avatars/warrior-dwarf-male-blonde-hair.png";
+import warriorDwarfMaleBlondeHairSe from "../assets/avatars/warrior-dwarf-male-blonde-hair-se.png";
+import warriorDwarfMaleRedHair from "../assets/avatars/warrior-dwarf-male-red-hair.png";
+import warriorDwarfMaleRedHairSe from "../assets/avatars/warrior-dwarf-male-red-hair-se.png";
+import warriorDwarfFemaleBlackHair from "../assets/avatars/warrior-dwarf-female-black-hair.png";
+import warriorDwarfFemaleBlackHairSe from "../assets/avatars/warrior-dwarf-female-black-hair-se.png";
+import warriorDwarfFemaleBrownHair from "../assets/avatars/warrior-dwarf-female-brown-hair.png";
+import warriorDwarfFemaleBrownHairSe from "../assets/avatars/warrior-dwarf-female-brown-hair-se.png";
+import warriorDwarfFemaleBlondeHair from "../assets/avatars/warrior-dwarf-female-blonde-hair.png";
+import warriorDwarfFemaleBlondeHairSe from "../assets/avatars/warrior-dwarf-female-blonde-hair-se.png";
+import warriorDwarfFemaleRedHair from "../assets/avatars/warrior-dwarf-female-red-hair.png";
+import warriorDwarfFemaleRedHairSe from "../assets/avatars/warrior-dwarf-female-red-hair-se.png";
 
 export interface AvatarOption {
   id: string;
@@ -111,7 +159,7 @@ export interface AvatarOption {
  * Appearance step -- keyed by class id, then filtered down to the ones
  * matching the character's chosen race (see `raceIds` above and
  * `getAvatarsForRaceClass`). Sourced from the "Character and NPC Sprites"
- * asset drops; Cleric and Wizard have options so far, with more
+ * asset drops; Cleric, Wizard, and Warrior have options so far, with more
  * classes/options to follow as more art arrives.
  *
  * Ids are never renamed once shipped -- a saved character's `avatarId`
@@ -460,6 +508,176 @@ export const AVATARS_BY_CLASS: Record<string, AvatarOption[]> = {
       raceIds: ["dwarf"],
       image: wizardDwarfFemaleRedHair,
       combatImage: wizardDwarfFemaleRedHairSe,
+    },
+  ],
+  warrior: [
+    {
+      id: "warrior-male-black-hair",
+      label: "Elf Male Black Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorMaleBlackHair,
+      combatImage: warriorMaleBlackHairSe,
+    },
+    {
+      id: "warrior-male-brown-hair",
+      label: "Elf Male Brown Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorMaleBrownHair,
+      combatImage: warriorMaleBrownHairSe,
+    },
+    {
+      id: "warrior-male-blonde-hair",
+      label: "Elf Male Blonde Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorMaleBlondeHair,
+      combatImage: warriorMaleBlondeHairSe,
+    },
+    {
+      id: "warrior-male-red-hair",
+      label: "Elf Male Red Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorMaleRedHair,
+      combatImage: warriorMaleRedHairSe,
+    },
+    {
+      id: "warrior-female-black-hair",
+      label: "Elf Female Black Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorFemaleBlackHair,
+      combatImage: warriorFemaleBlackHairSe,
+    },
+    {
+      id: "warrior-female-brown-hair",
+      label: "Elf Female Brown Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorFemaleBrownHair,
+      combatImage: warriorFemaleBrownHairSe,
+    },
+    {
+      id: "warrior-female-blonde-hair",
+      label: "Elf Female Blonde Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorFemaleBlondeHair,
+      combatImage: warriorFemaleBlondeHairSe,
+    },
+    {
+      id: "warrior-female-red-hair",
+      label: "Elf Female Red Hair",
+      raceIds: ["elf", "halfElf"],
+      image: warriorFemaleRedHair,
+      combatImage: warriorFemaleRedHairSe,
+    },
+    {
+      id: "warrior-human-male-black-hair",
+      label: "Human Male Black Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanMaleBlackHair,
+      combatImage: warriorHumanMaleBlackHairSe,
+    },
+    {
+      id: "warrior-human-male-brown-hair",
+      label: "Human Male Brown Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanMaleBrownHair,
+      combatImage: warriorHumanMaleBrownHairSe,
+    },
+    {
+      id: "warrior-human-male-blonde-hair",
+      label: "Human Male Blonde Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanMaleBlondeHair,
+      combatImage: warriorHumanMaleBlondeHairSe,
+    },
+    {
+      id: "warrior-human-male-red-hair",
+      label: "Human Male Red Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanMaleRedHair,
+      combatImage: warriorHumanMaleRedHairSe,
+    },
+    {
+      id: "warrior-human-female-black-hair",
+      label: "Human Female Black Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanFemaleBlackHair,
+      combatImage: warriorHumanFemaleBlackHairSe,
+    },
+    {
+      id: "warrior-human-female-brown-hair",
+      label: "Human Female Brown Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanFemaleBrownHair,
+      combatImage: warriorHumanFemaleBrownHairSe,
+    },
+    {
+      id: "warrior-human-female-blonde-hair",
+      label: "Human Female Blonde Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanFemaleBlondeHair,
+      combatImage: warriorHumanFemaleBlondeHairSe,
+    },
+    {
+      id: "warrior-human-female-red-hair",
+      label: "Human Female Red Hair",
+      raceIds: ["human", "halfElf"],
+      image: warriorHumanFemaleRedHair,
+      combatImage: warriorHumanFemaleRedHairSe,
+    },
+    {
+      id: "warrior-dwarf-male-black-hair",
+      label: "Dwarf Male Black Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfMaleBlackHair,
+      combatImage: warriorDwarfMaleBlackHairSe,
+    },
+    {
+      id: "warrior-dwarf-male-brown-hair",
+      label: "Dwarf Male Brown Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfMaleBrownHair,
+      combatImage: warriorDwarfMaleBrownHairSe,
+    },
+    {
+      id: "warrior-dwarf-male-blonde-hair",
+      label: "Dwarf Male Blonde Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfMaleBlondeHair,
+      combatImage: warriorDwarfMaleBlondeHairSe,
+    },
+    {
+      id: "warrior-dwarf-male-red-hair",
+      label: "Dwarf Male Red Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfMaleRedHair,
+      combatImage: warriorDwarfMaleRedHairSe,
+    },
+    {
+      id: "warrior-dwarf-female-black-hair",
+      label: "Dwarf Female Black Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfFemaleBlackHair,
+      combatImage: warriorDwarfFemaleBlackHairSe,
+    },
+    {
+      id: "warrior-dwarf-female-brown-hair",
+      label: "Dwarf Female Brown Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfFemaleBrownHair,
+      combatImage: warriorDwarfFemaleBrownHairSe,
+    },
+    {
+      id: "warrior-dwarf-female-blonde-hair",
+      label: "Dwarf Female Blonde Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfFemaleBlondeHair,
+      combatImage: warriorDwarfFemaleBlondeHairSe,
+    },
+    {
+      id: "warrior-dwarf-female-red-hair",
+      label: "Dwarf Female Red Hair",
+      raceIds: ["dwarf"],
+      image: warriorDwarfFemaleRedHair,
+      combatImage: warriorDwarfFemaleRedHairSe,
     },
   ],
 };
