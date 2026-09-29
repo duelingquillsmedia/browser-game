@@ -50,7 +50,7 @@ import clericDwarfMaleRedHairSe from "../assets/avatars/cleric-dwarf-male-red-ha
 export interface AvatarOption {
   id: string;
   label: string;
-  /** Which race(s) this look is offered for on Character Creation's Appearance step -- the source art depicts a specific race's model, so (unlike class) this one does gate selection. A look modeled on Elf art is offered to Half-elf too, since they share the same pixel model. */
+  /** Which race(s) this look is offered for on Character Creation's Appearance step -- the source art depicts a specific race's model, so (unlike class) this one does gate selection. Half-elf gets both the Elf- and Human-modeled sets, since a half-elf can favor either side of their heritage; every other race only sees its own modeled set. */
   raceIds: string[];
   /** The south (front-facing) portrait -- used for Character Creation and the Character screen. */
   image: string;
@@ -134,56 +134,56 @@ export const AVATARS_BY_CLASS: Record<string, AvatarOption[]> = {
     {
       id: "cleric-human-male-black-hair",
       label: "Human Male Black Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanMaleBlackHair,
       combatImage: clericHumanMaleBlackHairSe,
     },
     {
       id: "cleric-human-male-brown-hair",
       label: "Human Male Brown Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanMaleBrownHair,
       combatImage: clericHumanMaleBrownHairSe,
     },
     {
       id: "cleric-human-male-blonde-hair",
       label: "Human Male Blonde Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanMaleBlondeHair,
       combatImage: clericHumanMaleBlondeHairSe,
     },
     {
       id: "cleric-human-male-red-hair",
       label: "Human Male Red Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanMaleRedHair,
       combatImage: clericHumanMaleRedHairSe,
     },
     {
       id: "cleric-human-female-black-hair",
       label: "Human Female Black Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanFemaleBlackHair,
       combatImage: clericHumanFemaleBlackHairSe,
     },
     {
       id: "cleric-human-female-brown-hair",
       label: "Human Female Brown Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanFemaleBrownHair,
       combatImage: clericHumanFemaleBrownHairSe,
     },
     {
       id: "cleric-human-female-blonde-hair",
       label: "Human Female Blonde Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanFemaleBlondeHair,
       combatImage: clericHumanFemaleBlondeHairSe,
     },
     {
       id: "cleric-human-female-red-hair",
       label: "Human Female Red Hair",
-      raceIds: ["human"],
+      raceIds: ["human", "halfElf"],
       image: clericHumanFemaleRedHair,
       combatImage: clericHumanFemaleRedHairSe,
     },

@@ -3162,6 +3162,32 @@ cards -- the three sets don't leak into each other.
 extracted and renamed from the root-level `Dwarf_Cleric_*` folders,
 removed after).
 
+## Half-elf Gets Both Modeled Sets, Not Just Elf's (2026-09-29)
+
+Half-elf was already tagged onto the Elf-modeled avatar set's `raceIds`
+(from the round that introduced race gating), reflecting that Elf and
+Half-elf literally share that pixel model. The user pointed out that
+since Half-elf sits between both parent races narratively, it should
+also unlock the Human-modeled set -- letting a half-elf player lean
+toward looking more elven or more human, their choice.
+
+One-line-per-entry change: `raceIds: ["human"]` -> `raceIds: ["human",
+"halfElf"]` on all 8 Human-modeled entries in `avatars.ts` (the 8
+Elf-modeled entries already had `halfElf` from before). No other code
+changed -- `getAvatarsForRaceClass` already unions correctly for a race
+appearing in more than one option's `raceIds` array, since it just
+filters, it doesn't assume one match per option.
+
+Verified with the usual temporary debug harness (deleted after): Human
+and Elf alone still show exactly their own 8 portraits each; Half-elf
+now shows all 16 (the Elf set followed by the Human set); Dwarf is
+unaffected. A quick label-count check across all four races confirmed
+no unexpected leakage between sets.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (`raceIds` on the 8 Human-modeled
+entries; updated doc comment on `AvatarOption.raceIds`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
