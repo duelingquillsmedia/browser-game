@@ -1,0 +1,36 @@
+{
+  "group_id": "8d1abce6-defe-40b2-8751-68285eeecd8b",
+  "states": [
+    {
+      "character": {
+        "id": "5cc1ff24-8f8e-4de3-9933-30909784f53e",
+        "name": "Idle",
+        "prompt": "A female human wizard with fair-skin and black hair. She is wearing a blue robe and is wielding a staff.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T05:50:01.200209+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T06:07:13.751043"
+}
