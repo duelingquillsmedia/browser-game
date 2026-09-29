@@ -1,0 +1,36 @@
+{
+  "group_id": "1032bb20-e8b0-4c29-a75e-224341ab4aa2",
+  "states": [
+    {
+      "character": {
+        "id": "33bb3727-b663-4f4a-b304-66fedf5dfcd3",
+        "name": "Idle",
+        "prompt": "A male human with fair-skin and brown hair. He is wearing grey cleric armor and has a shield and a cleric one-handed blunt mace.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T00:58:30.422648+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T01:27:18.777821"
+}
