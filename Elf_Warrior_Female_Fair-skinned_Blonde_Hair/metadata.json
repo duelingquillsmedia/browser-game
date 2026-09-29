@@ -1,0 +1,36 @@
+{
+  "group_id": "b5d6dbdc-da13-4139-99e9-a0d91dedc927",
+  "states": [
+    {
+      "character": {
+        "id": "0a2d6f0d-1d22-41b2-a026-1a5bc710bcac",
+        "name": "Idle",
+        "prompt": "A female elf barbarian with fair skin and blonde hair. She is wearing minimal leather armor. She is wielding a two-handed axe.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T07:21:34.530411+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T07:28:25.080049"
+}
