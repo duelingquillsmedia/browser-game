@@ -2870,6 +2870,79 @@ scale, artboard's `top` shift, new `.cbt-mobile-topbar`),
 `apps/client/src/screens/CombatScreen.css` (`.cbt-mobile-topbar` +
 `.cbt-mobile-round-*` rules).
 
+## Elf & Half-elf Cleric Avatars: 7 New Hair-Color Variants (2026-09-29)
+
+The user added new pixel-art portraits to the Drive folder
+`Character and NPC Sprites -> Pixel Art - Player Races -> Elf & Half-elf ->
+Cleric`, reusing the same character models for both Elves and Half-elves
+to cut down on asset count, and asked for all of it wired into the game.
+The folder held 8 variant subfolders (4 female hair colors, 4 male hair
+colors, all "Fair-Skinned"), each with an `Idle/rotations/` pair of
+`south.png` (front-facing portrait) and `south-east.png` (combat pose),
+64x64 RGBA. Per `AVATARS_BY_CLASS`'s existing design, these are
+class-keyed, not race-gated -- the art depicts Elf/Half-elf models, but
+any player picking Cleric (of any race) can select the look, same as the
+one pre-existing Male Black Hair option.
+
+**Transcription is unreliable at this scale -- verify every byte, and
+verify against ground truth, not just self-consistency.** Copying a
+~5-6KB base64 blob for a 64x64 PNG by hand from one tool result into a
+`Write` call is well within the range where a single character gets
+dropped, duplicated, or transposed, and the byte-length alone doesn't
+catch it (a transposition preserves length). The fix was a Python
+one-liner run after every write, decoding the base64 and requiring both
+an exact byte-length match against Drive's own recorded `fileSize` *and*
+a successful `PIL.Image.open().load()` -- PNG's per-chunk CRC32 catches
+corruption that a naive size check misses. Fourteen of the sixteen
+source files needed at least one re-fetch-and-rewrite cycle before
+passing. Two files -- `cleric-female-red-hair`'s `south.png` and
+`cleric-female-blonde-hair`'s `south-east.png` -- failed identically
+across four independent re-fetches: same bytes back every time, IDAT
+CRC32 mismatched against its own chunk, zlib refusing to inflate it.
+That means the corruption is baked into the file as stored on Drive (or
+introduced identically by the export pipeline), not a transcription
+slip, and confirmed there's no second export sitting alongside it to
+fall back on. **Those two images still need to be re-exported/re-
+uploaded by the user** -- everything else shipped.
+
+Of the 7 new variants, 6 are complete (male brown/blonde/red hair, female
+black/brown hair, plus a refresh of the existing male black hair pair
+which turned out to be stale against a later Drive re-export -- its
+`south.png` had changed size, its `south-east.png` hadn't). The 7th,
+Female Blonde Hair, ships with only its front portrait (`image`); its
+`combatImage` is the corrupted file above and was left unset, which
+`AvatarOption` already treats as "fall back to `image` in combat" so
+the variant works today and can pick up its own combat pose once
+re-uploaded. Female Red Hair is the one variant not wired in at all --
+its front portrait, not just the combat pose, is the corrupted file,
+and Character Creation has no reasonable fallback for a missing primary
+portrait.
+
+Labels for the 6 pre-existing-pattern-following entries got a gender
+prefix (`Male Black Hair`, `Female Brown Hair`, etc.) now that both
+sexes coexist in one flat list -- the one original entry's label
+("Black Hair") was renamed to "Male Black Hair" for consistency; its
+`id` (`cleric-male-black-hair`) is unchanged so no character data
+migrates. No changes were needed to `CharacterCreationScreen.tsx` --
+its Appearance step already maps over whatever `getAvatarsForClass`
+returns.
+
+Verified with a temporary, untracked debug harness
+(`avatar-debug.html`/`.tsx`, same render-directly-with-mock-data
+approach as every prior round -- deleted before finishing) driving a
+real Chromium through Half-elf -> Cleric -> Appearance: all 7 new
+portraits render distinctly, and selecting one (tested with Female
+Blonde Hair, the partial variant) shows correctly in the side preview
+with no broken image or layout shift.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (imports + 7 new `AvatarOption`
+entries); `apps/client/src/assets/avatars/cleric-{male,female}-
+{black,brown,blonde,red}-hair[-se].png` (13 new/refreshed files; two
+source images -- female red hair's front portrait, female blonde hair's
+combat pose -- remain corrupted at the Drive source and are not yet
+addable).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
