@@ -1,0 +1,36 @@
+{
+  "group_id": "44d32985-8442-407c-b954-63515ae98365",
+  "states": [
+    {
+      "character": {
+        "id": "2e830751-cda3-4d4e-9f8f-13713a707ddd",
+        "name": "Idle",
+        "prompt": "A male human wizard with fair-skin and black hair. He is wearing blue robe and holding a staff.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-09-29T04:54:41.046986+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-09-29T05:10:30.387834"
+}
