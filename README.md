@@ -3188,6 +3188,46 @@ no unexpected leakage between sets.
 `apps/client/src/game/avatars.ts` (`raceIds` on the 8 Human-modeled
 entries; updated doc comment on `AvatarOption.raceIds`).
 
+## Wizard Avatars: Second Class Onto the Existing Race-Gated System (2026-09-29)
+
+The user's "big update" this round: 24 new pixel-art folders for the
+Wizard class -- all 3 modeled races (Elf/Half-elf, Human, Dwarf) times
+4 hair colors times 2 genders, the same coverage Cleric already has.
+Folder naming was inconsistent this drop (`Elf_Wizard_Male_...` for
+Elf, but `Wizard_Human_Male_...`/`Human_Wizard_Female_...` and
+`Wizard_Dwarf_Male_...`/`Dwarf_Wizard_Female_...` for the other two --
+gender and class swap position depending on the folder), so each of
+the 24 was mapped explicitly by hand rather than assumed from a single
+naming pattern. Metadata confirmed the same "mannequin" 64x64,
+8-direction export as every prior drop, this time depicting a robed
+spellcaster with a staff rather than Cleric's mace-and-shield.
+
+Wiring this in was almost entirely mechanical because the race-gating
+system built for Cleric already generalizes across classes:
+`AVATARS_BY_CLASS` gained a `wizard` key with the same 24-entry shape
+as `cleric` (Elf/Half-elf set with plain `wizard-*` ids since it's the
+"first" race like Cleric's was, Human set with `wizard-human-*` ids and
+`raceIds: ["human", "halfElf"]`, Dwarf set with `wizard-dwarf-*` ids
+and `raceIds: ["dwarf"]`) -- `getAvatarsForRaceClass` needed no changes
+at all, since it already filters generically on whatever `classId` key
+exists.
+
+Verified all 48 south/south-east PNGs decoded as clean 64x64 RGBA
+before wiring anything in (git transfer, no corruption, consistent
+with every drop since the switch away from Drive's base64 API). Then
+via the usual temporary debug harness (deleted after): Human, Elf, and
+Dwarf + Wizard each show exactly their own 8 portraits; Half-elf +
+Wizard shows all 16 (Elf set then Human set); a Cleric regression check
+confirmed the two classes' avatar lists don't interfere with each
+other.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (48 new imports, new `wizard` key in
+`AVATARS_BY_CLASS` with 24 entries); `apps/client/src/assets/avatars/
+wizard-*.png` / `wizard-human-*.png` / `wizard-dwarf-*.png` (48 new
+files, extracted and renamed from the 24 root-level scaffold folders,
+removed after).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
