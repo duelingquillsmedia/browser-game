@@ -3,6 +3,7 @@ import {
   getClassResource,
   getSchool,
   isTargetable,
+  STATUS_EFFECT_DEFS,
   type Combatant,
   type CombatActionDef,
   type CombatLogEntry,
@@ -206,9 +207,10 @@ export function computeStageLayout(
 
 /**
  * The red disabled-reason text under the actions info line. Mirrors
- * `isActionReady`'s own check order (uses, cooldown, resource, AP) but
- * returns `null` for "on cooldown" -- that's shown via the skill-bar slot's
- * own cooldown-turns overlay instead of a redundant text reason.
+ * `isActionReady`'s own check order (uses, cooldown, resource, AP, status
+ * prerequisite) but returns `null` for "on cooldown" -- that's shown via the
+ * skill-bar slot's own cooldown-turns overlay instead of a redundant text
+ * reason.
  */
 export function describeBlockReason(actor: Combatant, action: CombatActionDef, round: number): string | null {
   if (action.usesPerCombat !== undefined && (actor.actionUses[action.id] ?? 0) <= 0) return "No uses left this fight";
@@ -219,6 +221,9 @@ export function describeBlockReason(actor: Combatant, action: CombatActionDef, r
   }
   const apCost = action.apCost ?? 1;
   if (actor.ap !== undefined && actor.ap < apCost) return "Not enough AP";
+  if (action.requiresStatusDefId && !actor.statusEffects.some((e) => e.defId === action.requiresStatusDefId)) {
+    return `Requires ${STATUS_EFFECT_DEFS[action.requiresStatusDefId].name}`;
+  }
   return null;
 }
 

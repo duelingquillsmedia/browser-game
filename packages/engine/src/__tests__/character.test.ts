@@ -23,6 +23,38 @@ import {
 import type { Character } from "../character.js";
 import { RACES, type HalfElfChoice } from "../races.js";
 import { CLASSES } from "../classes.js";
+import { isActionReady, startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
+import { forD20, sequenceRng } from "./testUtils.js";
+
+function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
+  return {
+    id: "foe",
+    name: "Foe",
+    side: "enemy",
+    abilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 10 },
+    maxHp: 20,
+    hp: 20,
+    armorRating: 0,
+    actions: [
+      { id: "claw", name: "Claw", description: "", kind: "attack", target: "enemy", ability: "str", power: 1, damageType: "slashing" },
+    ],
+    actionUses: {},
+    actionCooldowns: {},
+    savingThrowProficiencies: [],
+    damageResistances: [],
+    damageVulnerabilities: [],
+    damageImmunities: [],
+    tempEvasionBonus: 0,
+    dodging: false,
+    initiative: 0,
+    fled: false,
+    unconscious: false,
+    dead: false,
+    rank: "front",
+    statusEffects: [],
+    ...overrides,
+  };
+}
 
 describe("createCharacter", () => {
   it("derives ability scores and HP/AC for a level 1 character from race/class growth", () => {
@@ -313,7 +345,7 @@ describe("equipItem / unequipItem", () => {
 
   it("gives every class its own Class Style Sheet passive(s), for the Character screen's Traits panel", () => {
     const named: Record<string, string[]> = {
-      warrior: ["Furious"],
+      warrior: ["Furious", "Reckless"],
       soldier: ["Experience with a Blade"],
       cleric: ["Spellcasting"],
       ranger: ["Sharpshooter"],
@@ -488,6 +520,56 @@ describe("level-gating (Class Style Sheet reforge)", () => {
     const level4 = warriorAtLevel(4);
     expect(level4.actions.some((a) => a.id === "cleave")).toBe(true);
     expect(level4.actions.some((a) => a.id === "serrated-blade")).toBe(true);
+  });
+});
+
+describe("ranked abilities (levels 6-30 Warrior build-out)", () => {
+  function warriorAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-rank-${level}`,
+      name: "Bram",
+      raceId: "human",
+      classId: "warrior",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(warriorAtLevel(2).actions.filter((a) => a.familyId === "cleave")).toHaveLength(1);
+    expect(warriorAtLevel(2).actions.find((a) => a.familyId === "cleave")?.id).toBe("cleave");
+    expect(warriorAtLevel(12).actions.find((a) => a.familyId === "cleave")?.id).toBe("cleave"); // rank 2 unlocks at 13
+    expect(warriorAtLevel(13).actions.find((a) => a.familyId === "cleave")?.id).toBe("cleave-r2");
+    expect(warriorAtLevel(20).actions.find((a) => a.familyId === "cleave")?.id).toBe("cleave-r3");
+    expect(warriorAtLevel(30).actions.find((a) => a.familyId === "cleave")?.id).toBe("cleave-r4");
+  });
+
+  it("has the full 6-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(warriorAtLevel(10));
+    expect(atTen).toEqual(
+      new Set(["enrage", "cleave", "serrated-blade", "furious-strike", "bulwark-stance", "warlords-reckoning"])
+    );
+    expect(familyIds(warriorAtLevel(30))).toEqual(atTen);
+  });
+
+  it("gates Furious Strike and Warlord's Reckoning behind an active Enrage", () => {
+    const warrior = { ...toCombatant(warriorAtLevel(10), "party"), resource: 100 };
+    const furiousStrike = warrior.actions.find((a) => a.id === "furious-strike")!;
+    // Not ready yet even with plenty of Fury -- Enrage's own "fortified" buff isn't up.
+    expect(isActionReady(warrior, furiousStrike, 1)).toBe(false);
+
+    const enraged = { ...warrior, statusEffects: [{ defId: "fortified" as const, turnsRemaining: 5 }] };
+    expect(isActionReady(enraged, furiousStrike, 1)).toBe(true);
+  });
+
+  it("throws when submitting a requires-Enraged ability without the buff active", () => {
+    const warrior = { ...toCombatant(warriorAtLevel(10), "party"), resource: 100 };
+    const state = startCombat([warrior], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(() =>
+      submitPlayerAction(state, { actorId: warrior.id, actionId: "furious-strike", targetId: "foe" })
+    ).toThrow();
   });
 });
 

@@ -3583,6 +3583,74 @@ call for a one-line balance knob).
 ### Critical files
 `packages/engine/src/character.ts` (`LEVEL_CAP` 30 -> 10, doc comments).
 
+## Warrior Built Out to Level 30: Ranked Abilities (2026-10-01)
+
+Full build-out of the Warrior's kit from level 6 through the eventual level
+30 cap (today's `LEVEL_CAP` is still 10 -- see the entry above -- so levels
+11-30 aren't reachable through real play yet, but the content and the
+mechanism behind it are both in place for whenever the cap is raised).
+
+**Design shape**, per the user: a WoW-style small roster of abilities that
+each level up in power (Rank 2, 3, 4, ...) rather than one-off spells added
+forever. The Warrior's full kit -- 6 actives, 2 passives -- is entirely
+unlocked by level 10 (using odd levels too, not just the even levels stat
+growth already uses); from 11-30 no new abilities arrive, only new ranks of
+these same six, staggered one rank-up per level almost the whole way to 30.
+
+- **New actives**: Furious Strike (lvl 6, requires Enraged), Bulwark Stance
+  (lvl 8, a short strong evasion buff), Warlord's Reckoning (lvl 10, a
+  bigger Enraged-gated row AoE finisher). Furious Strike and Warlord's
+  Reckoning finally pay off Enrage's own description, unimplemented since
+  the original lvl 1-4 kit ("you can use abilities that require Enraged").
+- **New passive**: Reckless (lvl 5) -- bonus Fury gain while below half HP,
+  deepening further at higher ranks.
+- **Every existing and new active ability** (Enrage, Cleave, Serrated
+  Blade, Furious Strike, Bulwark Stance, Warlord's Reckoning) gets 2-4
+  ranks across 11-30, each a modest damage/effect bump (and a small
+  resource-cost bump on the damage-dealing ones) -- see classes.ts's own
+  Warrior `actions` array for the full table, it's self-documenting.
+
+**New engine mechanism (reusable by every future class)**: a ranked
+ability is several `CombatActionDef` entries sharing one `familyId`, each
+its own rank's numbers and `unlockLevel`; `applyEquipmentEffects` now
+resolves each family down to just the single highest rank the character's
+level qualifies for, so exactly one ever reaches `actions`/the action bar.
+The Skills page's saved action-bar slots store that stable `familyId`
+(not the exact rank's own id, which changes every rank-up) so a slot
+survives a rank-up instead of going blank -- see `game/actionBar.ts`'s
+`buildActionBarSlots`/`defaultActionBarIds` and `SkillsScreen.tsx`'s own
+`familyId ?? id` lookups. A new `requiresStatusDefId` field on
+`CombatActionDef`, checked in `isActionReady`/`performAction`, backs
+"requires Enraged" generically (keyed off Enrage's own "fortified" status,
+kept a separate status id from Bulwark Stance's "braced" so an unrelated
+evasion buff can't accidentally satisfy the gate). Furious and Reckless's
+own ranked numbers are small level-keyed helper functions in `combat.ts`
+(`furiousPercent`, `recklessMultiplier`) rather than a data table, since
+passives don't have ranked-family plumbing yet and Warrior is the only
+class that needs one so far.
+
+Verified with new engine tests (family resolution at several levels, the
+full level-10 kit, the Enraged gate, Furious/Reckless's ranked numbers)
+and against the real client: a level-10/13 Skills page shows the right
+ranks and names ("Cleave (Rank 2)"), a Cleave assigned to a slot at level
+2 still resolves correctly at level 13, and a live combat run (build
+Fury, cast Enrage, confirm Furious Strike flips from blocked to usable)
+played out exactly as designed.
+
+### Critical files
+`packages/engine/src/classes.ts` (the Warrior's full `actions`/`passives`
+rewrite); `packages/engine/src/actions.ts` (`familyId`, `rank`,
+`requiresStatusDefId`); `packages/engine/src/character.ts`
+(`applyEquipmentEffects`'s family-resolution reduce); `packages/engine/src/combat.ts`
+(`requiresStatusDefId` checks, `furiousPercent`, `recklessMultiplier`);
+`packages/engine/src/status.ts` (new `braced` status); `packages/engine/src/resources.ts`
+(removed the now-Warrior-specific `gainOnBeingStruckPercent`);
+`apps/client/src/game/actionBar.ts` + `SkillsScreen.tsx` (family-id-keyed
+action-bar slots); `apps/client/src/game/combatDisplay.ts` ("Requires X"
+block-reason text); `apps/client/src/components/combat/CombatResultOverlay.tsx`
+("ranked up" copy); `apps/client/src/screens/CharacterScreen.tsx`
+(passives filtered by `unlockLevel`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

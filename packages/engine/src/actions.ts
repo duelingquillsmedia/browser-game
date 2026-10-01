@@ -1,7 +1,7 @@
 import type { AbilityKey } from "./abilities.js";
 import type { DamageType } from "./damage.js";
 import type { SchoolId } from "./schools.js";
-import type { StatusApplication } from "./status.js";
+import type { StatusApplication, StatusEffectId } from "./status.js";
 
 export type ActionKind = "attack" | "heal" | "buff" | "defend" | "flee" | "save" | "endTurn";
 export type ActionTarget = "enemy" | "enemies" | "ally" | "self" | "none";
@@ -88,6 +88,28 @@ export interface CombatActionDef {
   randomDamageTypes?: DamageType[];
   /** The character level this action requires (default 1). Enforced in `applyEquipmentEffects` — a character below it simply doesn't know the action yet. */
   unlockLevel?: number;
+  /**
+   * Groups this entry with every other rank of the same ability -- e.g.
+   * Cleave's rank 1-4 defs all share `familyId: "cleave"`. `applyEquipmentEffects`
+   * resolves each family down to just the single highest rank a character's
+   * level qualifies for, so exactly one ever appears in `actions`/on the
+   * action bar. Omitted for an ability with only one rank, where `id` alone
+   * already serves as its own family (every lookup that cares falls back to
+   * `familyId ?? id`) -- see game/actionBar.ts on the client for why this
+   * matters for a saved action-bar slot surviving a rank-up.
+   */
+  familyId?: string;
+  /** This def's rank within its `familyId` (1, 2, 3, ...) -- for UI display only (e.g. "Cleave (Rank 3)"); resolution itself compares `unlockLevel`, not this number. Omitted for an ability with only one rank. */
+  rank?: number;
+  /**
+   * This action is only usable while the actor has an active status effect
+   * with this `defId` (e.g. Warrior's Furious Strike requires Enrage's own
+   * "fortified"). Checked in `isActionReady`/`submitPlayerAction`; the
+   * client derives its "Requires X" block-reason text from the status's own
+   * `STATUS_EFFECT_DEFS` name, so this stays usable by any future class
+   * without new client copy.
+   */
+  requiresStatusDefId?: StatusEffectId;
 }
 
 export const BASIC_ATTACK: CombatActionDef = {

@@ -8,8 +8,6 @@ export interface ResourceConfig {
   gainOnBasicAttack: number;
   /** Gained instead of `gainOnBasicAttack` when the Basic Attack crits. */
   gainOnBasicAttackCrit: number;
-  /** Warrior's Furious passive only: fraction of incoming damage taken converted to resource. */
-  gainOnBeingStruckPercent?: number;
 }
 
 /**
@@ -25,7 +23,7 @@ export interface ResourceConfig {
  * same as everyone else.
  */
 export const RESOURCE_CONFIGS: Record<ResourceKey, ResourceConfig> = {
-  fury: { key: "fury", name: "Fury", gainOnBasicAttack: 15, gainOnBasicAttackCrit: 30, gainOnBeingStruckPercent: 0.25 },
+  fury: { key: "fury", name: "Fury", gainOnBasicAttack: 15, gainOnBasicAttackCrit: 30 },
   expertise: { key: "expertise", name: "Expertise", gainOnBasicAttack: 1, gainOnBasicAttackCrit: 2 },
   prayer: { key: "prayer", name: "Prayer", gainOnBasicAttack: 1, gainOnBasicAttackCrit: 2 },
   focus: { key: "focus", name: "Focus", gainOnBasicAttack: 1, gainOnBasicAttackCrit: 2 },

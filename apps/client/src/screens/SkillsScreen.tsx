@@ -133,12 +133,15 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
   for (const action of listActions) counts[bucketFor(action.kind)]++;
 
   const selected: CombatActionDef | undefined = character.actions.find((a) => a.id === selectedId);
-  const selectedSlotIndex = selected ? actionBarIds.indexOf(selected.id) : -1;
+  const selectedSlotIndex = selected ? actionBarIds.indexOf(selected.familyId ?? selected.id) : -1;
   const placingAction = placingActionId ? actionById.get(placingActionId) : undefined;
 
   function handleSlotClick(slotIndex: number) {
     if (placingActionId) {
-      onUpdateCharacter(assignActionBarSlot({ ...character, actionBarIds }, slotIndex, placingActionId));
+      // Stored by family id, not the exact rank id, so a later rank-up still resolves to
+      // this same slot (see game/actionBar.ts's `buildActionBarSlots` for the other half).
+      const slotValue = placingAction?.familyId ?? placingActionId;
+      onUpdateCharacter(assignActionBarSlot({ ...character, actionBarIds }, slotIndex, slotValue));
       setPlacingActionId(null);
       return;
     }
@@ -223,7 +226,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                     : action.usesPerCombat !== undefined
                       ? `${action.usesPerCombat}/fight`
                       : null;
-                  const slotIndex = actionBarIds.indexOf(action.id);
+                  const slotIndex = actionBarIds.indexOf(action.familyId ?? action.id);
                   const name = action.name;
                   return (
                     <button

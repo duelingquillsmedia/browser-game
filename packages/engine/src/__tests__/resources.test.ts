@@ -135,4 +135,32 @@ describe("class resource pools", () => {
     // Logged as its own "resource-gain" event (distinct from the "hit" entry) so a UI can pop a "+4 Fury" indicator.
     expect(state.log.some((e) => e.kind === "resource-gain" && e.targetId === warrior.id && e.amount === 4)).toBe(true);
   });
+
+  it("Furious's struck-gain percent rises at its higher ranks (lvl 14, lvl 23)", () => {
+    // Same hit/crit/variance rolls (and therefore the same raw 15 damage taken) as the rank-1
+    // case above -- only the warrior's level changes, so any difference in Fury gained is
+    // Furious's own ranking. The initiative rolls are deliberately lopsided (foe 20 vs warrior 1)
+    // rather than reusing the rank-1 case's 15/5: a high-level Warrior's own Dex growth raises
+    // their initiative enough to otherwise outroll the foe and go first, which would skip the
+    // foe's attack (and this test's whole premise) for the higher-level cases.
+    const rollForCrit = () => sequenceRng([forD20(1), forD20(20), 0, GUARANTEED_SUCCESS, 0, forVariance(1)]);
+    const rank2 = startCombat([toCombatant(makeCharacter("warrior", "human", 14), "party")], [makeFoe()], rollForCrit());
+    expect(rank2.combatants[0].resource).toBe(5); // round(15 * 0.30)
+
+    const rank3 = startCombat([toCombatant(makeCharacter("warrior", "human", 23), "party")], [makeFoe()], rollForCrit());
+    expect(rank3.combatants[0].resource).toBe(5); // round(15 * 0.35)
+  });
+
+  it("Reckless (lvl 5+) boosts Fury gained from a landed Basic Attack while below half HP", () => {
+    const full = toCombatant(makeCharacter("warrior", "human", 5), "party");
+    const warrior = { ...full, hp: Math.floor(full.maxHp * 0.4) };
+    const state = startCombat([warrior], [makeFoe()], sequenceRng([forD20(15), forD20(5)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: warrior.id, actionId: "strike-melee", targetId: "foe" },
+      sequenceRng([GUARANTEED_FAILURE])
+    );
+    // base 15 Fury, +50% from Reckless while under the 50% HP threshold -> round(22.5) = 23.
+    expect(after.combatants.find((c) => c.id === warrior.id)!.resource).toBe(23);
+  });
 });

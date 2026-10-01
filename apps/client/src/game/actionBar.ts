@@ -43,7 +43,7 @@ function defaultActionBarIds(actions: CombatActionDef[]): (string | null)[] {
   for (const action of actions) {
     if (i >= ACTION_BAR_SLOT_COUNT) break;
     if (action.kind === "flee" || action.kind === "endTurn" || action.isBasicAttack) continue;
-    ids[i++] = action.id;
+    ids[i++] = action.familyId ?? action.id;
   }
   return ids;
 }
@@ -51,16 +51,22 @@ function defaultActionBarIds(actions: CombatActionDef[]): (string | null)[] {
 /**
  * Resolves each of the 6 slot ids against `actions` (a `Character`'s or a
  * combat `Combatant`'s own list -- either works, they carry the same shape).
- * A stale id resolves to `empty`: either a Basic Attack variant no longer
- * available after unequipping its weapon, or -- since Basic Attack moved
- * off the action bar entirely -- a Basic Attack id saved to a slot from
- * before that change.
+ * Keyed by `familyId ?? id` rather than the raw id alone: a ranked ability
+ * (e.g. Warrior's Cleave) only ever has its single current-rank entry in
+ * `actions`, under a rank-specific id (`cleave-r2`, ...) that changes on
+ * every rank-up, but the player's saved slot stores the stable family id
+ * (`cleave`) -- see `defaultActionBarIds` and the Skills page's own
+ * `familyId ?? id` lookups -- so a rank-up swaps in the new numbers without
+ * ever looking like the slot went empty. A stale id resolves to `empty`:
+ * either a Basic Attack variant no longer available after unequipping its
+ * weapon, or -- since Basic Attack moved off the action bar entirely -- a
+ * Basic Attack id saved to a slot from before that change.
  */
 export function buildActionBarSlots(actionBarIds: (string | null)[], actions: CombatActionDef[]): ActionBarSlot[] {
-  const byId = new Map(actions.map((a) => [a.id, a]));
+  const byFamily = new Map(actions.map((a) => [a.familyId ?? a.id, a]));
   return actionBarIds.map((id): ActionBarSlot => {
     if (!id) return { kind: "empty" };
-    const action = byId.get(id);
+    const action = byFamily.get(id);
     if (!action || action.isBasicAttack) return { kind: "empty" };
     return { kind: "action", action };
   });

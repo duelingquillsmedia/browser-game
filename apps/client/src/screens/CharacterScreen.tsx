@@ -408,7 +408,9 @@ export function CharacterScreen({ character, onUpdateCharacter }: CharacterScree
           )}
 
           <div className="aow-skill-stat-group-label">{cls?.name ?? character.classId}</div>
-          {cls?.passives.map((passive) => (
+          {cls?.passives
+            .filter((passive) => (passive.unlockLevel ?? 1) <= character.level)
+            .map((passive) => (
             <div key={passive.name} className="aow-trait-card">
               <h3>{passive.name}</h3>
               <p>{passive.description}</p>

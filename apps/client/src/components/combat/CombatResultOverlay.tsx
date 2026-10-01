@@ -74,7 +74,9 @@ export function CombatResultOverlay({
             <div className="cbt-result-levelup-title">Level Up! Now level {newLevel}</div>
             {newlyUnlockedActions.map((action) => (
               <div key={action.id} className="cbt-result-new-ability">
-                New ability: {action.name}!
+                {action.rank && action.rank > 1
+                  ? `${action.name.replace(/ \(Rank \d+\)$/, "")} ranked up to Rank ${action.rank}!`
+                  : `New ability: ${action.name}!`}
               </div>
             ))}
           </div>

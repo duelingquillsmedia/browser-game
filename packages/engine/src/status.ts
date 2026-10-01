@@ -31,6 +31,7 @@ export type StatusEffectId =
   | "knockedDown"
   | "readied"
   | "fortified"
+  | "braced"
   | "barbedPrimed";
 
 export interface StatusEffectDef {
@@ -62,6 +63,10 @@ export const STATUS_EFFECT_DEFS: Record<StatusEffectId, StatusEffectDef> = {
     description: "The next incoming attack is much less likely to hit; each attack against them spends one stack.",
   },
   fortified: { id: "fortified", name: "Fortified", kind: "buff", description: "Evasion is temporarily increased." },
+  // A separate flavor/id from "fortified" specifically so an ability can gate on "requires Enraged"
+  // (Enrage's own buff) without also being satisfied by Bulwark Stance's unrelated evasion buff --
+  // see actions.ts's `requiresStatusDefId` and the Warrior's Furious Strike/Warlord's Reckoning.
+  braced: { id: "braced", name: "Braced", kind: "buff", description: "Evasion is temporarily increased." },
   barbedPrimed: {
     id: "barbedPrimed",
     name: "Barbed",

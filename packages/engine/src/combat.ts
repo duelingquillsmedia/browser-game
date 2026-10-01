@@ -296,10 +296,38 @@ function computeHitChance(actor: Combatant, target: Combatant, action: CombatAct
   return Math.max(MIN_HIT_CHANCE, Math.min(MAX_HIT_CHANCE, 100 - levelGapMiss - evasion - guardReduction + rangedBonus.hit));
 }
 
+/**
+ * Warrior's Furious passive (ranked): the fraction of damage taken converted
+ * to Fury, by character level -- see classes.ts's own Furious rank entries
+ * for the matching flavor text. Not yet generalized into a shared "ranked
+ * passive" system (unlike active abilities' `familyId`/`rank` fields) since
+ * Warrior is the only class with one so far; the numbers live here instead
+ * of in a data table purely because this is the only place that needs them.
+ */
+function furiousPercent(level: number): number {
+  if (level >= 23) return 0.35;
+  if (level >= 14) return 0.3;
+  return 0.25;
+}
+
+/**
+ * Warrior's Reckless passive (ranked, lvl 5+): a multiplier on every Fury
+ * gain (Furious's struck-gain below, and landing a Basic Attack) while the
+ * Warrior's own HP is under a threshold that widens at rank 2. Returns 1
+ * (no change) for every other class, or before Reckless unlocks.
+ */
+function recklessMultiplier(actor: Combatant): number {
+  if (actor.classId !== "warrior" || (actor.level ?? 1) < 5) return 1;
+  const thresholdPercent = (actor.level ?? 1) >= 16 ? 0.6 : 0.5;
+  if (actor.hp / actor.maxHp >= thresholdPercent) return 1;
+  const bonusPercent = (actor.level ?? 1) >= 29 ? 0.75 : 0.5;
+  return 1 + bonusPercent;
+}
+
 /** Warrior's Furious passive: a fraction of damage taken converted to resource, in place of a flat per-hit amount. */
 function beingStruckResourceGain(target: Combatant, damageTaken: number): number | undefined {
-  const percent = getClassResource(target.classId)?.gainOnBeingStruckPercent;
-  if (!percent) return undefined;
+  if (target.classId !== "warrior") return undefined;
+  const percent = furiousPercent(target.level ?? 1) * recklessMultiplier(target);
   return Math.round(damageTaken * percent);
 }
 
@@ -518,12 +546,13 @@ function hasEnoughAp(actor: Combatant, action: CombatActionDef): boolean {
   return actor.side !== "party" || actor.ap === undefined || actor.ap >= effectiveApCost(action);
 }
 
-/** Whether `actor` can use `action` right now — respects usesPerCombat, cooldown, resource cost, and AP. */
+/** Whether `actor` can use `action` right now — respects usesPerCombat, cooldown, resource cost, AP, and any `requiresStatusDefId` prerequisite (e.g. Warrior's "requires Enraged" abilities). */
 export function isActionReady(actor: Combatant, action: CombatActionDef, round: number): boolean {
   if (action.usesPerCombat !== undefined && (actor.actionUses[action.id] ?? 0) <= 0) return false;
   if (action.cooldown !== undefined && round < (actor.actionCooldowns[action.id] ?? 0)) return false;
   if (action.resourceCost !== undefined && (actor.resource ?? 0) < action.resourceCost) return false;
   if (!hasEnoughAp(actor, action)) return false;
+  if (action.requiresStatusDefId && !actor.statusEffects.some((e) => e.defId === action.requiresStatusDefId)) return false;
   return true;
 }
 
@@ -902,6 +931,9 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     if (actor.ap < apCost) throw new Error(`${actor.name} doesn't have enough AP to use ${action.name}.`);
     actor.ap -= apCost;
   }
+  if (action.requiresStatusDefId && !actor.statusEffects.some((e) => e.defId === action.requiresStatusDefId)) {
+    throw new Error(`${actor.name} must have ${STATUS_EFFECT_DEFS[action.requiresStatusDefId].name} active to use ${action.name}.`);
+  }
   switch (action.kind) {
     case "attack": {
       if (!request.targetId) throw new Error(`${action.name} requires a target.`);
@@ -917,7 +949,8 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
       // before, like the old flat-Rage-only version) so the crit-scaled amount is accurate.
       if (action.isBasicAttack) {
         const resourceConfig = getClassResource(actor.classId);
-        gainResource(actor, anyCrit ? resourceConfig?.gainOnBasicAttackCrit : resourceConfig?.gainOnBasicAttack);
+        const base = anyCrit ? resourceConfig?.gainOnBasicAttackCrit : resourceConfig?.gainOnBasicAttack;
+        gainResource(actor, base !== undefined ? Math.round(base * recklessMultiplier(actor)) : base);
       }
       break;
     }

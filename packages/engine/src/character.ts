@@ -240,10 +240,22 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
 
   const basicAttacks = generateBasicAttacks(withScores, cls);
   // Enforces each ability's Class Style Sheet unlock level; a character below it simply
-  // doesn't know that action yet (see classes.ts -- there's no leveling system to raise
-  // `character.level` yet, so today this mostly just gates a level-1 character's kit
-  // down to their Basic Attack + lvl-1 ability, ready for when leveling ships).
-  const leveledActions = cls.actions.filter((a) => (a.unlockLevel ?? 1) <= character.level);
+  // doesn't know that action yet. Past that, a "ranked" ability (Warrior's Cleave, Enrage,
+  // ...) has several `cls.actions` entries sharing one `familyId` -- one per rank, each its
+  // own unlockLevel -- and only the single highest-unlockLevel entry the character actually
+  // qualifies for survives this reduction, so exactly one rank of each ability ever reaches
+  // `actions`/the action bar at a time. An ability with only one rank has no `familyId`, so
+  // it keys off its own `id` here and reduces to just itself, unaffected.
+  const leveledActions = Object.values(
+    cls.actions
+      .filter((a) => (a.unlockLevel ?? 1) <= character.level)
+      .reduce<Record<string, CombatActionDef>>((bestByFamily, a) => {
+        const key = a.familyId ?? a.id;
+        const current = bestByFamily[key];
+        if (!current || (a.unlockLevel ?? 1) > (current.unlockLevel ?? 1)) bestByFamily[key] = a;
+        return bestByFamily;
+      }, {})
+  );
 
   const actions = [...basicAttacks, ...leveledActions, ...(race.actions ?? []), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
@@ -422,7 +434,7 @@ export interface ExperienceGainResult {
   levelsGained: number;
   /** The actual XP applied, after race bonuses (e.g. Human's Many Roads) -- what a "+N XP" UI moment should show. */
   xpAwarded: number;
-  /** Abilities whose `unlockLevel` falls in (startLevel, newLevel] -- for a "New ability learned!" UI moment. */
+  /** Abilities whose `unlockLevel` falls in (startLevel, newLevel] -- for a "New ability learned!" UI moment. Includes a higher rank of an already-known ability (its own `rank` > 1), which the client renders as "ranked up" instead. */
   newlyUnlockedActions: CombatActionDef[];
 }
 
