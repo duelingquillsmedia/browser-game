@@ -25,7 +25,7 @@ import type { Character } from "../character.js";
 import { RACES, type HalfElfChoice } from "../races.js";
 import { CLASSES } from "../classes.js";
 import { isActionReady, startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
-import { forD20, forVariance, sequenceRng } from "./testUtils.js";
+import { GUARANTEED_SUCCESS, forD20, forVariance, sequenceRng } from "./testUtils.js";
 
 function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
   return {
@@ -681,6 +681,68 @@ describe("ranked abilities (levels 5-30 Cleric build-out)", () => {
     const ward = target.statusEffects.find((e) => e.defId === "ward");
     expect(ward).toBeDefined();
     expect(ward!.amount).toBe(Math.round(cleric.abilityScores.wis * 0.8)); // rank 1 power
+  });
+});
+
+describe("ranked abilities (levels 5-30 Ranger build-out)", () => {
+  function rangerAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-ranger-rank-${level}`,
+      name: "Wren",
+      raceId: "human",
+      classId: "ranger",
+      baseAbilityScores: { str: 10, dex: 15, vit: 10, int: 10, wis: 12 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(rangerAtLevel(4).actions.find((a) => a.familyId === "natures-remedy")?.id).toBe("natures-remedy");
+    expect(rangerAtLevel(10).actions.find((a) => a.familyId === "natures-remedy")?.id).toBe("natures-remedy"); // rank 2 unlocks at 11
+    expect(rangerAtLevel(11).actions.find((a) => a.familyId === "natures-remedy")?.id).toBe("natures-remedy-r2");
+    expect(rangerAtLevel(18).actions.find((a) => a.familyId === "natures-remedy")?.id).toBe("natures-remedy-r3");
+    expect(rangerAtLevel(25).actions.find((a) => a.familyId === "natures-remedy")?.id).toBe("natures-remedy-r4");
+  });
+
+  it("has the full 5-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(rangerAtLevel(10));
+    expect(atTen).toEqual(
+      new Set(["barbed-arrow", "natures-remedy", "pinning-shot", "evasive-maneuvers", "kill-shot"])
+    );
+    expect(familyIds(rangerAtLevel(30))).toEqual(atTen);
+  });
+
+  it("gates Kill Shot behind an active Evasive Maneuvers buff", () => {
+    const ranger = { ...toCombatant(rangerAtLevel(10), "party"), resource: 5 };
+    const killShot = ranger.actions.find((a) => a.id === "kill-shot")!;
+    expect(isActionReady(ranger, killShot, 1)).toBe(false);
+
+    const evasive = { ...ranger, statusEffects: [{ defId: "evasive" as const, turnsRemaining: 3 }] };
+    expect(isActionReady(evasive, killShot, 1)).toBe(true);
+  });
+
+  it("throws when submitting a requires-Evasive ability without the buff active", () => {
+    const ranger = { ...toCombatant(rangerAtLevel(10), "party"), resource: 5 };
+    const state = startCombat([ranger], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(() =>
+      submitPlayerAction(state, { actorId: ranger.id, actionId: "kill-shot", targetId: "foe" })
+    ).toThrow();
+  });
+
+  it("Pinning Shot roots its target via the existing, previously-unclaimed 'rooted' CC status", () => {
+    const ranger = { ...toCombatant(rangerAtLevel(10), "party"), resource: 5 };
+    // Tanky foe so the hit doesn't kill it outright -- a dead target never reaches
+    // resolveApplyStatus, which would otherwise make this test about overkill, not rooting.
+    const state = startCombat([ranger], [makeFoe({ maxHp: 500, hp: 500 })], sequenceRng([forD20(20), forD20(1)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: ranger.id, actionId: "pinning-shot", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, 0, forVariance(1)])
+    );
+    const foe = after.combatants.find((c) => c.id === "foe")!;
+    expect(foe.statusEffects.some((e) => e.defId === "rooted")).toBe(true);
   });
 });
 

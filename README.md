@@ -3806,6 +3806,54 @@ Cleric resolve to the expected action lists.
 `packages/engine/src/status.ts` (`"grace"` status id/def);
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Ranger Built Out to Level 30: Ranked Abilities (2026-10-01)
+
+Same ranked-ability shape as the Warrior/Soldier/Cleric build-outs (see
+those dated entries above), applied to the Ranger's existing level 1-4 kit
+(Barbed Arrow, Nature's Remedy, "Sharpshooter"). Focus is as tight a
+resource as Prayer -- a fixed 5-point pool, +1 per landed Basic Attack/+2
+on crit -- so this kit stays at 5 total actives with every cost in the
+2-5 range, same constraint as the Cleric's build.
+
+New actives, online by level 10:
+
+- **Barbed Arrow** (lvl 2, existing) ranks up only its stack count (2 ->
+  3 -> 4) over 3 ranks -- its per-hit bleed percent is a module-level
+  constant in combat.ts (`BARBED_BLEED_ABILITY_PERCENT`), not
+  per-ability data, so there was nothing else to scale per rank. Same
+  choice the Soldier's Readied stacks made (mitigation% stayed flat,
+  only stack count grew).
+- **Nature's Remedy** (lvl 4, existing) gets the full 4 ranks, growing its
+  self-heal.
+- **Pinning Shot** (lvl 6, new) -- a ranged attack that roots the target
+  for 1 turn, the first ability to claim the engine's "rooted" CC status
+  (present since the AP-economy rebuild but unused by any class until
+  now). 3 ranks.
+- **Evasive Maneuvers** (lvl 8, new) -- self-buff, evasion up for a few
+  turns scaled off Dexterity (a new "evasive" status, status.ts), the
+  Ranger's own stance ability alongside Bulwark Stance/Riposte Stance. 3
+  ranks.
+- **Kill Shot** (lvl 10, new) -- the signature gated finisher, requiring
+  Evasive Maneuvers active (mirroring Enrage -> Furious Strike, Riposte
+  Stance -> Counter-Strike): a big ranged nuke costing most of the Focus
+  bar. 4 ranks, its last landing exactly at 30.
+
+New engine tests cover family resolution across the Nature's Remedy
+ranks, the full 5-ability kit being stable from level 10 through 30, Kill
+Shot's Evasive gate (both `isActionReady` and a thrown
+`submitPlayerAction`), and Pinning Shot actually landing "rooted" on its
+target (using a high-HP dummy foe so the hit's own damage doesn't kill it
+before the status gets a chance to apply -- the first version of this
+test used the shared `makeFoe()` default of 20 HP, which a level-10
+Ranger's hit regularly one-shot, so the status never had a live target to
+land on). Verified directly against the built engine package that a
+level-10 and level-30 Ranger resolve to the expected action lists.
+
+### Critical files
+`packages/engine/src/classes.ts` (Ranger's `actions`);
+`packages/engine/src/status.ts` (`"evasive"` status id/def);
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -34,6 +34,7 @@ export type StatusEffectId =
   | "braced"
   | "parrying"
   | "grace"
+  | "evasive"
   | "barbedPrimed";
 
 export interface StatusEffectDef {
@@ -76,6 +77,9 @@ export const STATUS_EFFECT_DEFS: Record<StatusEffectId, StatusEffectDef> = {
   // Cleric's own HoT flavor/id -- kept distinct from "bloom" so a later nature-flavored
   // class (Druid) isn't stuck reusing a radiant-sounding name, or vice versa.
   grace: { id: "grace", name: "Grace", kind: "hot", description: "Restores HP at the start of each of their turns." },
+  // Ranger's own evasion-buff flavor/id, kept distinct from fortified/braced/parrying so
+  // Kill Shot's `requiresStatusDefId` can't be satisfied by another class's unrelated buff.
+  evasive: { id: "evasive", name: "Evasive", kind: "buff", description: "Evasion is temporarily increased." },
   barbedPrimed: {
     id: "barbedPrimed",
     name: "Barbed",
