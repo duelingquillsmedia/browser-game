@@ -39,7 +39,17 @@ export interface Encounter {
   backgroundImage: string;
 }
 
-/** A handful of low-level encounters on the frontier around Ridgeton. */
+/**
+ * Encounters spanning the frontier around Ridgeton -- the only level-1
+ * starting region -- out through Tiuv Forest and Collmhor Wood as those
+ * regions' own level climbs (see eridanMap.ts's REGIONS). Only 4 background
+ * images exist today (Ridgeton, Tameless Shore, Tiuv Forest, Collmhor Wood),
+ * so every encounter here reuses one of those three combat backdrops rather
+ * than the full `MONSTER_TEMPLATES` roster built for the whole 1-30 curve --
+ * the ~20 other monsters (Sepulcher Hills, Bronze Hills, the three level-30
+ * endgame regions, ...) are ready in the engine but have no clickable World
+ * Map encounter yet, since those regions have no art of their own.
+ */
 export const ENCOUNTERS: Encounter[] = [
   {
     id: "tameless-shore-raiders",
@@ -53,13 +63,34 @@ export const ENCOUNTERS: Encounter[] = [
     backgroundImage: tamelessShoreBg,
   },
   {
+    id: "tameless-shore-bandits",
+    name: "Bandits on the Coast Road",
+    location: "The Tameless Shore",
+    flavorText:
+      "A felled cart blocks the coast road, its driver nowhere in sight. A bandit thug steps out " +
+      "from behind it swinging a club, while an archer draws back from the treeline.",
+    monsters: [{ templateId: "banditThug" }, { templateId: "brigandArcher" }],
+    backgroundImage: tamelessShoreBg,
+  },
+  {
     id: "tiuv-forest-hunter",
     name: "The Hunters of Tiuv Forest",
     location: "Tiuv Forest",
     flavorText:
       "A low growl rolls out from beneath Tiuv Forest's tangled canopy. A pair of dire wolves, " +
-      "ribs showing beneath matted coats, stalk out together to bar your path.",
+      "grown huge on the forest's game trails, stalk out together to bar your path.",
     monsters: [{ templateId: "direWolf" }, { templateId: "direWolf" }],
+    backgroundImage: tiuvForestBg,
+  },
+  {
+    id: "tiuv-forest-ironwood",
+    name: "The Ironwood Consortium's Reach",
+    location: "Tiuv Forest",
+    flavorText:
+      "An Ironwood Enforcer paces before a freshly staked claim-marker, cudgel in hand, while " +
+      "something many-legged shifts in the canopy overhead -- Varlon's business has stirred up " +
+      "more than just the locals.",
+    monsters: [{ templateId: "ironwoodEnforcer" }, { templateId: "giantSpider" }],
     backgroundImage: tiuvForestBg,
   },
   {
@@ -70,6 +101,16 @@ export const ENCOUNTERS: Encounter[] = [
       "An orc marauder stands over a fallen way-marker at the edge of Collmhor Wood, greataxe " +
       "resting on one shoulder, while a bone-adorned shaman mutters curses from behind him.",
     monsters: [{ templateId: "orcMarauder" }, { templateId: "orcShaman" }],
+    backgroundImage: collmhorWoodBg,
+  },
+  {
+    id: "collmhor-wood-warchief",
+    name: "The Warchief's Vanguard",
+    location: "Collmhor Wood",
+    flavorText:
+      "Deeper into Collmhor Wood, the warchief holding the clans together stands before the old " +
+      "ruins at the forest's heart, flanked by a pair of marauders loyal only to him.",
+    monsters: [{ templateId: "orcWarchief" }, { templateId: "orcMarauder" }],
     backgroundImage: collmhorWoodBg,
   },
 ];

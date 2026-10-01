@@ -4049,6 +4049,69 @@ independently of Defend, so it's still very much alive.
 `apps/client/src/screens/CombatScreen.tsx`;
 `packages/engine/src/__tests__/{character,combat,resources}.test.ts`.
 
+## Monster Roster Spans Level 1-30; World Map Rebalanced Around It (2026-10-01)
+
+Monsters already had a `level` field (`monsters.ts`) feeding real combat math
+(`stats.ts`'s `computeLevelGapMissChance`, on both sides of every attack
+roll) -- but only 5 templates existed, spanning levels 1-3, while players can
+now reach 30. This adds a roster across the full range and rebuilds the
+world map's region-level data to match it, per the user: Ridgeton (Tameless
+Shore) is the game's only level-1 starting region; Mhistana Detritus,
+Windshear Peaks, and Frostbound Wastes are the three level-30 endgame zones.
+
+**The region level curve** (`apps/client/src/game/eridanMap.ts`'s `REGIONS`)
+replaces an earlier placeholder table that predated the XP/leveling system
+entirely and was never reconciled with it -- every region sat at 20-44 (past
+`LEVEL_CAP`), with the home region itself tagged 20-24. The new curve is a
+straight-line interpolation for each of the 28 regions between its pixel
+distance to Tameless Shore (level 1) and its distance to the nearest of the
+three endgame anchors (level 30), computed directly from the anchors'
+existing x/y coordinates rather than hand-assigned per region. A single
+region's level is deliberately *not* independently overridable in this
+pass -- the whole curve is one formula from three fixed points, so a future
+change to any region's intended difficulty means moving an anchor or
+re-running the interpolation, not hand-editing one row.
+
+**The monster roster** (`packages/engine/src/monsters.ts`) grew from 5 to
+31 templates: Dire Wolf (was level 2) and the Orc Marauder/Shaman pair
+(were level 3) got re-leveled to 8 and 20 to match Tiuv Forest's and
+Collmhor Wood's new region levels, and 26 new templates fill in the rest of
+the curve, each grounded in the Encyclopedia of Eridan's own geography and
+two creatures its own chapter drafts had already named (Slaybear,
+Flightless Horror, both now living in the Frostbound Wastes). Stats were
+sized against the real player power curve at each level (HP, Strength) via
+a quick reference script, not guessed -- a monster's HP/ability scores/XP
+scale with its level the way a level-appropriate player's own stats do,
+following the same "curated stat block" precedent the original 5 templates
+set (hand-tuned, not formula-derived, but checked against real numbers).
+
+**Encounters**: only 4 background images exist (`Ridgeton`, `Tameless
+Shore`, `Tiuv Forest`, `Collmhor Wood`), so only those three combat
+backdrops got new, actually-clickable World Map encounters -- one more each
+for Tameless Shore (Bandit Thug/Brigand Archer), Tiuv Forest (Ironwood
+Enforcer/Giant Spider), and Collmhor Wood (an Orc Warchief vanguard), each
+placed on its own nearby-but-distinct hex (`ENCOUNTER_HEX_KEYS`) since two
+encounters can't share one hex in the current lookup. The other ~20 new
+monsters (Sepulcher Hills, Bronze Hills, the three endgame regions, ...)
+are fully playable in the engine but have no clickable encounter yet --
+those regions have no background art. Flagged for whenever that art exists.
+
+New engine tests (`monsters.test.ts`) check the roster's own shape rather
+than exact numbers (every key matches its own `id`, the level range spans
+1 to `LEVEL_CAP`, every 5-level band has at least one template, HP/XP both
+grow substantially from the low tier to the level-30 endgame tier) plus a
+smoke test that a re-leveled legacy template and a new one both resolve
+correctly through `getMonsterTemplate`/`createMonster`. Verified live: the
+World Map's Ridgeton panel now shows "LEVEL RANGE 1–5" / "Safe" instead of
+the old 20-24, and all 6 encounter hexes (3 original + 3 new) resolve to
+distinct, collision-free hexes.
+
+### Critical files
+`packages/engine/src/monsters.ts`;
+`apps/client/src/game/eridanMap.ts` (`REGIONS`, `ENCOUNTER_HEX_KEYS`),
+`apps/client/src/game/lore.ts` (`ENCOUNTERS`);
+`packages/engine/src/__tests__/monsters.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

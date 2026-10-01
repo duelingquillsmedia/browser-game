@@ -214,37 +214,52 @@ export interface RegionDef {
   levelRange: string;
 }
 
-/** Land regions: id, display name, anchor point (image px), minimum level, and level-range label. */
+/**
+ * Land regions: id, display name, anchor point (image px), minimum level, and
+ * level-range label.
+ *
+ * This level curve replaces an earlier placeholder one (every region 20-44,
+ * well past `LEVEL_CAP`, with the home region itself tagged 20-24) that
+ * predated the XP/leveling system and was never reconciled with it. Per the
+ * user: Ridgeton/Tameless Shore is the game's only starting region (level 1),
+ * and Mhistana Detritus, Windshear Peaks, and Frostbound Wastes are the three
+ * level-30 endgame zones. Every other region's level is a straight-line
+ * interpolation between its pixel distance to Tameless Shore and its distance
+ * to the nearest of those three endgame anchors -- geographically closer to
+ * Ridgeton reads as safer, closer to an endgame region reads as more
+ * dangerous, with everything in between forming a gradient. See the engine's
+ * `MONSTER_TEMPLATES` (monsters.ts) for the roster built against this curve.
+ */
 export const REGIONS: RegionDef[] = (
   [
-    ["tameless", "The Tameless Shore", 720, 1060, 20, "20–24"],
-    ["tiuv", "Tiuv Forest", 660, 850, 21, "21–25"],
-    ["sepulcher", "Sepulcher Hills", 960, 790, 24, "24–28"],
-    ["eldrin", "Eldrin Reach", 900, 930, 22, "22–25"],
-    ["arnweyal", "Arnweyal Plains", 1010, 610, 23, "23–27"],
-    ["corran", "Corran Woodland", 640, 470, 25, "25–29"],
-    ["aonru", "Lake Aonru", 840, 560, 24, "24–27"],
-    ["bretten", "Gandireav Vale", 950, 330, 25, "25–29"],
-    ["bronze", "The Bronze Hills", 450, 380, 30, "30–35"],
-    ["frost", "Frostbound Wastes", 420, 90, 34, "34–40"],
-    ["cristolach", "Cristolach", 120, 520, 36, "36–42"],
-    ["fen", "Great Glacial Fen", 390, 770, 27, "27–31"],
-    ["raonai", "Raonai Strand", 460, 990, 26, "26–30"],
-    ["collmhor", "Collmhor Wood", 330, 1230, 28, "28–32"],
-    ["mhistana", "Mhistana Detritus", 220, 1420, 38, "38–44"],
-    ["torril", "Torril Wood", 1130, 370, 26, "26–30"],
-    ["tririver", "Tririver Marsh", 1260, 470, 28, "28–32"],
-    ["freyil", "The Freyil Basin", 1700, 330, 32, "32–36"],
-    ["raduna", "Raduna Woodland", 1700, 90, 35, "35–40"],
-    ["thrandir", "Thrandir Ridge", 1420, 560, 33, "33–38"],
-    ["windshear", "Windshear Peaks", 1500, 760, 34, "34–39"],
-    ["prakov", "Prakov’s Gift", 1400, 990, 28, "28–33"],
-    ["solmara", "Solmara", 1000, 1110, 25, "25–29"],
-    ["graliel", "Graliel’s Bulwark", 1250, 1240, 30, "30–34"],
-    ["ylestrea", "Ylestrea Valley", 1700, 900, 33, "33–37"],
-    ["dunes", "The Bloody Dunes", 1880, 900, 36, "36–42"],
-    ["decay", "Sands of Decay", 1880, 1340, 38, "38–44"],
-    ["claw", "Claw Pointe", 930, 1400, 30, "30–34"],
+    ["tameless", "The Tameless Shore", 720, 1060, 1, "1–5"],
+    ["tiuv", "Tiuv Forest", 660, 850, 8, "8–12"],
+    ["sepulcher", "Sepulcher Hills", 960, 790, 13, "13–17"],
+    ["eldrin", "Eldrin Reach", 900, 930, 9, "9–13"],
+    ["arnweyal", "Arnweyal Plains", 1010, 610, 16, "16–20"],
+    ["corran", "Corran Woodland", 640, 470, 18, "18–22"],
+    ["aonru", "Lake Aonru", 840, 560, 14, "14–18"],
+    ["bretten", "Gandireav Vale", 950, 330, 17, "17–21"],
+    ["bronze", "The Bronze Hills", 450, 380, 22, "22–26"],
+    ["frost", "Frostbound Wastes", 420, 90, 30, "30"],
+    ["cristolach", "Cristolach", 120, 520, 19, "19–23"],
+    ["fen", "Great Glacial Fen", 390, 770, 12, "12–16"],
+    ["raonai", "Raonai Strand", 460, 990, 11, "11–15"],
+    ["collmhor", "Collmhor Wood", 330, 1230, 20, "20–24"],
+    ["mhistana", "Mhistana Detritus", 220, 1420, 30, "30"],
+    ["torril", "Torril Wood", 1130, 370, 18, "18–22"],
+    ["tririver", "Tririver Marsh", 1260, 470, 21, "21–25"],
+    ["freyil", "The Freyil Basin", 1700, 330, 22, "22–26"],
+    ["raduna", "Raduna Woodland", 1700, 90, 20, "20–24"],
+    ["thrandir", "Thrandir Ridge", 1420, 560, 24, "24–28"],
+    ["windshear", "Windshear Peaks", 1500, 760, 30, "30"],
+    ["prakov", "Prakov’s Gift", 1400, 990, 22, "22–26"],
+    ["solmara", "Solmara", 1000, 1110, 10, "10–14"],
+    ["graliel", "Graliel’s Bulwark", 1250, 1240, 16, "16–20"],
+    ["ylestrea", "Ylestrea Valley", 1700, 900, 24, "24–28"],
+    ["dunes", "The Bloody Dunes", 1880, 900, 23, "23–27"],
+    ["decay", "Sands of Decay", 1880, 1340, 19, "19–23"],
+    ["claw", "Claw Pointe", 930, 1400, 11, "11–15"],
   ] as const
 ).map(([id, name, x, y, lo, levelRange]) => ({ id, name, x, y, lo, levelRange }));
 
@@ -370,6 +385,9 @@ export const PARTY_START_HEX = hexKey(pixelToHex(758, 1012));
  */
 export const ENCOUNTER_HEX_KEYS: Record<string, string> = {
   "tameless-shore-raiders": hexKey(pixelToHex(720, 1060)),
+  "tameless-shore-bandits": hexKey(pixelToHex(860, 990)),
   "tiuv-forest-hunter": hexKey(pixelToHex(660, 850)),
+  "tiuv-forest-ironwood": hexKey(pixelToHex(560, 930)),
   "collmhor-wood-marauder": hexKey(pixelToHex(330, 1230)),
+  "collmhor-wood-warchief": hexKey(pixelToHex(440, 1140)),
 };
