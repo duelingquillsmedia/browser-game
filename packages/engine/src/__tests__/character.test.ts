@@ -574,6 +574,54 @@ describe("ranked abilities (levels 6-30 Warrior build-out)", () => {
   });
 });
 
+describe("ranked abilities (levels 5-30 Soldier build-out)", () => {
+  function soldierAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-soldier-rank-${level}`,
+      name: "Garrick",
+      raceId: "human",
+      classId: "soldier",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(soldierAtLevel(4).actions.find((a) => a.familyId === "topple")?.id).toBe("topple");
+    expect(soldierAtLevel(11).actions.find((a) => a.familyId === "topple")?.id).toBe("topple"); // rank 2 unlocks at 12
+    expect(soldierAtLevel(12).actions.find((a) => a.familyId === "topple")?.id).toBe("topple-r2");
+    expect(soldierAtLevel(19).actions.find((a) => a.familyId === "topple")?.id).toBe("topple-r3");
+    expect(soldierAtLevel(26).actions.find((a) => a.familyId === "topple")?.id).toBe("topple-r4");
+  });
+
+  it("has the full 5-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(soldierAtLevel(10));
+    expect(atTen).toEqual(
+      new Set(["defensive-flourish", "topple", "riposte-stance", "counter-strike", "shield-sweep"])
+    );
+    expect(familyIds(soldierAtLevel(30))).toEqual(atTen);
+  });
+
+  it("gates Counter-Strike behind an active Riposte Stance (Parrying)", () => {
+    const soldier = { ...toCombatant(soldierAtLevel(10), "party"), resource: 10 };
+    const counterStrike = soldier.actions.find((a) => a.id === "counter-strike")!;
+    expect(isActionReady(soldier, counterStrike, 1)).toBe(false);
+
+    const parrying = { ...soldier, statusEffects: [{ defId: "parrying" as const, turnsRemaining: 3 }] };
+    expect(isActionReady(parrying, counterStrike, 1)).toBe(true);
+  });
+
+  it("throws when submitting a requires-Parrying ability without the buff active", () => {
+    const soldier = { ...toCombatant(soldierAtLevel(10), "party"), resource: 10 };
+    const state = startCombat([soldier], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(() =>
+      submitPlayerAction(state, { actorId: soldier.id, actionId: "counter-strike", targetId: "foe" })
+    ).toThrow();
+  });
+});
+
 describe("gainExperience / xpToNextLevel", () => {
   // Dwarf, not Human -- Human's "Many Roads" trait adds +10% XP from every
   // source (tested separately below), which would throw off these tests'

@@ -32,6 +32,7 @@ export type StatusEffectId =
   | "readied"
   | "fortified"
   | "braced"
+  | "parrying"
   | "barbedPrimed";
 
 export interface StatusEffectDef {
@@ -67,6 +68,10 @@ export const STATUS_EFFECT_DEFS: Record<StatusEffectId, StatusEffectDef> = {
   // (Enrage's own buff) without also being satisfied by Bulwark Stance's unrelated evasion buff --
   // see actions.ts's `requiresStatusDefId` and the Warrior's Furious Strike/Warlord's Reckoning.
   braced: { id: "braced", name: "Braced", kind: "buff", description: "Evasion is temporarily increased." },
+  // A third, separate buff id/flavor from "fortified"/"braced" so Soldier's Counter-Strike can
+  // gate on "requires Parrying" (Riposte Stance's own buff) without also being satisfied by a
+  // Warrior's Enrage/Bulwark Stance -- see actions.ts's `requiresStatusDefId`.
+  parrying: { id: "parrying", name: "Parrying", kind: "buff", description: "Evasion is temporarily increased." },
   barbedPrimed: {
     id: "barbedPrimed",
     name: "Barbed",

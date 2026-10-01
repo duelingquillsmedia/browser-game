@@ -3707,6 +3707,53 @@ path every other screen already uses.
 wiring); `apps/client/src/screens/HomeScreen.tsx`+`.css` (`isAdmin`/
 `onUpdateCharacter` props, the admin row); `packages/engine/src/__tests__/character.test.ts`.
 
+## Soldier Built Out to Level 30: Ranked Abilities (2026-10-01)
+
+Same ranked-ability shape as the Warrior's build-out (see that dated entry
+above), applied to the Soldier's existing level 1-4 kit (Defensive
+Flourish, Topple, "Experience with a Blade"). The Style Sheet only
+specifies Soldier abilities through level 4, same as every other class, so
+everything past that is new design -- planned and shown to the user for
+review before being built, same as the Warrior.
+
+The design departs from the Warrior's in one real way: Expertise is a
+fixed **10-point pool** generating only 1 per landed Basic Attack (2 on
+crit) -- nothing like Fury's 100-point pool. Copying Warrior's "spend
+20-75 resource per cast" pattern verbatim would be unplayable, so the
+Soldier's kit stays at 5 total actives (not 6) and every cost sits in the
+3-9 range:
+
+- **Defensive Flourish** (lvl 2, existing) and **Topple** (lvl 4,
+  existing) each get 4 ranks through 30, growing their weapon-damage bonus
+  (and Defensive Flourish's Readied stacks, 2 -> 3) the same way Warrior's
+  early abilities do.
+- **Riposte Stance** (lvl 6, new) -- a self-buff, Evasion up for a few
+  turns scaled off Vitality (Soldier's spellcasting stat per the sheet),
+  playing the same role as Bulwark Stance. 3 ranks.
+- **Counter-Strike** (lvl 8, new) -- a gated finisher requiring Riposte
+  Stance's own buff active, mirroring Enrage -> Furious Strike. Needed its
+  own status id, `"parrying"` (status.ts), kept distinct from
+  `"fortified"`/`"braced"` so `requiresStatusDefId` can't be satisfied by a
+  Warrior's unrelated buff. 3 ranks.
+- **Shield Sweep** (lvl 10, new) -- the Soldier's "kit comes fully online"
+  signature ability: a line-AoE weapon attack with a percent chance (50%
+  rising to 65%) to knock down every enemy struck, costing most of the
+  Expertise bar. 4 ranks, its last landing exactly at 30 like Warlord's
+  Reckoning's did for the Warrior.
+
+New engine tests cover family resolution across the Topple ranks, the full
+5-ability kit being stable from level 10 through 30, and Counter-Strike's
+Parrying gate (both the `isActionReady` check and a thrown
+`submitPlayerAction`) -- same coverage shape as the Warrior's own tests.
+Verified directly against the built engine package (not just the test
+suite) that a level-10 and a level-30 Soldier resolve to the expected
+action lists.
+
+### Critical files
+`packages/engine/src/classes.ts` (Soldier's `actions`/`passives`);
+`packages/engine/src/status.ts` (`"parrying"` status id/def);
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
