@@ -807,6 +807,82 @@ describe("ranked abilities (levels 5-30 Rogue build-out)", () => {
   });
 });
 
+describe("ranked abilities (levels 5-30 Druid build-out)", () => {
+  function druidAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-druid-rank-${level}`,
+      name: "Oswin",
+      raceId: "human",
+      classId: "druid",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 15 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(druidAtLevel(4).actions.find((a) => a.familyId === "wylde-wrath")?.id).toBe("wylde-wrath");
+    expect(druidAtLevel(11).actions.find((a) => a.familyId === "wylde-wrath")?.id).toBe("wylde-wrath"); // rank 2 unlocks at 12
+    expect(druidAtLevel(12).actions.find((a) => a.familyId === "wylde-wrath")?.id).toBe("wylde-wrath-r2");
+    expect(druidAtLevel(19).actions.find((a) => a.familyId === "wylde-wrath")?.id).toBe("wylde-wrath-r3");
+    expect(druidAtLevel(26).actions.find((a) => a.familyId === "wylde-wrath")?.id).toBe("wylde-wrath-r4");
+  });
+
+  it("has the full 6-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(druidAtLevel(10));
+    expect(atTen).toEqual(
+      new Set(["wylde-healing", "wylde-wrath", "entangling-roots", "barkskin", "bloom", "savage-growth"])
+    );
+    expect(familyIds(druidAtLevel(30))).toEqual(atTen);
+  });
+
+  it("gates Savage Growth behind an active Barkskin", () => {
+    const druid = toCombatant(druidAtLevel(10), "party");
+    const savageGrowth = druid.actions.find((a) => a.id === "savage-growth")!;
+    expect(isActionReady(druid, savageGrowth, 1)).toBe(false);
+
+    const barkskinned = { ...druid, statusEffects: [{ defId: "barkskin" as const, turnsRemaining: 3 }] };
+    expect(isActionReady(barkskinned, savageGrowth, 1)).toBe(true);
+  });
+
+  it("throws when submitting a requires-Barkskin ability without the buff active", () => {
+    const druid = toCombatant(druidAtLevel(10), "party");
+    const state = startCombat([druid], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(() =>
+      submitPlayerAction(state, { actorId: druid.id, actionId: "savage-growth", targetId: "foe" })
+    ).toThrow();
+  });
+
+  it("Entangling Roots roots its target -- same CC status the Ranger's Pinning Shot uses, shared without conflict", () => {
+    const druid = toCombatant(druidAtLevel(10), "party");
+    const state = startCombat([druid], [makeFoe({ maxHp: 500, hp: 500 })], sequenceRng([forD20(20), forD20(1)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: druid.id, actionId: "entangling-roots", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, 0, forVariance(1)])
+    );
+    const foe = after.combatants.find((c) => c.id === "foe")!;
+    expect(foe.statusEffects.some((e) => e.defId === "rooted")).toBe(true);
+  });
+
+  it("Bloom heals an ally and applies the engine's previously-unclaimed 'bloom' HoT to them", () => {
+    const druid = toCombatant(druidAtLevel(10), "party");
+    const ally = { ...toCombatant(druidAtLevel(10), "party"), id: "ally", hp: 1 };
+    const state = startCombat([druid, ally], [makeFoe()], sequenceRng([forD20(20), forD20(1), forD20(10)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: druid.id, actionId: "bloom", targetId: "ally" },
+      sequenceRng([forVariance(1), forVariance(1)])
+    );
+    const target = after.combatants.find((c) => c.id === "ally")!;
+    expect(target.hp).toBe(Math.min(target.maxHp, 1 + 20));
+    const bloom = target.statusEffects.find((e) => e.defId === "bloom");
+    expect(bloom).toBeDefined();
+    expect(bloom!.amount).toBe(Math.round(druid.abilityScores.wis * 0.3)); // rank 1 power
+  });
+});
+
 describe("gainExperience / xpToNextLevel", () => {
   // Dwarf, not Human -- Human's "Many Roads" trait adds +10% XP from every
   // source (tested separately below), which would throw off these tests'

@@ -3901,6 +3901,50 @@ level-10 and level-30 Rogue resolve to the expected action lists.
 `packages/engine/src/status.ts` (`"veiled"` status id/def);
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Druid Built Out to Level 30: Ranked Abilities (2026-10-01)
+
+Same ranked-ability shape as the other five classes (see their own dated
+entries above), applied to the Druid's existing level 1-4 kit (Wylde
+Healing, Wylde Wrath, "Spellcasting"). Unlike the last four classes,
+Wylde is a mana-like pool -- full at combat start, scaling with Wisdom
+and level (`stats.ts`) -- not a tiny fixed pool, so this kit gets the
+full **6 actives**, matching the Warrior's count rather than
+Soldier/Cleric/Ranger/Rogue's 5.
+
+New actives, online by level 10:
+
+- **Wylde Healing** (lvl 2, existing) and **Wylde Wrath** (lvl 4,
+  existing) each get the full 4 ranks through 30.
+- **Entangling Roots** (lvl 6, new) -- an attack that roots the target
+  for 1 turn, reusing "rooted" (already claimed by the Ranger's Pinning
+  Shot). Unlike a buff's `requiresStatusDefId` gate, a CC flavor isn't
+  exclusive to one class, so two classes applying the same root is fine.
+  3 ranks.
+- **Barkskin** (lvl 8, new) -- self-buff, evasion up for a few turns
+  scaled off Wisdom (a new "barkskin" status) -- the Druid's own stance
+  ability. 3 ranks.
+- **Bloom** (lvl 9, new) -- heals an ally and applies a heal-over-time,
+  finally claiming the engine's own "bloom" HoT status: it's existed
+  since the AP-economy rebuild (an obvious Druid-flavored name even
+  then) but sat unused until now. Built on the same heal+applyStatus
+  wiring added for the Cleric's Ward/Grace/Sanctuary. 3 ranks.
+- **Savage Growth** (lvl 10, new) -- the signature gated finisher,
+  requiring Barkskin active (mirroring Enrage -> Furious Strike and
+  every other class's stance/finisher pair): a big nature nuke. 4 ranks,
+  its last landing exactly at 30.
+
+New engine tests cover family resolution across the Wylde Wrath ranks,
+the full 6-ability kit being stable from level 10 through 30, Savage
+Growth's Barkskin gate, Entangling Roots sharing "rooted" without
+conflict, and Bloom's heal+HoT combo landing on its target with the
+expected amount. Verified directly against the built engine package that
+a level-10 and level-30 Druid resolve to the expected action lists.
+
+### Critical files
+`packages/engine/src/classes.ts` (Druid's `actions`);
+`packages/engine/src/status.ts` (`"barkskin"` status id/def);
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

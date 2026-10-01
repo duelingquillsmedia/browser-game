@@ -36,6 +36,7 @@ export type StatusEffectId =
   | "grace"
   | "evasive"
   | "veiled"
+  | "barkskin"
   | "barbedPrimed";
 
 export interface StatusEffectDef {
@@ -84,6 +85,9 @@ export const STATUS_EFFECT_DEFS: Record<StatusEffectId, StatusEffectDef> = {
   // Rogue's own evasion-buff flavor/id, kept distinct from the others so Assassinate's
   // `requiresStatusDefId` can't be satisfied by another class's unrelated buff.
   veiled: { id: "veiled", name: "Veiled", kind: "buff", description: "Evasion is temporarily increased." },
+  // Druid's own evasion-buff flavor/id, kept distinct from the others so Savage Growth's
+  // `requiresStatusDefId` can't be satisfied by another class's unrelated buff.
+  barkskin: { id: "barkskin", name: "Barkskin", kind: "buff", description: "Evasion is temporarily increased." },
   barbedPrimed: {
     id: "barbedPrimed",
     name: "Barbed",
