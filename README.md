@@ -3559,6 +3559,30 @@ harness confirmed the popup's size there is unchanged.
 the existing `@media (pointer: coarse)` block; no `.tsx` changes --
 `CombatResultOverlay.tsx`'s three outcomes share this one set of classes).
 
+## Level Cap Lowered to 10 (2026-10-01)
+
+Per the user: content will be built out ten levels at a time per class
+rather than all the way to the original design's level 30, so the cap
+comes down to match what's actually been built so far.
+
+`LEVEL_CAP` (`packages/engine/src/character.ts`) is the single source of
+truth every level-gated check in the app already read from --
+`gainExperience`'s own leveling loop, `computeAbilityScores`'s growth
+loop, and every "at level cap" check in the client (`HomeScreen`,
+`CharacterScreen`, `CharacterSelectScreen`) all derive from it rather than
+hardcoding 30 anywhere else, so dropping it to 10 was a one-line change.
+Confirmed no ability across any class has an `unlockLevel` past 10 (the
+highest today is 4), so nothing becomes unreachable by the new cap.
+
+This only stops *future* leveling past 10 -- it doesn't retroactively
+clamp a character already saved above it (none exist today, but if a
+pre-cap test character ever does, this is a conscious choice, not an
+oversight: silently rewriting someone's saved level felt like the wrong
+call for a one-line balance knob).
+
+### Critical files
+`packages/engine/src/character.ts` (`LEVEL_CAP` 30 -> 10, doc comments).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

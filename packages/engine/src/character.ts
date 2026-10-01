@@ -397,15 +397,21 @@ export function useConsumable(character: Character, itemId: string): Character {
   return { ...consumed, resource: Math.min(resourceMax, (consumed.resource ?? 0) + item.consumable.amount) };
 }
 
-/** Highest level a character can reach. */
-export const LEVEL_CAP = 30;
+/**
+ * Highest level a character can reach. Temporarily capped at 10 (down from
+ * the original design's 30) while content is built out ten levels at a
+ * time per class -- raise this once the next ten levels' worth of
+ * abilities/growth exist for every class, not just one.
+ */
+export const LEVEL_CAP = 10;
 
 /**
  * XP required to advance from `level` to `level + 1` -- homebrew, sized to
- * feel like a WoW-style escalating grind (100 XP for the 1->2 hop, ~90,000
- * for the last stretch into 30). No leveling system existed when the rest
- * of this file's derived-stat formulas were invented, so there's no prior
- * curve to match.
+ * feel like a WoW-style escalating grind (100 XP for the 1->2 hop, climbing
+ * steeply toward the cap). No leveling system existed when the rest of this
+ * file's derived-stat formulas were invented, so there's no prior curve to
+ * match. The formula itself still extrapolates cleanly past the current
+ * `LEVEL_CAP` for whenever it's raised again.
  */
 export function xpToNextLevel(level: number): number {
   return 100 * level * level;
