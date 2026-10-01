@@ -3529,6 +3529,36 @@ the enemy's own retaliation hit, only rising once that hit's own
 party member's own held-back resource delta, applied at step 0 of each
 batch).
 
+## Combat: Bigger Result Popup on Mobile (2026-10-01)
+
+Reported bug: the post-fight popup (Victory, Defeat, and Escaped all share
+one component, `CombatResultOverlay.tsx`, via `RESULT_COPY`) was hard to
+read on a phone. Unlike the HUD, this popup was never pulled out into its
+own real-pixel dock -- it still renders inside the scaled `.cbt-artboard`,
+so its CSS sizes live in the same 1600x900 virtual-canvas units as
+everything else there and shrink along with the whole canvas once `scale`
+(as low as ~0.4 on a small phone, since combat is letterboxed to fit the
+viewport) is applied. A 34px title was rendering at barely 15 real px.
+
+**Fix**: a new block under the existing `@media (pointer: coarse)` section
+in `CombatScreen.css` roughly doubles the popup's padding and every text
+size (title, subtitle, reward line, level-up box, Continue button) --
+since it's all still inside the scaled artboard, fixing one component's
+CSS automatically fixes all three outcomes at once, no `.tsx` changes
+needed. Left untouched on mouse/desktop (`pointer: fine` doesn't match).
+
+Verified with a temporary debug harness forcing each of the three
+`CombatStatus` outcomes directly (bypassing actually winning/losing/
+fleeing a fight) and screenshotting each at an iPhone-12-landscape
+viewport with touch emulation (matching the `pointer: coarse` query) --
+all three now read clearly, and a desktop-viewport screenshot of the same
+harness confirmed the popup's size there is unchanged.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.css` (new result-popup sizing inside
+the existing `@media (pointer: coarse)` block; no `.tsx` changes --
+`CombatResultOverlay.tsx`'s three outcomes share this one set of classes).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

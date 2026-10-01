@@ -1612,4 +1612,59 @@
   .cbt-hud-dock .cbt-pip-row {
     gap: 4px;
   }
+
+  /* The result popup (victory/defeat/flee -- `RESULT_COPY` in
+     CombatResultOverlay.tsx share this exact markup, so sizing it here fixes
+     all three at once) stays inside the scaled `.cbt-artboard` rather than
+     getting its own real-pixel dock -- it's a simple centered modal, not
+     worth a second component instance. Its CSS sizes are still in the same
+     1600x900 virtual-canvas units as everything else in the artboard, so
+     bumping them here lands noticeably bigger once `scale` (as low as ~0.4
+     on a small phone) shrinks the whole canvas back down to real pixels. */
+  .cbt-result-panel {
+    gap: 20px;
+    padding: 56px 64px;
+  }
+
+  .cbt-result-round {
+    font-size: 14px;
+  }
+
+  .cbt-result-title {
+    font-size: 60px;
+  }
+
+  .cbt-result-sub {
+    font-size: 24px;
+    max-width: 440px;
+  }
+
+  .cbt-result-rewards {
+    gap: 24px;
+  }
+
+  .cbt-result-xp,
+  .cbt-result-gold {
+    font-size: 26px;
+  }
+
+  .cbt-result-levelup {
+    padding: 18px 28px;
+    max-width: 440px;
+    gap: 6px;
+  }
+
+  .cbt-result-levelup-title {
+    font-size: 22px;
+  }
+
+  .cbt-result-new-ability {
+    font-size: 20px;
+  }
+
+  .cbt-result-button {
+    height: 64px;
+    padding: 0 32px;
+    font-size: 18px;
+  }
 }
