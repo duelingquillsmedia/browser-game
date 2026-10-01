@@ -176,29 +176,47 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
     // would otherwise only ever catch up once the *entire* batch below has
     // finished playing -- which can span several trailing enemy turns after
     // the player's own action. Adopt them immediately instead, in step with
-    // the action's own animation, so a resource/AP cost (or a cooldown, or a
-    // buff's evasion bump) reads as spent the instant the ability fires
-    // rather than lagging behind it. HP -- and the death/flee state that's
-    // visually derived from it (`isDown` below checks `hp <= 0`, not these
-    // flags) -- keeps animating step by step via `applyEventToWorkingState`,
-    // since those correspond to actual narrated hit/heal events. A
-    // "resource-gain" entry (Warrior's Furious, so far) is also narrated --
-    // it fires on the specific hit that triggered it, not "whenever the
-    // enemy's turn starts" -- so that portion of the gain is held back here
-    // and added back in step, same as HP, instead of jumping early with
-    // everything else.
+    // the action's own animation, so a cooldown or a buff's evasion bump
+    // reads as applied the instant the ability fires rather than lagging
+    // behind it. HP -- and the death/flee state that's visually derived from
+    // it (`isDown` below checks `hp <= 0`, not these flags) -- keeps
+    // animating step by step via `applyEventToWorkingState`, since those
+    // correspond to actual narrated hit/heal events.
+    //
+    // Resource is split into two deferred pieces instead, both held back
+    // from this eager adoption and added back in step like HP:
+    //  - A "resource-gain" entry (Warrior's Furious, so far) is its own
+    //    narrated event -- it fires on the specific hit that triggered it,
+    //    not "whenever the enemy's turn starts".
+    //  - The resource cost of the party member's own action (every other
+    //    class's resource gain too, from landing their own Basic Attack) has
+    //    no log entry of its own, but it always lands on this batch's very
+    //    first entry -- `submitPlayerAction` resolves the actor's action
+    //    before any enemy turn ever gets a chance to run. Diffing the
+    //    party member's final resource against their prior value, minus
+    //    whatever's already accounted for by a `resource-gain` entry later
+    //    in the same batch, isolates exactly that cost/gain so it can be
+    //    held back the same way and applied at step 0 -- in lockstep with
+    //    the ability's own cast animation instead of jumping ahead of it.
     const pendingResourceGain = new Map<string, number>();
     for (const entry of newEntries) {
       if (entry.kind === "resource-gain" && entry.targetId && entry.amount !== undefined) {
         pendingResourceGain.set(entry.targetId, (pendingResourceGain.get(entry.targetId) ?? 0) + entry.amount);
       }
     }
+    const actor = combat.combatants.find((c) => c.side === "party");
+    const actorPrior = actor ? visualState.combatants.find((v) => v.id === actor.id) : undefined;
+    const actorDeferredDelta =
+      actor && actorPrior && actor.resource !== undefined && actorPrior.resource !== undefined
+        ? actor.resource - actorPrior.resource - (pendingResourceGain.get(actor.id) ?? 0)
+        : 0;
+
     let working: CombatState = {
       ...combat,
       combatants: combat.combatants.map((c) => {
         const prior = visualState.combatants.find((v) => v.id === c.id);
         if (!prior) return c;
-        const held = pendingResourceGain.get(c.id) ?? 0;
+        const held = (pendingResourceGain.get(c.id) ?? 0) + (c.id === actor?.id ? actorDeferredDelta : 0);
         return {
           ...c,
           hp: prior.hp,
@@ -228,6 +246,14 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
 
       const entry = newEntries[i];
       working = applyEventToWorkingState(working, entry);
+      if (i === 0 && actorDeferredDelta !== 0 && actor) {
+        working = {
+          ...working,
+          combatants: working.combatants.map((c) =>
+            c.id === actor.id && c.resource !== undefined ? { ...c, resource: c.resource + actorDeferredDelta } : c
+          ),
+        };
+      }
       setVisualState({ ...working, log: combat.log.slice(0, startIndex + i + 1) });
 
       effectKeyRef.current += 2;

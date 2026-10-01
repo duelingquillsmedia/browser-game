@@ -3485,6 +3485,50 @@ clicked.
 new `resource-gain` branch; the batch-start snapshot's `pendingResourceGain`
 hold-back).
 
+## Combat: Resource Drain/Gain Tied to the Ability's Own Step, Every Class (2026-10-01)
+
+Follow-up to the Fury-bar fix above: the user asked to (1) check every
+other class's resource gain for the same "fills before the animation"
+bug, and (2) make a resource *drain* (spending resource to cast an
+ability) animate in step with that ability's own cast, not separately.
+
+**Check result**: Warrior's Furious (resource gained from being *struck*)
+is the only passive, enemy-triggered resource gain in the game --
+`gainOnBeingStruckPercent` in `resources.ts`'s `RESOURCE_CONFIGS` is set
+for Fury alone. Every other class's only resource gain comes from landing
+their *own* Basic Attack, which (like a resource cost) has no log entry of
+its own -- so there was nothing else with Furious's exact "narrated event
+on a *later* step" shape to fix the same way.
+
+What those un-narrated changes (every ability's resource cost, and every
+class's Basic-Attack-landing gain) still shared with the pre-fix Fury bug
+was the batch-start eager-adopt: the party member's resource was always
+snapped straight to its final post-batch value before any step played,
+rather than being tied to the specific step where the responsible ability
+actually resolves. `submitPlayerAction` resolves the acting party member's
+own action *before* any enemy turn ever runs (see `combat.ts`), so that
+responsible step is always, structurally, the batch's very first entry.
+
+**Fix**: diff the party member's final resource against their prior value,
+subtract out whatever's already attributed to a `resource-gain` entry
+later in the same batch (so the two pieces never double-count), and hold
+the remainder back the same way -- added back at step 0, in lockstep with
+that ability's own cast/hit effect, instead of jumping ahead of it.
+
+Verified against the real engine, not mocked: a Wizard's Elemental Shard
+cast drains Arcana at the exact moment its own "hits ... for N fire
+damage" log line appears, and a Warrior casting Serrated Blade (which also
+exhausts their last 2 AP, forcing an enemy turn to resolve in that *same*
+batch) drains Fury from 40 to 10 right as Serrated Blade's own hit lands --
+then correctly holds at 10 through several seconds of Bleeding ticks and
+the enemy's own retaliation hit, only rising once that hit's own
+`resource-gain` entry gets its turn several steps later.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.tsx` (`actorDeferredDelta`: the
+party member's own held-back resource delta, applied at step 0 of each
+batch).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
