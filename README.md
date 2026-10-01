@@ -3854,6 +3854,53 @@ level-10 and level-30 Ranger resolve to the expected action lists.
 `packages/engine/src/status.ts` (`"evasive"` status id/def);
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Rogue Built Out to Level 30: Ranked Abilities (2026-10-01)
+
+Same ranked-ability shape as the Warrior/Soldier/Cleric/Ranger
+build-outs (see those dated entries above), applied to the Rogue's
+existing level 1-4 kit (Evasive Jab, Poisoned Throw). Cunning's 30-point
+pool is bigger than Prayer/Focus, but its existing abilities already cost
+50-66% of it per cast -- the same "spend most of the bar" shape as the
+tighter classes -- so this kit stays at 5 total actives like
+Soldier/Cleric/Ranger rather than the Warrior's 6.
+
+The Style Sheet itself just says "Placeholder" for the Rogue's passive,
+so -- as when the level 1-4 kit was first built -- nothing was invented
+for it; `passives` stays empty.
+
+New actives, online by level 10:
+
+- **Evasive Jab** (lvl 2, existing) and **Poisoned Throw** (lvl 4,
+  existing) each get the full 4 ranks through 30.
+- **Garrote** (lvl 6, new) -- an attack that stuns the target for 1 turn,
+  claiming the engine's last unclaimed CC status, "stunned" (present
+  since the AP-economy rebuild but unused by any class until now). 3
+  ranks.
+- **Vanish** (lvl 8, new) -- self-buff, evasion up for a few turns scaled
+  off Dexterity (a new "veiled" status, status.ts) -- the Rogue's own
+  stance ability, alongside Bulwark Stance/Riposte Stance/Evasive
+  Maneuvers. 3 ranks.
+- **Assassinate** (lvl 10, new) -- the signature gated finisher,
+  requiring Vanish active (mirroring Enrage -> Furious Strike, Riposte
+  Stance -> Counter-Strike, Evasive Maneuvers -> Kill Shot): a massive
+  single-target strike costing most of the Cunning bar. 4 ranks, its last
+  landing exactly at 30.
+
+New engine tests cover family resolution across the Poisoned Throw ranks,
+the full 5-ability kit being stable from level 10 through 30,
+Assassinate's Veiled gate (both `isActionReady` and a thrown
+`submitPlayerAction`), and Garrote actually landing "stunned" on its
+target -- the Garrote test used a high-HP dummy foe from the start
+(learned from the Ranger build's Pinning Shot test, whose first version
+used the default 20-HP dummy and got one-shot before the status could
+land). Verified directly against the built engine package that a
+level-10 and level-30 Rogue resolve to the expected action lists.
+
+### Critical files
+`packages/engine/src/classes.ts` (Rogue's `actions`);
+`packages/engine/src/status.ts` (`"veiled"` status id/def);
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

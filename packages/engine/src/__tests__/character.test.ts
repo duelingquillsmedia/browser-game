@@ -746,6 +746,67 @@ describe("ranked abilities (levels 5-30 Ranger build-out)", () => {
   });
 });
 
+describe("ranked abilities (levels 5-30 Rogue build-out)", () => {
+  function rogueAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-rogue-rank-${level}`,
+      name: "Vex",
+      raceId: "human",
+      classId: "rogue",
+      baseAbilityScores: { str: 10, dex: 15, vit: 10, int: 10, wis: 10 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(rogueAtLevel(4).actions.find((a) => a.familyId === "poisoned-throw")?.id).toBe("poisoned-throw");
+    expect(rogueAtLevel(11).actions.find((a) => a.familyId === "poisoned-throw")?.id).toBe("poisoned-throw"); // rank 2 unlocks at 12
+    expect(rogueAtLevel(12).actions.find((a) => a.familyId === "poisoned-throw")?.id).toBe("poisoned-throw-r2");
+    expect(rogueAtLevel(19).actions.find((a) => a.familyId === "poisoned-throw")?.id).toBe("poisoned-throw-r3");
+    expect(rogueAtLevel(26).actions.find((a) => a.familyId === "poisoned-throw")?.id).toBe("poisoned-throw-r4");
+  });
+
+  it("has the full 5-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(rogueAtLevel(10));
+    expect(atTen).toEqual(
+      new Set(["evasive-jab", "poisoned-throw", "garrote", "vanish", "assassinate"])
+    );
+    expect(familyIds(rogueAtLevel(30))).toEqual(atTen);
+  });
+
+  it("gates Assassinate behind an active Vanish (Veiled)", () => {
+    const rogue = { ...toCombatant(rogueAtLevel(10), "party"), resource: 30 };
+    const assassinate = rogue.actions.find((a) => a.id === "assassinate")!;
+    expect(isActionReady(rogue, assassinate, 1)).toBe(false);
+
+    const veiled = { ...rogue, statusEffects: [{ defId: "veiled" as const, turnsRemaining: 3 }] };
+    expect(isActionReady(veiled, assassinate, 1)).toBe(true);
+  });
+
+  it("throws when submitting a requires-Veiled ability without the buff active", () => {
+    const rogue = { ...toCombatant(rogueAtLevel(10), "party"), resource: 30 };
+    const state = startCombat([rogue], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(() =>
+      submitPlayerAction(state, { actorId: rogue.id, actionId: "assassinate", targetId: "foe" })
+    ).toThrow();
+  });
+
+  it("Garrote stuns its target via the existing, previously-unclaimed 'stunned' CC status", () => {
+    const rogue = { ...toCombatant(rogueAtLevel(10), "party"), resource: 18 };
+    // Tanky foe so the hit doesn't kill it outright before the status can land.
+    const state = startCombat([rogue], [makeFoe({ maxHp: 500, hp: 500 })], sequenceRng([forD20(20), forD20(1)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: rogue.id, actionId: "garrote", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, 0, forVariance(1)])
+    );
+    const foe = after.combatants.find((c) => c.id === "foe")!;
+    expect(foe.statusEffects.some((e) => e.defId === "stunned")).toBe(true);
+  });
+});
+
 describe("gainExperience / xpToNextLevel", () => {
   // Dwarf, not Human -- Human's "Many Roads" trait adds +10% XP from every
   // source (tested separately below), which would throw off these tests'
