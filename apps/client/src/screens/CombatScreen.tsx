@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import {
   ACTION_BAR_SLOT_COUNT,
   currentCombatant,
@@ -119,6 +119,14 @@ function useElementHeight(ref: RefObject<HTMLElement | null>): number {
 export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, combatResult, onContinue }: CombatScreenProps) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const dockHeight = useElementHeight(dockRef);
+  // Desktop/mouse-only experiment (see .cbt-hud-overlay-wrap's `pointer: fine` rule): the
+  // in-artboard HUD overlays the bottom of the stage instead of claiming its own grid row, so
+  // the battlefield itself renders taller. Measuring its real height (in the same 1600x900
+  // virtual-canvas units as everything else inside `.cbt-artboard`, since ResizeObserver reports
+  // layout size, not the scaled paint size) lets the stage reserve exactly that much extra bottom
+  // padding -- shifting the combatants up to clear the overlay rather than vanishing behind it.
+  const hudOverlayRef = useRef<HTMLDivElement | null>(null);
+  const hudOverlayHeight = useElementHeight(hudOverlayRef);
   const scale = useCanvasScale();
   const [pendingAction, setPendingAction] = useState<CombatActionDef | null>(null);
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null);
@@ -325,7 +333,13 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
       )}
       <div
         className="cbt-artboard"
-        style={{ top: `calc(50% - ${dockHeight}px)`, transform: `translate(-50%, -50%) scale(${scale})` }}
+        style={
+          {
+            top: `calc(50% - ${dockHeight}px)`,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+            "--cbt-overlay-hud-h": `${hudOverlayHeight}px`,
+          } as CSSProperties
+        }
       >
         <CombatHeader state={visualState} encounter={encounter} player={player} canAct={!!canAct} onFlee={handleFlee} />
         <CombatStage
@@ -340,17 +354,19 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
           isSelectable={isSelectable}
           onPickTarget={handlePickTarget}
         />
-        <CombatHud
-          state={visualState}
-          player={player}
-          slots={actionBarSlots}
-          hoveredActionId={hoveredActionId}
-          pendingAction={pendingAction}
-          canAct={!!canAct}
-          onHoverAction={setHoveredActionId}
-          onSelectAction={handleSelectAction}
-          onEndTurn={handleEndTurn}
-        />
+        <div className="cbt-hud-overlay-wrap" ref={hudOverlayRef}>
+          <CombatHud
+            state={visualState}
+            player={player}
+            slots={actionBarSlots}
+            hoveredActionId={hoveredActionId}
+            pendingAction={pendingAction}
+            canAct={!!canAct}
+            onHoverAction={setHoveredActionId}
+            onSelectAction={handleSelectAction}
+            onEndTurn={handleEndTurn}
+          />
+        </div>
         {visualState.status !== "active" && !isAnimating && (
           <CombatResultOverlay
             status={visualState.status}

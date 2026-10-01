@@ -93,6 +93,15 @@
   overflow: hidden;
 }
 
+/* No-op by default (and under `pointer: coarse`, which replaces this whole in-artboard HUD
+   instance with the real-pixel `.cbt-hud-dock` copy anyway -- see CombatScreen.tsx) -- `display:
+   contents` makes this wrapper invisible to layout, so `.cbt-hud` itself stays the grid's third
+   (auto-height) row exactly as before. See the `pointer: fine` override below for what this
+   wrapper is actually for. */
+.cbt-hud-overlay-wrap {
+  display: contents;
+}
+
 /* ---------- Header ---------- */
 
 .cbt-header {
@@ -1333,6 +1342,45 @@
 
 .cbt-result-button:hover {
   background: var(--aow-ember);
+}
+
+/* ---------- Desktop battlefield-size experiment ----------
+ * The HUD footer used to claim its own `auto`-height grid row out of the 1600x900 artboard,
+ * shrinking the stage above it by however tall the footer happened to be. Here it instead
+ * overlaps the stage's own grid row (pinned to the bottom via `align-self: end`) as a translucent
+ * floating bar, so the stage row gets the artboard's full remaining height and the battlefield
+ * renders bigger. The combatants themselves sit right at the stage's own bottom edge (see
+ * `.cbt-stage-grid`'s padding below), so without a counter-measure they'd now render straight
+ * under the overlay; `.cbt-stage-grid` adds extra bottom padding equal to the HUD's own measured
+ * height (the `--cbt-overlay-hud-h` custom property, set from CombatScreen.tsx's ResizeObserver)
+ * so the party/enemies shift up to clear it instead. */
+@media (pointer: fine) {
+  /* Grid items with an explicit row+column are placed before auto-placed ones, so without this
+     the stage (never explicitly placed) would get pushed into the leftover 3rd (now-empty) `auto`
+     row instead of sharing row 2 with the overlay -- both need the same explicit placement to
+     actually overlap. */
+  .cbt-stage {
+    grid-row: 2 / 3;
+    grid-column: 1;
+  }
+
+  .cbt-hud-overlay-wrap {
+    display: block;
+    grid-row: 2 / 3;
+    grid-column: 1;
+    align-self: end;
+    z-index: 6;
+  }
+
+  .cbt-hud-overlay-wrap .cbt-hud {
+    background: rgba(8, 6, 11, 0.88);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -18px 36px rgba(0, 0, 0, 0.4);
+  }
+
+  .cbt-stage-grid {
+    padding-bottom: calc(12px + var(--cbt-overlay-hud-h, 0px));
+  }
 }
 
 /* ---------- Mobile HUD redesign ----------
