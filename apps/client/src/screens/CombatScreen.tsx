@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import {
   ACTION_BAR_SLOT_COUNT,
+  computeResourceMax,
   currentCombatant,
   fleeChancePercent,
   isTargetable,
@@ -48,6 +49,11 @@ function applyEventToWorkingState(state: CombatState, entry: CombatLogEntry): Co
     if (entry.kind === "heal") return { ...c, hp: Math.min(c.maxHp, c.hp + entry.amount!) };
     if (entry.kind === "hit" || entry.kind === "save-fail" || entry.kind === "save-succeed") {
       return { ...c, hp: Math.max(0, c.hp - entry.amount!) };
+    }
+    if (entry.kind === "resource-gain" && c.resource !== undefined) {
+      const max = computeResourceMax(c.abilityScores, c.classId ?? "", c.level ?? 1);
+      const raised = c.resource + entry.amount!;
+      return { ...c, resource: max !== undefined ? Math.min(max, raised) : raised };
     }
     return c;
   });
@@ -175,12 +181,32 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
     // rather than lagging behind it. HP -- and the death/flee state that's
     // visually derived from it (`isDown` below checks `hp <= 0`, not these
     // flags) -- keeps animating step by step via `applyEventToWorkingState`,
-    // since those correspond to actual narrated hit/heal events.
+    // since those correspond to actual narrated hit/heal events. A
+    // "resource-gain" entry (Warrior's Furious, so far) is also narrated --
+    // it fires on the specific hit that triggered it, not "whenever the
+    // enemy's turn starts" -- so that portion of the gain is held back here
+    // and added back in step, same as HP, instead of jumping early with
+    // everything else.
+    const pendingResourceGain = new Map<string, number>();
+    for (const entry of newEntries) {
+      if (entry.kind === "resource-gain" && entry.targetId && entry.amount !== undefined) {
+        pendingResourceGain.set(entry.targetId, (pendingResourceGain.get(entry.targetId) ?? 0) + entry.amount);
+      }
+    }
     let working: CombatState = {
       ...combat,
       combatants: combat.combatants.map((c) => {
         const prior = visualState.combatants.find((v) => v.id === c.id);
-        return prior ? { ...c, hp: prior.hp, dead: prior.dead, unconscious: prior.unconscious, fled: prior.fled } : c;
+        if (!prior) return c;
+        const held = pendingResourceGain.get(c.id) ?? 0;
+        return {
+          ...c,
+          hp: prior.hp,
+          dead: prior.dead,
+          unconscious: prior.unconscious,
+          fled: prior.fled,
+          resource: c.resource !== undefined ? c.resource - held : c.resource,
+        };
       }),
       log: visualState.log,
     };

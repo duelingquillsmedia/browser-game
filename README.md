@@ -3447,6 +3447,44 @@ respectively) -- only the resource (Arcana/Wylde) cost moved.
 action defs); `packages/engine/src/__tests__/resources.test.ts` (updated
 the hardcoded post-cast Arcana expectation from the old cost).
 
+## Combat: Fury Bar No Longer Fills Ahead of the Hit Animation (2026-10-01)
+
+Reported bug: a Warrior's Fury bar (built partly from the Furious passive --
+25% of damage taken whenever struck, see `resources.ts`) visibly filled at
+the start of the enemy's turn, before the hit itself had even animated.
+
+Root cause: a Warrior's resource gain from being struck IS narrated as its
+own dedicated log entry (`kind: "resource-gain"`, logged right after the
+triggering hit -- see `combat.ts`'s `applyBeingStruckResourceGain`), but
+`CombatScreen.tsx`'s playback loop didn't know that. Only HP (and the
+death/flee state derived from it) was ever stepped through log entry by log
+entry; every other field, resource included, was eagerly snapped to its
+final authoritative value in one shot at the very start of a new batch of
+log entries -- before any of that batch's individual hit/heal animations
+had even begun to play. That eager-adopt behavior is still correct and
+intentional for the player's own resource *spend* (there's no log entry to
+step it through, and letting a cast cost lag behind the button press would
+read as "wrong"), so the fix narrows rather than removes it.
+
+**Fix**: before eagerly adopting each combatant's final resource value,
+sum up however much of it is attributable to `resource-gain` log entries
+still queued in the upcoming batch, and hold that amount back. As the
+step-by-step player reaches each `resource-gain` entry -- in lockstep with
+the hit that triggered it, the same way HP already does -- it adds that
+entry's own `amount` back in, landing on the authoritative value exactly
+when the batch finishes either way. Verified against the real engine (a
+Warrior repeatedly ending their turn into enemy attacks, no mocking): the
+Fury readout now holds steady through the HP-drop step of a hit and only
+ticks up ~900ms later, in its own step, exactly when "generates N Fury from
+the blow" becomes the newest log line -- previously it would have already
+shown the post-hit value from the very first frame after End Turn was
+clicked.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.tsx` (`applyEventToWorkingState`'s
+new `resource-gain` branch; the batch-start snapshot's `pendingResourceGain`
+hold-back).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
