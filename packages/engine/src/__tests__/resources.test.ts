@@ -42,7 +42,6 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     damageVulnerabilities: [],
     damageImmunities: [],
     tempEvasionBonus: 0,
-    dodging: false,
     initiative: 0,
     fled: false,
     unconscious: false,

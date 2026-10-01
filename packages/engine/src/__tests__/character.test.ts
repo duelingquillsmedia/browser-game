@@ -46,7 +46,6 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     damageVulnerabilities: [],
     damageImmunities: [],
     tempEvasionBonus: 0,
-    dodging: false,
     initiative: 0,
     fled: false,
     unconscious: false,
@@ -83,9 +82,9 @@ describe("createCharacter", () => {
     expect(character.armorRating).toBe(5);
 
     expect(character.proficiencyBonus).toBe(2);
-    // At level 1, only the generated Basic Attack (Rogue's own leveled abilities start at lvl 2) plus Defend/Flee are known.
+    // At level 1, only the generated Basic Attack (Rogue's own leveled abilities start at lvl 2) plus Flee are known.
     expect(character.actions.some((a) => a.isBasicAttack)).toBe(true);
-    expect(character.actions.some((a) => a.id === "defend")).toBe(true);
+    expect(character.actions.some((a) => a.id === "defend")).toBe(false);
     expect(character.actions.some((a) => a.id === "flee")).toBe(true);
   });
 

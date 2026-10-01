@@ -3,7 +3,7 @@ import type { DamageType } from "./damage.js";
 import type { SchoolId } from "./schools.js";
 import type { StatusApplication, StatusEffectId } from "./status.js";
 
-export type ActionKind = "attack" | "heal" | "buff" | "defend" | "flee" | "save" | "endTurn";
+export type ActionKind = "attack" | "heal" | "buff" | "flee" | "save" | "endTurn";
 export type ActionTarget = "enemy" | "enemies" | "ally" | "self" | "none";
 /** Enemy-targeted attacks only: "single" hits just the chosen target, "line" hits every living enemy in its rank, "area" hits it plus its immediate rank-neighbors. */
 export type TargetShape = "single" | "line" | "area";
@@ -27,7 +27,7 @@ export interface CombatActionDef {
   /**
    * Coefficient the scaling ability score is multiplied by to get this
    * action's damage or healing, before the random variance band is
-   * applied. Omitted for defend/flee/buff.
+   * applied. Omitted for flee/buff.
    */
   power?: number;
   /** The kind of damage an attack/save deals, for Resistance/Vulnerability/Immunity. */
@@ -121,15 +121,6 @@ export const BASIC_ATTACK: CombatActionDef = {
   ability: "str",
   power: 1,
   damageType: "slashing",
-};
-
-export const DEFEND_ACTION: CombatActionDef = {
-  id: "defend",
-  name: "Defend",
-  description: "Focus on defense: until your next turn, gain +10% Evasion and Advantage on Flee attempts.",
-  kind: "defend",
-  target: "self",
-  ability: "str",
 };
 
 export const FLEE_ACTION: CombatActionDef = {

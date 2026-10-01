@@ -8,7 +8,7 @@ import {
   toCombatant,
   type Combatant,
 } from "../combat.js";
-import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "../actions.js";
+import { BASIC_ATTACK, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "../actions.js";
 import { createCharacter } from "../character.js";
 import { computeLevelGapMissChance } from "../stats.js";
 import {
@@ -30,7 +30,7 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     hp: 20,
     armorRating: 0,
     proficiencyBonus: 2,
-    actions: [BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
+    actions: [BASIC_ATTACK, FLEE_ACTION, END_TURN_ACTION],
     actionUses: {},
     actionCooldowns: {},
     savingThrowProficiencies: [],
@@ -38,7 +38,6 @@ function makeHero(overrides: Partial<Combatant> = {}): Combatant {
     damageVulnerabilities: [],
     damageImmunities: [],
     tempEvasionBonus: 0,
-    dodging: false,
     initiative: 0,
     fled: false,
     unconscious: false,
@@ -83,7 +82,6 @@ function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
     damageVulnerabilities: [],
     damageImmunities: [],
     tempEvasionBonus: 0,
-    dodging: false,
     initiative: 0,
     fled: false,
     unconscious: false,
@@ -117,7 +115,7 @@ describe("combat engine", () => {
     expect(afterAttack.log.some((entry) => entry.message.includes("falls"))).toBe(true);
   });
 
-  it("auto-resolves enemy turns and Defend raises evasion against the next attack", () => {
+  it("auto-resolves an enemy's turn when they act before the party", () => {
     // foe rolls 15+0=15, hero rolls 5+2=7 -> foe acts first, auto-resolved inside startCombat
     // with a guaranteed non-crit hit for a clean 10 damage (str 10 * power 1 * variance 1.0).
     let state = startCombat(
@@ -129,15 +127,6 @@ describe("combat engine", () => {
     expect(state.turnIndex).toBe(1); // back to hero after foe's auto turn
     const heroAfterHit = state.combatants.find((c) => c.id === "hero")!;
     expect(heroAfterHit.hp).toBe(10);
-
-    // Hero defends, gaining +10 evasion until their next turn. Foe's hit chance against
-    // hero is normally 90 - 7 (dex-based evasion) = 83%, so a roll of 80 would connect --
-    // but Defend drops it to 90 - 7 - 10 = 73%, so that same roll of 80 now misses.
-    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([0, forPercentRoll(80)]));
-    const heroAfterDefend = state.combatants.find((c) => c.id === "hero")!;
-    expect(heroAfterDefend.hp).toBe(10); // unchanged: the follow-up attack missed
-    expect(state.round).toBe(2);
-    expect(state.turnIndex).toBe(1); // hero's turn again
 
     // Hero finishes the foe off (foe's 7 HP is well within a guaranteed hit's 16 damage).
     state = submitPlayerAction(
@@ -297,7 +286,7 @@ describe("combat engine", () => {
       [
         makeHero({
           racePassiveId: "spellcasters",
-          actions: [meleeStrike, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
+          actions: [meleeStrike, FLEE_ACTION, END_TURN_ACTION],
           meleeWeaponDamageMin: 14,
           meleeWeaponDamageMax: 14,
         }),
@@ -322,7 +311,7 @@ describe("combat engine", () => {
       [
         makeHero({
           racePassiveId: "axeWielders",
-          actions: [meleeStrike, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION],
+          actions: [meleeStrike, FLEE_ACTION, END_TURN_ACTION],
           meleeWeaponIsAxe: true,
           meleeWeaponDamageMin: 14,
           meleeWeaponDamageMax: 14,
@@ -354,7 +343,7 @@ describe("combat engine", () => {
       damageType: "slashing" as const,
       cooldown: 2,
     };
-    const hero = makeHero({ actions: [bigSwing, BASIC_ATTACK, DEFEND_ACTION, FLEE_ACTION] });
+    const hero = makeHero({ actions: [bigSwing, BASIC_ATTACK, FLEE_ACTION] });
     const foe = makeFoe({ maxHp: 50, hp: 50 }); // high HP so it survives the whole exchange
 
     // Round 1: hero (init 15) acts before foe (init 5).
@@ -618,7 +607,7 @@ describe("AP economy", () => {
 
   it("auto-ends the turn once an action exhausts all remaining AP", () => {
     const costlyStrike: CombatActionDef = { ...BASIC_ATTACK, apCost: 2 };
-    const hero = makeHero({ ap: 2, apMax: 2, actions: [costlyStrike, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const hero = makeHero({ ap: 2, apMax: 2, actions: [costlyStrike, FLEE_ACTION, END_TURN_ACTION] });
     let state = startCombat([hero], [makeFoe({ maxHp: 100, hp: 100 })], sequenceRng([forD20(15), forD20(5)]));
     expect(currentCombatant(state).id).toBe("hero");
 
@@ -685,11 +674,10 @@ describe("status effects", () => {
 
   it("can kill an enemy outright with a DoT tick (no floor), ending the fight", () => {
     const foe = makeFoe({ hp: 5, maxHp: 5, statusEffects: [{ defId: "poisoned", turnsRemaining: 1, amount: 999 }] });
-    // hero (higher initiative) acts first with Defend, which exhausts their
-    // 1-AP budget and hands the turn to the foe -- whose fatal DoT tick fires
-    // before they can act.
+    // hero (higher initiative) acts first, immediately ending their turn and
+    // handing it to the foe -- whose fatal DoT tick fires before they can act.
     let state = startCombat([makeHero()], [foe], sequenceRng([forD20(15), forD20(5)]));
-    state = submitPlayerAction(state, { actorId: "hero", actionId: "defend" }, sequenceRng([]));
+    state = submitPlayerAction(state, { actorId: "hero", actionId: "end-turn" }, sequenceRng([]));
     expect(state.status).toBe("party_won");
     expect(state.combatants.find((c) => c.id === "foe")!.hp).toBe(0);
   });
@@ -732,7 +720,7 @@ describe("multi-enemy ranks", () => {
     const front1 = makeFoe({ id: "front1", name: "Front1", rank: "front" });
     const front2 = makeFoe({ id: "front2", name: "Front2", rank: "front" });
     const back = makeFoe({ id: "back", name: "Back", rank: "back" });
-    const hero = makeHero({ ap: 4, apMax: 4, actions: [makeLineAction(), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const hero = makeHero({ ap: 4, apMax: 4, actions: [makeLineAction(), FLEE_ACTION, END_TURN_ACTION] });
     const state = startCombat(
       [hero],
       [front1, front2, back],
@@ -753,7 +741,7 @@ describe("multi-enemy ranks", () => {
     const b = makeFoe({ id: "b", name: "B", rank: "front" });
     const c = makeFoe({ id: "c", name: "C", rank: "front" });
     const d = makeFoe({ id: "d", name: "D", rank: "front" });
-    const hero = makeHero({ ap: 4, apMax: 4, actions: [makeAreaAction(), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const hero = makeHero({ ap: 4, apMax: 4, actions: [makeAreaAction(), FLEE_ACTION, END_TURN_ACTION] });
     const state = startCombat(
       [hero],
       [a, b, c, d],
@@ -863,7 +851,7 @@ describe("previewAttack", () => {
     const front2 = makeFoe({ id: "front2", name: "Front2", rank: "front" });
     const back = makeFoe({ id: "back", name: "Back", rank: "back" });
     const lineAction: CombatActionDef = { ...BASIC_ATTACK, id: "line-attack", targetShape: "line" };
-    const hero = makeHero({ actions: [lineAction, DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION] });
+    const hero = makeHero({ actions: [lineAction, FLEE_ACTION, END_TURN_ACTION] });
     const state = startCombat(
       [hero],
       [front1, front2, back],
@@ -946,7 +934,7 @@ describe("Class Style Sheet mechanics", () => {
 });
 
 describe("fleeChancePercent", () => {
-  it("matches the plain d20-vs-DC10 odds for a non-proficient, non-dodging actor", () => {
+  it("matches the plain d20-vs-DC10 odds for a non-proficient actor", () => {
     // DEX 14 -> mod +2, needed = 10-2 = 8, chance = (21-8)/20 = 65%.
     const hero = makeHero();
     expect(fleeChancePercent(hero)).toBe(65);
@@ -956,11 +944,5 @@ describe("fleeChancePercent", () => {
     // mod = 2 (DEX) + 2 (proficiency) = 4, needed = 6, chance = (21-6)/20 = 75%.
     const hero = makeHero({ savingThrowProficiencies: ["dex"] });
     expect(fleeChancePercent(hero)).toBe(75);
-  });
-
-  it("raises the odds with Advantage while dodging", () => {
-    // Single-roll chance is 65% (needed 8); with advantage, 1-(1-0.65)^2 = 87.75% -> rounds to 88%.
-    const hero = makeHero({ dodging: true });
-    expect(fleeChancePercent(hero)).toBe(88);
   });
 });

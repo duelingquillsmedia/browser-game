@@ -3995,6 +3995,60 @@ Wizard resolve to the expected action lists.
 `packages/engine/src/classes.ts` (Wizard's `actions`);
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Defend Removed: Evasion Now Comes Only From a Class's Own Kit (2026-10-01)
+
+With every class now built out through level 30 with its own evasion/shield
+tools (Bulwark Stance, Riposte Stance, Arcane Barrier, Ward, Evasive
+Maneuvers, Vanish, Barkskin, ...), the free universal Defend action
+(every character's own "+10% evasion and Advantage on Flee" button, no
+class or resource required) no longer fits -- per the user, defensive
+advantage should come from playing a class's own kit, not a freebie every
+character gets regardless of class. Removed entirely, superseding the
+"Defend: +10% Evasion, Made Visible" entry above.
+
+This took out more than the action itself: Defend was the *only* thing
+that ever set the `dodging` flag (Advantage on Flee attempts, and on a
+party member's Dexterity saving throws), so once Defend was gone,
+`dodging` itself became dead state with nothing left to set it -- removed
+along with it, rather than left as inert plumbing for some future
+ability to pick up. `tempEvasionBonus` stayed: buff-kind actions (Arcane
+Barrier, Enrage, every other class's own stance) already write to it
+independently of Defend, so it's still very much alive.
+
+- `actions.ts`: `DEFEND_ACTION` and the `"defend"` `ActionKind` removed.
+- `character.ts`: `DEFEND_ACTION` no longer spliced into every
+  character's generated action list (alongside Basic Attack/Flee/End
+  Turn).
+- `combat.ts`: `resolveDefend`, `DEFEND_EVASION_BONUS`, the `"defend"`
+  `CombatEventKind`, and the `dodging` field/its two read sites (Flee's
+  Advantage roll, `fleeChancePercent`'s matching odds math, and the dex
+  save-chance bonus) all removed. `dice.ts`'s `rollD20WithEdge` helper
+  (advantage/disadvantage rerolling) became unused once Flee's own
+  Advantage case went away, so it was removed too rather than left
+  orphaned -- Flee now just rolls a plain `rollD20`.
+- Client: `CombatHud.tsx`'s "Defending" status chip (synthesized from
+  `player.dodging`, not a real status effect) removed; `CombatScreen.tsx`
+  no longer treats a `"defend"` log-event kind as a buff-flash trigger.
+  A few stale comments elsewhere (`combatDisplay.ts`,
+  `CharacterCreationScreen.tsx`) updated to stop naming Defend.
+- Engine tests: two tests that functionally exercised Defend (a
+  hit-chance-reduction test, and a "use a free action to pass the turn"
+  helper in an unrelated DoT-lethality test, which now uses End Turn
+  instead) were updated or trimmed; the `dodging`-specific
+  `fleeChancePercent` "Advantage" test was removed outright since the
+  mechanic it tested no longer exists. Net: 199 tests (was 200 after the
+  Wizard build-out), verified passing.
+- Verified live: a Playwright pass against a real combat screen confirmed
+  no "Defend" button appears anywhere in the action bar, and End Turn/Flee
+  and the rest of the turn loop (including auto-resolved enemy turns)
+  still work with no console errors.
+
+### Critical files
+`packages/engine/src/actions.ts`, `character.ts`, `combat.ts`, `dice.ts`;
+`apps/client/src/components/combat/CombatHud.tsx`,
+`apps/client/src/screens/CombatScreen.tsx`;
+`packages/engine/src/__tests__/{character,combat,resources}.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

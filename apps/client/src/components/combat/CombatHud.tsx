@@ -169,17 +169,8 @@ export function CombatHud({
               <ApDiamonds current={player.ap ?? 0} max={player.apMax} />
             </div>
           )}
-          {(player.statusEffects.length > 0 || player.dodging) && (
+          {player.statusEffects.length > 0 && (
             <div className="cbt-status-chip-row cbt-status-chip-row-hud">
-              {player.dodging && (
-                <span
-                  className="cbt-status-chip cbt-status-chip-hud"
-                  style={{ borderColor: statusKindColor("buff"), color: statusKindColor("buff") }}
-                  title="Defend's own buff -- not a status effect, but shown the same way: +10% Evasion and Advantage on Flee until your next turn."
-                >
-                  Defending
-                </span>
-              )}
               {player.statusEffects.map((e) => {
                 const def = STATUS_EFFECT_DEFS[e.defId];
                 const color = statusKindColor(def.kind);

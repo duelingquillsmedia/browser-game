@@ -66,7 +66,7 @@ function effectsForEntry(entry: CombatLogEntry, keyBase: number): Record<string,
 
   if (entry.actorId && isAttackLike) {
     effects[entry.actorId] = { kind: "attacking", key: keyBase };
-  } else if (entry.actorId && (entry.kind === "buff" || entry.kind === "defend")) {
+  } else if (entry.actorId && entry.kind === "buff") {
     effects[entry.actorId] = { kind: "buff", key: keyBase };
   }
 
@@ -149,7 +149,6 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
       unconscious: false,
       dead: false,
       fled: false,
-      dodging: false,
       tempEvasionBonus: 0,
       ap: c.apMax,
       statusEffects: [],
@@ -295,7 +294,7 @@ export function CombatScreen({ combat, encounter, actionBarIds, onSubmitAction, 
       setPendingAction(null);
       return;
     }
-    // "none" (Defend, Flee) and "enemies" (a full-team nuke) actions have nothing sensible
+    // "none" (Flee, End Turn) and "enemies" (a full-team nuke) actions have nothing sensible
     // to click as a target, so they fire immediately; "self" now arms and waits for a click
     // on the player's own portrait, matching the handoff's exact self-cast interaction.
     if (action.target === "none" || action.target === "enemies") {

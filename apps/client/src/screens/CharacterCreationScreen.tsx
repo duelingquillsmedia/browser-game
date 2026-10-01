@@ -402,7 +402,7 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                     </div>
                     <div className="aow-creation-skill-list">
                       {/* cls.actions (the class definition's static list) holds only its leveled abilities now --
-                          the Basic Attack, Defend, and Flee are generated per-character in character.ts, not listed here. */}
+                          the Basic Attack and Flee are generated per-character in character.ts, not listed here. */}
                       {cls.actions.map((a) => (
                         <div key={a.id} className="aow-trait-card">
                           <h3>{a.name}</h3>

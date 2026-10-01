@@ -133,7 +133,7 @@ export function targetTypeLabel(action: CombatActionDef): string {
   return "ENEMY";
 }
 
-/** An action's school color, falling back to the Martial school's tone for the schoolless shared actions (Strike, Defend) the handoff's single-Cleric prototype never had to color. */
+/** An action's school color, falling back to the Martial school's tone for the schoolless shared actions (Strike, Flee) the handoff's single-Cleric prototype never had to color. */
 export function schoolColor(action: CombatActionDef): string {
   return action.schoolId ? getSchool(action.schoolId).color : getSchool("martial").color;
 }

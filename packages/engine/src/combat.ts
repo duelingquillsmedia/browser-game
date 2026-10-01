@@ -1,7 +1,7 @@
 import { isMagicalAbility, type AbilityKey, type AbilityScores } from "./abilities.js";
 import type { RacePassiveId } from "./races.js";
-import { abilityModifier, rollD20, rollD20WithEdge, type RNG } from "./dice.js";
-import { DEFEND_ACTION, type CombatActionDef } from "./actions.js";
+import { abilityModifier, rollD20, type RNG } from "./dice.js";
+import type { CombatActionDef } from "./actions.js";
 import type { Character } from "./character.js";
 import { getClass } from "./classes.js";
 import type { Monster } from "./monsters.js";
@@ -37,9 +37,6 @@ import {
 
 export type Side = "party" | "enemy";
 export type Rank = "front" | "back";
-
-/** Flat evasion-percentage bonus from using Defend, on top of the target's own Dexterity-based evasion. */
-const DEFEND_EVASION_BONUS = 10;
 
 /** Every party member's Action Points refill to this at the start of each of their own turns. Monsters never use the AP economy — they act via a single free action each turn, as before. */
 export const PLAYER_AP_PER_TURN = 4;
@@ -86,10 +83,8 @@ export interface Combatant {
   damageImmunities: DamageType[];
   /** Current value in this combatant's class resource pool (Fury/Expertise/Prayer/Focus/Cunning/Wylde/Arcana); undefined if their class has none. */
   resource?: number;
-  /** From buff actions (e.g. Arcane Shield) and Defend; cleared at the start of this combatant's own next turn. */
+  /** From buff actions (e.g. Arcane Shield); cleared at the start of this combatant's own next turn. */
   tempEvasionBonus: number;
-  /** From Defend: gives Advantage on this combatant's own Flee attempts until their next turn. */
-  dodging: boolean;
   initiative: number;
   fled: boolean;
   /** Dropped to 0 HP — knocked out of the fight. For the party, this alone ends combat in defeat. */
@@ -139,7 +134,6 @@ export function toCombatant(source: Character | Monster, side: Side): Combatant 
     damageVulnerabilities: source.damageVulnerabilities ?? [],
     damageImmunities: source.damageImmunities ?? [],
     tempEvasionBonus: 0,
-    dodging: false,
     initiative: 0,
     fled: false,
     // A party member who enters a fight already at 0 HP (e.g. a companion left
@@ -167,7 +161,6 @@ export type CombatEventKind =
   | "save-succeed"
   | "heal"
   | "buff"
-  | "defend"
   | "flee-success"
   | "flee-fail"
   | "down"
@@ -746,7 +739,6 @@ function resolveSave(state: CombatState, actor: Combatant, action: CombatActionD
   for (const target of targets) {
     let saveChance = computeSaveChance(target.abilityScores[saveAbility], casterScore);
     if (target.savingThrowProficiencies.includes(saveAbility)) saveChance += 10;
-    if (target.dodging && saveAbility === "dex") saveChance += 15;
     saveChance = Math.max(0, Math.min(100, saveChance));
     const succeeded = rng() * 100 < saveChance;
 
@@ -854,19 +846,8 @@ function resolveApplyStatus(state: CombatState, actor: Combatant, target: Combat
   });
 }
 
-function resolveDefend(state: CombatState, actor: Combatant): void {
-  actor.dodging = true;
-  actor.tempEvasionBonus += DEFEND_EVASION_BONUS;
-  log(
-    state,
-    `${actor.name} uses ${DEFEND_ACTION.name}: +${DEFEND_EVASION_BONUS}% evasion and Advantage on Flee until their next turn.`,
-    { kind: "defend", actorId: actor.id }
-  );
-}
-
 function resolveFlee(state: CombatState, actor: Combatant, rng: RNG): void {
-  const edge = actor.dodging ? "advantage" : "none";
-  const roll = rollD20WithEdge(edge, rng);
+  const roll = rollD20(rng);
   const proficient = actor.savingThrowProficiencies.includes("dex");
   const total = roll + abilityMod(actor, "dex") + (proficient ? (actor.proficiencyBonus ?? 0) : 0);
   if (total >= FLEE_DC) {
@@ -880,15 +861,14 @@ function resolveFlee(state: CombatState, actor: Combatant, rng: RNG): void {
 /**
  * Analytic (not simulated) percent chance `resolveFlee` would succeed for
  * this actor right now: the same d20 + Dexterity modifier (+ proficiency
- * bonus if proficient, + Advantage if `dodging`) vs. DC 10 it actually
- * rolls, expressed as odds instead of rolled.
+ * bonus if proficient) vs. DC 10 it actually rolls, expressed as odds
+ * instead of rolled.
  */
 export function fleeChancePercent(actor: Combatant): number {
   const proficient = actor.savingThrowProficiencies.includes("dex");
   const mod = abilityMod(actor, "dex") + (proficient ? (actor.proficiencyBonus ?? 0) : 0);
   const needed = Math.max(1, Math.min(21, FLEE_DC - mod));
-  const singleRollChance = (21 - needed) / 20;
-  const chance = actor.dodging ? 1 - (1 - singleRollChance) ** 2 : singleRollChance;
+  const chance = (21 - needed) / 20;
   return Math.round(Math.max(0, Math.min(100, chance * 100)));
 }
 
@@ -972,9 +952,6 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
     case "buff":
       resolveBuff(state, actor, action, rng);
       break;
-    case "defend":
-      resolveDefend(state, actor);
-      break;
     case "flee":
       resolveFlee(state, actor, rng);
       break;
@@ -1026,7 +1003,6 @@ function settleTurnStart(state: CombatState, combatant: Combatant): boolean {
     return false;
   }
   combatant.tempEvasionBonus = 0;
-  combatant.dodging = false;
   if (combatant.apMax !== undefined) combatant.ap = combatant.apMax;
   return true;
 }

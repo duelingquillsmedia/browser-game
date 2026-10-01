@@ -2,7 +2,7 @@ import type { AbilityKey, AbilityScores } from "./abilities.js";
 import { abilityModifier } from "./dice.js";
 import { getRace, resolveRacePassiveId, type HalfElfChoice, type Race, type RacePassiveId } from "./races.js";
 import { getClass, type BasicAttackVariant, type CharacterClass } from "./classes.js";
-import { BASIC_ATTACK, DEFEND_ACTION, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
+import { BASIC_ATTACK, END_TURN_ACTION, FLEE_ACTION, type CombatActionDef } from "./actions.js";
 import { getItem, type ItemSlot } from "./items.js";
 import type { DamageType } from "./damage.js";
 import { computeMaxHealth, computeResourceMax, computeResourceStart } from "./stats.js";
@@ -257,7 +257,7 @@ function applyEquipmentEffects(character: Character, cls: CharacterClass, race: 
       }, {})
   );
 
-  const actions = [...basicAttacks, ...leveledActions, ...(race.actions ?? []), DEFEND_ACTION, FLEE_ACTION, END_TURN_ACTION].filter(
+  const actions = [...basicAttacks, ...leveledActions, ...(race.actions ?? []), FLEE_ACTION, END_TURN_ACTION].filter(
     (action, index, all) => all.findIndex((a) => a.id === action.id) === index
   );
 

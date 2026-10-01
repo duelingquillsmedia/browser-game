@@ -36,17 +36,6 @@ export function rollD20(rng: RNG = Math.random): number {
   return rollDie(20, rng);
 }
 
-/** Rolls a d20 twice and keeps the higher (advantage) or lower (disadvantage). */
-export function rollD20WithEdge(
-  edge: "advantage" | "disadvantage" | "none",
-  rng: RNG = Math.random
-): number {
-  if (edge === "none") return rollD20(rng);
-  const a = rollD20(rng);
-  const b = rollD20(rng);
-  return edge === "advantage" ? Math.max(a, b) : Math.min(a, b);
-}
-
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }
