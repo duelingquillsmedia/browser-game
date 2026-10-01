@@ -883,6 +883,81 @@ describe("ranked abilities (levels 5-30 Druid build-out)", () => {
   });
 });
 
+describe("ranked abilities (levels 5-30 Wizard build-out)", () => {
+  function wizardAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-wizard-rank-${level}`,
+      name: "Thessaly",
+      raceId: "human",
+      classId: "wizard",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 15, wis: 10 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(wizardAtLevel(4).actions.find((a) => a.familyId === "arcane-barrier")?.id).toBe("arcane-barrier");
+    expect(wizardAtLevel(11).actions.find((a) => a.familyId === "arcane-barrier")?.id).toBe("arcane-barrier"); // rank 2 unlocks at 12
+    expect(wizardAtLevel(12).actions.find((a) => a.familyId === "arcane-barrier")?.id).toBe("arcane-barrier-r2");
+    expect(wizardAtLevel(19).actions.find((a) => a.familyId === "arcane-barrier")?.id).toBe("arcane-barrier-r3");
+    expect(wizardAtLevel(26).actions.find((a) => a.familyId === "arcane-barrier")?.id).toBe("arcane-barrier-r4");
+  });
+
+  it("has the full 6-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(wizardAtLevel(10));
+    expect(atTen).toEqual(
+      new Set(["elemental-shard", "arcane-barrier", "frostbind", "arcane-nova", "immolate", "spellstrike"])
+    );
+    expect(familyIds(wizardAtLevel(30))).toEqual(atTen);
+  });
+
+  it("gates Spellstrike behind an active Arcane Barrier (Fortified)", () => {
+    const wizard = toCombatant(wizardAtLevel(10), "party");
+    const spellstrike = wizard.actions.find((a) => a.id === "spellstrike")!;
+    expect(isActionReady(wizard, spellstrike, 1)).toBe(false);
+
+    const barriered = { ...wizard, statusEffects: [{ defId: "fortified" as const, turnsRemaining: 3 }] };
+    expect(isActionReady(barriered, spellstrike, 1)).toBe(true);
+  });
+
+  it("throws when submitting a requires-Fortified ability without the buff active", () => {
+    const wizard = toCombatant(wizardAtLevel(10), "party");
+    const state = startCombat([wizard], [makeFoe()], sequenceRng([forD20(5), forD20(15)]));
+    expect(() =>
+      submitPlayerAction(state, { actorId: wizard.id, actionId: "spellstrike", targetId: "foe" })
+    ).toThrow();
+  });
+
+  it("Frostbind roots its target -- the same CC status the Ranger and Druid also use", () => {
+    const wizard = toCombatant(wizardAtLevel(10), "party");
+    const state = startCombat([wizard], [makeFoe({ maxHp: 500, hp: 500 })], sequenceRng([forD20(20), forD20(1)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: wizard.id, actionId: "frostbind", targetId: "foe" },
+      sequenceRng([GUARANTEED_SUCCESS, 0, forVariance(1)])
+    );
+    const foe = after.combatants.find((c) => c.id === "foe")!;
+    expect(foe.statusEffects.some((e) => e.defId === "rooted")).toBe(true);
+  });
+
+  it("Immolate burns its target via the engine's previously-unclaimed 'burning' DoT status", () => {
+    const wizard = toCombatant(wizardAtLevel(10), "party");
+    const state = startCombat([wizard], [makeFoe({ maxHp: 500, hp: 500 })], sequenceRng([forD20(20), forD20(1)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: wizard.id, actionId: "immolate", targetId: "foe" },
+      // 4 rolls: hit, crit, damage variance, then the burning status's own variance roll.
+      sequenceRng([GUARANTEED_SUCCESS, 0, forVariance(1), forVariance(1)])
+    );
+    const foe = after.combatants.find((c) => c.id === "foe")!;
+    const burning = foe.statusEffects.find((e) => e.defId === "burning");
+    expect(burning).toBeDefined();
+    expect(burning!.amount).toBe(Math.round(wizard.abilityScores.int * 0.3)); // rank 1 power
+  });
+});
+
 describe("gainExperience / xpToNextLevel", () => {
   // Dwarf, not Human -- Human's "Many Roads" trait adds +10% XP from every
   // source (tested separately below), which would throw off these tests'

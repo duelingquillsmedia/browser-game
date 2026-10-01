@@ -3945,6 +3945,56 @@ a level-10 and level-30 Druid resolve to the expected action lists.
 `packages/engine/src/status.ts` (`"barkskin"` status id/def);
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Wizard Built Out to Level 30: Ranked Abilities -- All 7 Classes Complete (2026-10-01)
+
+Same ranked-ability shape as the other six classes (see their own dated
+entries above), applied to the Wizard's existing level 1-4 kit (Elemental
+Shard, Arcane Barrier, "Spellcasting"). Arcana is a mana-like pool like
+Wylde, so this kit gets the full 6 actives, matching the Warrior/Druid.
+**This completes the ranked-ability build-out for all 7 classes.**
+
+One notable choice: Arcane Barrier already applied `"fortified"` (the
+Warrior's own buff id) from before this session's "each class mints its
+own buff id" convention existed. Rather than migrate already-shipped
+behavior, it was left as-is and Spellstrike's gate reuses the same id --
+safe because a character only ever has access to their own class's
+actions, so there was never any real risk of a Warrior's Enrage
+satisfying a Wizard's gate (or vice versa) to begin with; the "own id per
+class" habit in later classes was about thematic distinctness more than
+a correctness requirement.
+
+New actives, online by level 10:
+
+- **Elemental Shard** (lvl 2, existing) and **Arcane Barrier** (lvl 4,
+  existing) each get the full 4 ranks through 30.
+- **Frostbind** (lvl 6, new) -- a cold attack that roots the target for 1
+  turn, reusing "rooted" (already shared by the Ranger and Druid). 3
+  ranks.
+- **Arcane Nova** (lvl 8, new) -- an area attack, the Wizard's AoE option
+  (every other class has had one since their own build-out). 3 ranks.
+- **Immolate** (lvl 9, new) -- a fire attack with a damage-over-time,
+  claiming the engine's "burning" status, present since the AP-economy
+  rebuild but unused by any class until now. 3 ranks.
+- **Spellstrike** (lvl 10, new) -- the signature gated finisher,
+  requiring Arcane Barrier's Fortified buff active: the Wizard's biggest
+  single-target nuke. 4 ranks, its last landing exactly at 30.
+
+New engine tests cover family resolution across the Arcane Barrier
+ranks, the full 6-ability kit being stable from level 10 through 30,
+Spellstrike's Fortified gate, Frostbind sharing "rooted" cleanly, and
+Immolate's burn landing with the expected tick amount. The Immolate test
+initially failed (9 vs. an expected 11) because its 3-value rng sequence
+only covered the attack's own hit/crit/damage rolls -- `resolveApplyStatus`
+draws a 4th roll for the status's own variance, which `sequenceRng`
+silently satisfied by wrapping back to the first (non-1.0-variance) value
+instead of erroring; fixed by adding the missing 4th roll. Verified
+directly against the built engine package that a level-10 and level-30
+Wizard resolve to the expected action lists.
+
+### Critical files
+`packages/engine/src/classes.ts` (Wizard's `actions`);
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
