@@ -3754,6 +3754,58 @@ action lists.
 `packages/engine/src/status.ts` (`"parrying"` status id/def);
 `packages/engine/src/__tests__/character.test.ts`.
 
+## Cleric Built Out to Level 30: Ranked Abilities (2026-10-01)
+
+Same ranked-ability shape as the Warrior/Soldier build-outs (see those
+dated entries above), applied to the Cleric's existing level 1-4 kit
+(Mend, Radiant Beam, "Spellcasting"). Prayer is the tightest resource of
+any class so far -- a fixed **5-point pool**, +1 per landed Basic
+Attack/+2 on crit -- so every new ability's cost stays in the 2-5 range,
+even tighter than the Soldier's build.
+
+This build-out needed one small, generically useful engine fix: a
+`"heal"`-kind action's `applyStatus` wasn't wired to anything --
+`resolveAttack` already applied its own `applyStatus` to the attack's
+target, but the `"heal"` case in `submitPlayerAction` only ever called
+`resolveHeal` and stopped there. Without that wiring, a heal could never
+also shield or HoT the ally it healed, which blocks the entire "support
+caster" half of a healer's kit. Fixed with one added line
+(`resolveApplyStatus(state, actor, target, action, rng)` right after
+`resolveHeal`, `packages/engine/src/combat.ts`) -- purely additive, since
+no existing ability used `applyStatus` on a `"heal"`-kind action before
+this, so every existing class/test is unaffected.
+
+New actives, online by level 10 (5 total, matching the Soldier's count
+rather than the Warrior's 6, for the same tight-economy reason):
+
+- **Mend** (lvl 2, existing) and **Radiant Beam** (lvl 4, existing) each
+  get 4 ranks through 30, growing their flat/percent healing and damage.
+- **Ward** (lvl 6, new) -- shields an ally for a few turns, absorbing
+  damage equal to a percentage of Spell Power. First real use of the
+  engine's `"ward"` shield-kind status, which existed but had gone
+  unclaimed by any class until now. 3 ranks.
+- **Grace** (lvl 8, new) -- a small heal plus a heal-over-time on an
+  ally, via a new `"grace"` HoT status (status.ts) kept distinct from
+  Druid's eventual nature-flavored HoT. 3 ranks.
+- **Sanctuary** (lvl 10, new) -- the signature "kit comes online"
+  ability: heals an ally *and* shields them in the same cast, costing the
+  full Prayer bar. 4 ranks, its last landing exactly at 30 like Warlord's
+  Reckoning/Shield Sweep did for the other two classes.
+
+New engine tests cover family resolution across the Mend ranks, the full
+5-ability kit being stable from level 10 through 30, and -- since this is
+the first class to actually exercise the new heal+applyStatus wiring --
+dedicated tests confirming Ward's shield and Sanctuary's heal-and-shield
+combo land on the healed ally with the expected amounts. Verified
+directly against the built engine package that a level-10 and level-30
+Cleric resolve to the expected action lists.
+
+### Critical files
+`packages/engine/src/combat.ts` (heal-kind `applyStatus` wiring);
+`packages/engine/src/classes.ts` (Cleric's `actions`/`passives`);
+`packages/engine/src/status.ts` (`"grace"` status id/def);
+`packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

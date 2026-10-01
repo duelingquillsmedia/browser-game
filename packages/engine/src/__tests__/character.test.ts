@@ -25,7 +25,7 @@ import type { Character } from "../character.js";
 import { RACES, type HalfElfChoice } from "../races.js";
 import { CLASSES } from "../classes.js";
 import { isActionReady, startCombat, submitPlayerAction, toCombatant, type Combatant } from "../combat.js";
-import { forD20, sequenceRng } from "./testUtils.js";
+import { forD20, forVariance, sequenceRng } from "./testUtils.js";
 
 function makeFoe(overrides: Partial<Combatant> = {}): Combatant {
   return {
@@ -619,6 +619,68 @@ describe("ranked abilities (levels 5-30 Soldier build-out)", () => {
     expect(() =>
       submitPlayerAction(state, { actorId: soldier.id, actionId: "counter-strike", targetId: "foe" })
     ).toThrow();
+  });
+});
+
+describe("ranked abilities (levels 5-30 Cleric build-out)", () => {
+  function clericAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-cleric-rank-${level}`,
+      name: "Sister Elena",
+      raceId: "human",
+      classId: "cleric",
+      baseAbilityScores: { str: 10, dex: 10, vit: 10, int: 10, wis: 15 },
+      level,
+    });
+  }
+
+  it("resolves a ranked family down to exactly one entry: the highest rank the level qualifies for", () => {
+    expect(clericAtLevel(4).actions.find((a) => a.familyId === "mend")?.id).toBe("mend");
+    expect(clericAtLevel(10).actions.find((a) => a.familyId === "mend")?.id).toBe("mend"); // rank 2 unlocks at 11
+    expect(clericAtLevel(11).actions.find((a) => a.familyId === "mend")?.id).toBe("mend-r2");
+    expect(clericAtLevel(18).actions.find((a) => a.familyId === "mend")?.id).toBe("mend-r3");
+    expect(clericAtLevel(25).actions.find((a) => a.familyId === "mend")?.id).toBe("mend-r4");
+  });
+
+  it("has the full 5-ability kit by level 10, with nothing further added through level 30", () => {
+    const familyIds = (c: Character) =>
+      new Set(c.actions.filter((a) => a.familyId).map((a) => a.familyId));
+    const atTen = familyIds(clericAtLevel(10));
+    expect(atTen).toEqual(new Set(["mend", "radiant-beam", "ward", "grace", "sanctuary"]));
+    expect(familyIds(clericAtLevel(30))).toEqual(atTen);
+  });
+
+  it("Ward shields the ally it heals -- the heal-kind applyStatus wiring lands on the same target", () => {
+    const cleric = { ...toCombatant(clericAtLevel(10), "party"), resource: 10 };
+    const ally = { ...toCombatant(clericAtLevel(10), "party"), id: "ally" };
+    // Lopsided initiative so the cleric acts first regardless of Dex growth.
+    const state = startCombat([cleric, ally], [makeFoe()], sequenceRng([forD20(20), forD20(1), forD20(10)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: cleric.id, actionId: "ward", targetId: "ally" },
+      sequenceRng([forVariance(1), forVariance(1)]) // one roll for the (flatBase: 0) heal, one for the shield
+    );
+    const shielded = after.combatants.find((c) => c.id === "ally")!;
+    const ward = shielded.statusEffects.find((e) => e.defId === "ward");
+    expect(ward).toBeDefined();
+    expect(ward!.amount).toBe(Math.round(cleric.abilityScores.wis * 0.6)); // rank 1 power
+  });
+
+  it("Sanctuary heals and shields the same ally in one cast", () => {
+    const cleric = { ...toCombatant(clericAtLevel(10), "party"), resource: 10 };
+    const ally = { ...toCombatant(clericAtLevel(10), "party"), id: "ally", hp: 1 };
+    const state = startCombat([cleric, ally], [makeFoe()], sequenceRng([forD20(20), forD20(1), forD20(10)]));
+    const after = submitPlayerAction(
+      state,
+      { actorId: cleric.id, actionId: "sanctuary", targetId: "ally" },
+      sequenceRng([forVariance(1), forVariance(1)])
+    );
+    const target = after.combatants.find((c) => c.id === "ally")!;
+    const expectedHeal = 60 + Math.round(cleric.abilityScores.wis * 0.3);
+    expect(target.hp).toBe(Math.min(target.maxHp, 1 + expectedHeal));
+    const ward = target.statusEffects.find((e) => e.defId === "ward");
+    expect(ward).toBeDefined();
+    expect(ward!.amount).toBe(Math.round(cleric.abilityScores.wis * 0.8)); // rank 1 power
   });
 });
 

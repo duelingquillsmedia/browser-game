@@ -963,6 +963,10 @@ function performAction(state: CombatState, request: ActionRequest, rng: RNG): vo
       const target = findCombatant(state, targetId);
       if (!isTargetable(target)) throw new Error(`${target.name} is not a valid target.`);
       resolveHeal(state, actor, target, action, rng);
+      // A heal that also carries a status (Cleric's Ward/Grace/Sanctuary) applies it
+      // to the same target it just healed -- same treatment `resolveAttack` already
+      // gives its own target, just not previously wired up since nothing needed it.
+      resolveApplyStatus(state, actor, target, action, rng);
       break;
     }
     case "buff":

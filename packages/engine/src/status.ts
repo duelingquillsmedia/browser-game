@@ -33,6 +33,7 @@ export type StatusEffectId =
   | "fortified"
   | "braced"
   | "parrying"
+  | "grace"
   | "barbedPrimed";
 
 export interface StatusEffectDef {
@@ -72,6 +73,9 @@ export const STATUS_EFFECT_DEFS: Record<StatusEffectId, StatusEffectDef> = {
   // gate on "requires Parrying" (Riposte Stance's own buff) without also being satisfied by a
   // Warrior's Enrage/Bulwark Stance -- see actions.ts's `requiresStatusDefId`.
   parrying: { id: "parrying", name: "Parrying", kind: "buff", description: "Evasion is temporarily increased." },
+  // Cleric's own HoT flavor/id -- kept distinct from "bloom" so a later nature-flavored
+  // class (Druid) isn't stuck reusing a radiant-sounding name, or vice versa.
+  grace: { id: "grace", name: "Grace", kind: "hot", description: "Restores HP at the start of each of their turns." },
   barbedPrimed: {
     id: "barbedPrimed",
     name: "Barbed",
