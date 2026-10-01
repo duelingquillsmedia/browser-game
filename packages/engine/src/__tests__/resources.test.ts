@@ -97,7 +97,7 @@ describe("class resource pools", () => {
       { actorId: wizard.id, actionId: "elemental-shard", targetId: "foe" },
       sequenceRng([GUARANTEED_FAILURE]) // guaranteed miss
     );
-    expect(after.combatants.find((c) => c.id === wizard.id)!.resource).toBe(202); // 232 - 30, spent even on a miss
+    expect(after.combatants.find((c) => c.id === wizard.id)!.resource).toBe(182); // 232 - 50, spent even on a miss
   });
 
   it("builds Fury when a Warrior uses their melee Basic Attack, hit or miss", () => {

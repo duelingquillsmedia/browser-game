@@ -3386,6 +3386,67 @@ were removed.
 `apps/client/src/screens/CharacterSelectScreen.css` (new
 `@media (max-width: 600px)` block; no `.tsx`/logic changes).
 
+## Combat: Bigger Battlefield via an Overlaid Action Bar (2026-10-01)
+
+An experiment, confirmed by the user on both desktop and mobile: on mouse/
+desktop, the HUD footer used to claim its own `auto`-height grid row out of
+the 1600x900 artboard, shrinking the stage above it by however tall the
+footer happened to be. It now instead overlaps the stage's own grid row
+(pinned to the bottom via `align-self: end`) as a translucent, blurred
+floating bar, so the stage gets the artboard's full remaining height and
+the battlefield renders noticeably bigger -- the same trade this app's
+mobile/touch combat dock already made for its own reasons (see the
+"Mobile HUD redesign" comment in `CombatScreen.css`), now extended to the
+primary mouse experience too.
+
+The combatants sit right at the stage's own bottom edge, so without a
+counter-measure they'd render straight under the new overlay. `CombatScreen.tsx`
+measures the overlay's real rendered height via the same `useElementHeight`/
+`ResizeObserver` hook the mobile dock already used for an analogous shift,
+exposes it as a `--cbt-overlay-hud-h` CSS custom property on `.cbt-artboard`,
+and `.cbt-stage-grid` adds that much extra bottom padding -- shifting the
+party/enemies up to clear the overlay instead of disappearing behind it.
+
+One pitfall worth recording: CSS Grid places items with an explicit
+row *and* column before auto-placing the rest, so giving only the new HUD
+overlay wrapper an explicit `grid-row: 2 / 3` (needed for it to pin to the
+bottom of the stage's row) pushed the still-auto-placed `.cbt-stage` into
+the now-mostly-empty 3rd (`auto`) row instead of sharing row 2 with it --
+the battlefield visually vanished (collapsed to near-zero height) until
+`.cbt-stage` was given that same explicit `grid-row: 2 / 3` placement too.
+
+Scoped to `@media (pointer: fine)` only -- touch combat keeps its existing,
+separately-tuned real-pixel dock untouched.
+
+### Critical files
+`apps/client/src/screens/CombatScreen.tsx` (`.cbt-hud-overlay-wrap` +
+`hudOverlayHeight` measurement, `--cbt-overlay-hud-h` custom property);
+`apps/client/src/screens/CombatScreen.css` (new `@media (pointer: fine)`
+block).
+
+## Class Balance: Elemental Shard & Wylde Wrath Resource Costs (2026-10-01)
+
+Per an update to the project's own Class Style Sheet (Google Drive): both
+abilities were landing too much damage for how little of their resource
+pool they drained. Elemental Shard (Wizard) and Wylde Wrath (Druid) are
+the game's only two "mana-like" resource pools (Arcana/Wylde) that start a
+fight already full and scale with an ability score (`100 + 6×ability +
+8×(level-1)`, see `stats.ts`'s `computeResourceMax`) rather than the small
+fixed integer pools (Fury, Expertise, Prayer, Focus, Cunning) every other
+class spends down from empty -- at their old costs (30 and 60) both were a
+small enough fraction of that scaling pool, especially combined with the
+passive resource gain from landing Basic Attacks, to be cast nearly every
+turn for an entire fight with no real resource tension.
+
+**Elemental Shard**: `resourceCost` 30 -> 50. **Wylde Wrath**:
+`resourceCost` 60 -> 70. Both abilities' AP costs are unchanged (2 and 3
+respectively) -- only the resource (Arcana/Wylde) cost moved.
+
+### Critical files
+`packages/engine/src/classes.ts` (`elemental-shard` and `wylde-wrath`
+action defs); `packages/engine/src/__tests__/resources.test.ts` (updated
+the hardcoded post-cast Arcana expectation from the old cost).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
