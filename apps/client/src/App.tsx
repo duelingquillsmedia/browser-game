@@ -18,6 +18,9 @@ import { addCharacterToRoster, updateCharacterInRoster } from "./game/roster";
 import { isSupabaseConfigured, supabase, supabaseConfigDebug } from "./lib/supabaseClient";
 import "./App.css";
 
+/** Debug/test account that gets the admin "Set Level" control on the Home screen (see HomeScreen.tsx). */
+const ADMIN_EMAIL = "adminteam@duelingquills.com";
+
 type Screen =
   | { kind: "intro" }
   | { kind: "auth" }
@@ -41,8 +44,13 @@ function App() {
   // (already signed-in) player, "New Game" otherwise. Checked once up front
   // and kept in sync by the auth listener below.
   const [hasSession, setHasSession] = useState(false);
+  // Drives the admin-only "Set Level" control on the Home screen -- see ADMIN_EMAIL above.
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session));
+    supabase.auth.getSession().then(({ data }) => {
+      setHasSession(!!data.session);
+      setUserEmail(data.session?.user?.email ?? null);
+    });
   }, []);
 
   // Picks up sign-ins that complete via Google's full-page OAuth redirect --
@@ -52,15 +60,17 @@ function App() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") {
         setHasSession(true);
+        setUserEmail(session?.user?.email ?? null);
         if (screenRef.current.kind === "intro" || screenRef.current.kind === "auth") {
           setScreen({ kind: "characterSelect" });
         }
       }
       if (event === "SIGNED_OUT") {
         setHasSession(false);
+        setUserEmail(null);
         setScreen({ kind: "intro" });
       }
     });
@@ -175,6 +185,15 @@ function App() {
           onSignOut={async () => {
             await supabase.auth.signOut();
             setScreen({ kind: "intro" });
+          }}
+          isAdmin={userEmail === ADMIN_EMAIL}
+          onUpdateCharacter={async (next) => {
+            setScreen({ kind: "home", character: next });
+            try {
+              await updateCharacterInRoster(next);
+            } catch (err) {
+              console.error("Failed to save admin level change:", err);
+            }
           }}
         />
       </GameShell>

@@ -509,6 +509,42 @@ export function gainExperience(character: Character, amount: number): Experience
   };
 }
 
+/**
+ * Admin/debug tool: directly sets `character` to an arbitrary `level`
+ * (clamped to `[1, LEVEL_CAP]`), bypassing XP entirely and able to move in
+ * either direction -- unlike `gainExperience`, which only ever advances
+ * forward via earned XP. Recomputes ability scores/max HP/resource/actions
+ * the same way `gainExperience` does, but tops HP and resource back up to
+ * full (rather than healing by a delta) since this isn't meant to simulate
+ * an in-fiction level-up, just let a class's kit be inspected at any level.
+ */
+export function setCharacterLevel(character: Character, level: number): Character {
+  const clamped = Math.max(1, Math.min(LEVEL_CAP, Math.round(level)));
+  if (clamped === character.level) {
+    return character;
+  }
+
+  const cls = getClass(character.classId);
+  const race = getRace(character.raceId);
+
+  const newAbilityScores = abilityScoresWithGear(character, race, cls, clamped);
+  const newMaxHp = computeMaxHealth(newAbilityScores, cls.id, clamped);
+  const newResourceMax = computeResourceMax(newAbilityScores, cls.id, clamped);
+
+  const leveled: Character = {
+    ...character,
+    level: clamped,
+    xp: 0,
+    abilityScores: newAbilityScores,
+    maxHp: newMaxHp,
+    hp: newMaxHp,
+    resource: newResourceMax ?? character.resource,
+    proficiencyBonus: 2 + Math.floor((clamped - 1) / 4),
+  };
+
+  return applyEquipmentEffects(leveled, cls, race);
+}
+
 /** Number of slots on the Skills page's action bar. */
 export const ACTION_BAR_SLOT_COUNT = 6;
 

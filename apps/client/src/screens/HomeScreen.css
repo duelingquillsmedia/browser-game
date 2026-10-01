@@ -80,6 +80,21 @@
   margin-top: 14px;
 }
 
+.aow-admin-row {
+  margin-top: 8px;
+}
+
+.aow-admin-level-input {
+  width: 64px;
+  background: var(--aow-inset);
+  border: 1px solid var(--aow-control-border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-family: var(--aow-font-mono);
+  font-size: 13px;
+  color: var(--aow-secondary);
+}
+
 .aow-map-art {
   position: relative;
   flex: 1;

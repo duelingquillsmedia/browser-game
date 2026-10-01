@@ -14,6 +14,7 @@ import {
   gainExperience,
   ownsItem,
   sellItem,
+  setCharacterLevel,
   unequipItem,
   useConsumable,
   withClassMigrationIfMissing,
@@ -687,6 +688,64 @@ describe("gainExperience / xpToNextLevel", () => {
     expect(exact.levelsGained).toBe(1);
     expect(exact.character.level).toBe(2);
     expect(exact.character.xp).toBe(10); // 110 - 100 threshold, carried over
+  });
+});
+
+describe("setCharacterLevel (admin/debug level set)", () => {
+  function warriorAtLevel(level: number) {
+    return createCharacter({
+      id: `pc-set-level-${level}`,
+      name: "Bram",
+      raceId: "dwarf",
+      classId: "warrior",
+      baseAbilityScores: { str: 15, dex: 14, vit: 13, int: 12, wis: 10 },
+      level,
+    });
+  }
+
+  it("jumps straight to a higher level, matching a character created at that level", () => {
+    const jumped = setCharacterLevel(warriorAtLevel(1), 13);
+    const createdDirectly = warriorAtLevel(13);
+    expect(jumped.level).toBe(13);
+    expect(jumped.abilityScores).toEqual(createdDirectly.abilityScores);
+    expect(jumped.maxHp).toBe(createdDirectly.maxHp);
+    expect(jumped.actions.map((a) => a.id).sort()).toEqual(createdDirectly.actions.map((a) => a.id).sort());
+  });
+
+  it("can move a character backward in level, not just forward", () => {
+    const lowered = setCharacterLevel(warriorAtLevel(20), 3);
+    expect(lowered.level).toBe(3);
+    expect(lowered.actions.some((a) => a.id === "cleave-r2")).toBe(false); // Cleave rank 2 unlocks at 13
+  });
+
+  it("tops HP and resource back up to full rather than healing by a delta", () => {
+    const wounded = { ...warriorAtLevel(5), hp: 1, resource: 0 };
+    const leveled = setCharacterLevel(wounded, 10);
+    expect(leveled.hp).toBe(leveled.maxHp);
+  });
+
+  it("resets xp to 0 and recomputes proficiency bonus", () => {
+    const character = { ...warriorAtLevel(1), xp: 55 };
+    const leveled = setCharacterLevel(character, 9);
+    expect(leveled.xp).toBe(0);
+    expect(leveled.proficiencyBonus).toBe(4); // 2 + floor((9-1)/4)
+  });
+
+  it("clamps below 1 and above LEVEL_CAP instead of producing an invalid level", () => {
+    expect(setCharacterLevel(warriorAtLevel(5), 0).level).toBe(1);
+    expect(setCharacterLevel(warriorAtLevel(5), -10).level).toBe(1);
+    expect(setCharacterLevel(warriorAtLevel(5), 9999).level).toBe(LEVEL_CAP);
+  });
+
+  it("is a no-op (same reference) when already at the requested level", () => {
+    const character = warriorAtLevel(7);
+    expect(setCharacterLevel(character, 7)).toBe(character);
+  });
+
+  it("preserves an equipped gear bonus through the level change", () => {
+    const equipped = equipItem(warriorAtLevel(5), "ironLongsword");
+    const leveled = setCharacterLevel(equipped, 15);
+    expect(leveled.equipment.meleeWeapon).toBe("ironLongsword");
   });
 });
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ABILITY_KEYS,
   ABILITY_NAMES,
@@ -6,6 +7,7 @@ import {
   RACES,
   computeResourceMax,
   getClassResource,
+  setCharacterLevel,
   xpToNextLevel,
   type Character,
 } from "@eridan/engine";
@@ -23,6 +25,10 @@ export interface HomeScreenProps {
   onOpenSkills: () => void;
   onOpenCharacterSelect: () => void;
   onSignOut: () => void;
+  /** True only for the single admin test account -- shows a debug "Set Level" control (see App.tsx's `isAdminUser`). */
+  isAdmin?: boolean;
+  /** Required when `isAdmin` is true, to persist a level set via the admin control. */
+  onUpdateCharacter?: (character: Character) => void;
 }
 
 export function HomeScreen({
@@ -34,7 +40,10 @@ export function HomeScreen({
   onOpenSkills,
   onOpenCharacterSelect,
   onSignOut,
+  isAdmin,
+  onUpdateCharacter,
 }: HomeScreenProps) {
+  const [levelInput, setLevelInput] = useState(String(character.level));
   const race = RACES[character.raceId];
   const cls = CLASSES[character.classId];
   const resourceConfig = getClassResource(character.classId);
@@ -136,6 +145,32 @@ export function HomeScreen({
                 Sign Out
               </button>
             </div>
+
+            {isAdmin && onUpdateCharacter && (
+              <div className="aow-card-actions aow-admin-row">
+                <input
+                  type="number"
+                  min={1}
+                  max={LEVEL_CAP}
+                  className="aow-admin-level-input"
+                  value={levelInput}
+                  onChange={(e) => setLevelInput(e.target.value)}
+                  aria-label="Set character level"
+                />
+                <button
+                  type="button"
+                  className="aow-button-ghost"
+                  onClick={() => {
+                    const parsed = Number(levelInput);
+                    if (Number.isFinite(parsed)) {
+                      onUpdateCharacter(setCharacterLevel(character, parsed));
+                    }
+                  }}
+                >
+                  Set Level (Admin)
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

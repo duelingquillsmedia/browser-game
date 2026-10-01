@@ -3669,6 +3669,44 @@ did.
 ### Critical files
 `packages/engine/src/character.ts` (`LEVEL_CAP` 10 -> 30, doc comment).
 
+## Admin "Set Level" Debug Control (2026-10-01)
+
+One account, `adminteam@duelingquills.com`, now gets a "Set Level (Admin)"
+control on the Home screen's character card -- a number input plus a
+button that jumps the active character straight to any level from 1 to
+`LEVEL_CAP`, so a class's kit (ability unlocks, rank-ups, passives) can be
+inspected at any level without grinding real XP.
+
+This needed a new engine function, since `gainExperience` can't do it:
+it's forward-only (XP accumulates, levels only go up) and refuses to run
+once a character is already at `LEVEL_CAP`. The new `setCharacterLevel`
+(`packages/engine/src/character.ts`) sets an arbitrary level directly, in
+either direction, clamped to `[1, LEVEL_CAP]`. It mirrors
+`gainExperience`'s recompute (ability scores via `abilityScoresWithGear`,
+max HP/resource via `stats.ts`, proficiency bonus, then
+`applyEquipmentEffects` to rebuild the action list at the new level) but
+tops HP/resource back up to full and resets `xp` to 0, rather than healing
+by a delta -- this isn't meant to simulate an in-fiction level-up, just let
+a class be inspected at any point in its curve. A no-op (returns the same
+object) when the requested level already matches.
+
+The admin gate is client-side only, by design -- a convenience for one
+test account, not a security boundary, since this repo has no
+server-side role/RLS concept at all yet (confirmed via a full grep: no
+"admin"/"isAdmin" anything existed before this). `App.tsx` now tracks the
+signed-in user's email (`supabase.auth.getSession()`/`onAuthStateChange`,
+neither of which read `.user.email` before this) and passes
+`isAdmin={userEmail === ADMIN_EMAIL}` plus a new `onUpdateCharacter` prop
+down to `HomeScreen`, which renders the control only when `isAdmin` is
+true and persists the result through the same `updateCharacterInRoster`
+path every other screen already uses.
+
+### Critical files
+`packages/engine/src/character.ts` (`setCharacterLevel`, new);
+`apps/client/src/App.tsx` (`ADMIN_EMAIL`, `userEmail` state, `HomeScreen`
+wiring); `apps/client/src/screens/HomeScreen.tsx`+`.css` (`isAdmin`/
+`onUpdateCharacter` props, the admin row); `packages/engine/src/__tests__/character.test.ts`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
