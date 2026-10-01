@@ -3651,6 +3651,24 @@ block-reason text); `apps/client/src/components/combat/CombatResultOverlay.tsx`
 ("ranked up" copy); `apps/client/src/screens/CharacterScreen.tsx`
 (passives filtered by `unlockLevel`).
 
+## Level Cap Raised Back to 30 (2026-10-01)
+
+Per the user, now that the Warrior has full ranked-ability content
+through level 30 (see the entry just above): `LEVEL_CAP` goes back to
+its original design value, 30, reverting the temporary drop to 10 from
+earlier today.
+
+Every other class (Soldier, Cleric, Ranger, Rogue, Druid, Wizard) still
+only has abilities through level 4 -- nothing about this change invents
+content for them. A character of any other class can now level all the
+way to 30, their stats/HP/resource pool keep growing the whole way per
+the existing per-level formulas, but they'll plateau ability-wise after
+level 4 until each gets its own build-out pass the way the Warrior just
+did.
+
+### Critical files
+`packages/engine/src/character.ts` (`LEVEL_CAP` 10 -> 30, doc comment).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

@@ -410,12 +410,15 @@ export function useConsumable(character: Character, itemId: string): Character {
 }
 
 /**
- * Highest level a character can reach. Temporarily capped at 10 (down from
- * the original design's 30) while content is built out ten levels at a
- * time per class -- raise this once the next ten levels' worth of
- * abilities/growth exist for every class, not just one.
+ * Highest level a character can reach -- the original design target.
+ * Briefly lowered to 10 while the Warrior's own kit was being built out
+ * level-by-level; raised back now that the Warrior has full ranked-ability
+ * content through 30 (see README's dated entry). Every other class still
+ * only has abilities through level 4 -- they'll plateau there (stat growth
+ * and HP/resource scaling keep going, they just have nothing new to use)
+ * until each gets its own build-out pass the same way.
  */
-export const LEVEL_CAP = 10;
+export const LEVEL_CAP = 30;
 
 /**
  * XP required to advance from `level` to `level + 1` -- homebrew, sized to
