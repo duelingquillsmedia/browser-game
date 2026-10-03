@@ -452,6 +452,7 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
     onUpdateCharacter({
       ...character,
       worldMapState: {
+        ...mapState,
         day: mapState.day + finishedTravel.days,
         partyHexKey: finishedTravel.toHexKey,
         exploredHexKeys: [...nextExplored],

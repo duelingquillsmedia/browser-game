@@ -4262,6 +4262,41 @@ a clean client `tsc --noEmit` + `vite build`.
 ### Critical files
 `apps/client/src/screens/WorldMapScreen.tsx`+`.css`.
 
+## Fix: Arriving From Travel Was Wiping Every Spawn, Every Time (2026-10-03)
+
+The previous round's live-timing investigation had confirmed the spawn
+reconcile interval itself fires correctly and independently of travel --
+true, but incomplete. The user reported that *every single arrival*, even
+a single 30-second 1-hex hop, caused every wandering monster on the map to
+move or despawn, regardless of how recently it had spawned -- nothing close
+to the intended 2-4 minute lifetime. Reproduced exactly: traveled one hex
+(30s) in a throwaway sandbox and confirmed the active spawn roster was
+completely different afterward, every time.
+
+The bug: `completeTravel` (`WorldMapScreen.tsx`) builds the character's new
+`worldMapState` as a fresh object literal (`{ day, partyHexKey,
+exploredHexKeys, travel: undefined }`) instead of spreading `...mapState`
+first, unlike `startTravel`/`haltTravel`, which both already do. That
+silently drops `monsterSpawns` -- not overwritten with stale data, just
+gone, replaced with `undefined` -- on every arrival. The very next spawn
+reconcile tick (within 10 seconds) sees an empty list and tops it all the
+way back up to 6 fresh spawns from scratch, which looks exactly like "every
+monster moved or despawned," independent of any actual timer.
+
+**Fix**: added the missing `...mapState` spread, matching the other two
+travel handlers -- one line.
+
+Verified live: reproduced the original bug first (confirmed every spawn
+changed after a single 30s 1-hex journey on the pre-fix code, matching the
+user's exact report), then re-ran the identical scenario after the fix --
+all 6 original spawns, same ids *and* same hexes, survived a 1-hex arrival
+untouched, as expected given their 2-4 minute lifetimes hadn't elapsed.
+Also reran the full engine suite (205 tests) and a clean client `tsc
+--noEmit` + `vite build`.
+
+### Critical files
+`apps/client/src/screens/WorldMapScreen.tsx` (`completeTravel`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
