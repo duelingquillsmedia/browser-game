@@ -92,6 +92,15 @@ export interface WorldMapState {
    * the party isn't traveling.
    */
   travel?: TravelState;
+  /**
+   * This character's own wandering monsters on the World Map -- a "living
+   * world" flavor system, entirely client-driven (see
+   * `apps/client/src/game/monsterSpawns.ts`) and per-character, since there's
+   * no shared/server world state to put it in. The engine treats every field
+   * here as opaque data (a hex key and a monster-template id, both plain
+   * strings) the same way `TravelState.toHexKey` already is.
+   */
+  monsterSpawns?: MonsterSpawn[];
 }
 
 export interface TravelState {
@@ -101,6 +110,24 @@ export interface TravelState {
   arriveAt: number;
   /** In-world days this journey adds once it completes -- already fixed at the start (hex distance), so arrival doesn't need to recompute it. */
   days: number;
+}
+
+/**
+ * A single wandering monster on the World Map: lingers at `hexKey` for a
+ * while, then either wanders to an adjacent hex or disappears, mirroring
+ * `TravelState`'s own "store wall-clock timestamps, recompute from
+ * `Date.now()` on mount/tick" pattern so it resolves correctly even if the
+ * player was away from the World Map screen when its next event was due
+ * (see `apps/client/src/game/monsterSpawns.ts`'s `reconcileMonsterSpawns`).
+ */
+export interface MonsterSpawn {
+  id: string;
+  hexKey: string;
+  templateId: string;
+  /** `Date.now()`-style epoch milliseconds when this spawn arrived at `hexKey`. */
+  since: number;
+  /** `Date.now()`-style epoch milliseconds when it next wanders or despawns. */
+  nextEventAt: number;
 }
 
 export interface CharacterAppearance {

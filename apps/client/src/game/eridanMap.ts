@@ -189,19 +189,31 @@ export function nearest<T extends { x: number; y: number }>(list: T[], x: number
   ).item;
 }
 
-/** Danger label + color for a region, from its minimum level. */
+/** The up-to-6 hexes directly adjacent to `key` (reuses `hexDisk`'s already-tested cube math rather than re-deriving neighbor offsets). */
+export function hexNeighbors(key: string): string[] {
+  const disk = hexDisk(key, 1);
+  disk.delete(key);
+  return [...disk];
+}
+
+/**
+ * Danger label + color for a region, from its minimum level. Rescaled for
+ * the 1-30 region curve above (`REGIONS`) -- the previous breakpoints
+ * (23/26/31) were calibrated for a stale 20-44 placeholder curve and, left
+ * unchanged after that rewrite, made nearly the entire map read "Safe".
+ */
 export function dangerTier(lo: number): [string, string] {
-  if (lo <= 23) return ["Safe", "#86c46f"];
-  if (lo <= 26) return ["Moderate", "#d9b865"];
-  if (lo <= 31) return ["Dangerous", "#e08a72"];
+  if (lo <= 5) return ["Safe", "#86c46f"];
+  if (lo <= 15) return ["Moderate", "#d9b865"];
+  if (lo <= 24) return ["Dangerous", "#e08a72"];
   return ["Deadly", "#d0604a"];
 }
 
-/** Encounter-rate display string for a region, from its minimum level. */
+/** Encounter-rate display string for a region, from its minimum level. Rescaled alongside `dangerTier` -- see its comment. */
 export function encounterChance(lo: number): string {
-  if (lo <= 23) return "10%";
-  if (lo <= 26) return "15%";
-  if (lo <= 31) return "25%";
+  if (lo <= 5) return "10%";
+  if (lo <= 15) return "15%";
+  if (lo <= 24) return "25%";
   return "40%";
 }
 

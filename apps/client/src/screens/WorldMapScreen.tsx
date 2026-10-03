@@ -33,15 +33,19 @@ import {
   type TerrainKey,
 } from "../game/eridanMap";
 import { sampleTerrain, type TerrainSample } from "../game/terrainSampler";
+import { buildSpawnEncounter, reconcileMonsterSpawns } from "../game/monsterSpawns";
 import { TownHubPanel } from "../components/TownHubPanel";
 import eridanMap from "../assets/world/eridan-map.jpg";
 import "./WorldMapScreen.css";
 
 export interface WorldMapScreenProps {
   character: Character;
-  onChooseEncounter: (encounter: Encounter) => void;
+  onChooseEncounter: (encounter: Encounter, character: Character) => void;
   onUpdateCharacter: (next: Character) => void;
 }
+
+/** How often the World Map screen re-checks its wandering monsters' lifecycles while open -- coarser than the 150ms travel tick, since "lingers a couple minutes" doesn't need sub-second precision. */
+const SPAWN_RECONCILE_MS = 10_000;
 
 const ZOOM_MIN = 2;
 const ZOOM_MAX = 6;
@@ -153,6 +157,40 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
       cancelled = true;
     };
   }, []);
+
+  // Kept current every render so the interval below always reconciles against the latest
+  // character/terrain without re-subscribing the interval itself.
+  const characterRef = useRef(character);
+  characterRef.current = character;
+  const terrainRef = useRef(terrain);
+  terrainRef.current = terrain;
+
+  // The World Map's "living world": advances every wandering monster's lifecycle (wander/despawn)
+  // and tops the roster back up, once terrain is available and then every SPAWN_RECONCILE_MS --
+  // same "recompute from Date.now(), persist only if something changed" shape as travel's own tick.
+  useEffect(() => {
+    if (!terrain) return;
+    function tick() {
+      const currentTerrain = terrainRef.current;
+      if (!currentTerrain) return;
+      const currentCharacter = characterRef.current;
+      const currentMapState = currentCharacter.worldMapState ?? defaultWorldMapState();
+      const { spawns, changed } = reconcileMonsterSpawns({
+        spawns: currentMapState.monsterSpawns ?? [],
+        now: Date.now(),
+        terrain: currentTerrain,
+        exploredHexKeys: currentMapState.exploredHexKeys,
+        partyHexKey: currentMapState.partyHexKey,
+      });
+      if (changed) {
+        onUpdateCharacter({ ...currentCharacter, worldMapState: { ...currentMapState, monsterSpawns: spawns } });
+      }
+    }
+    tick();
+    const id = setInterval(tick, SPAWN_RECONCILE_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terrain]);
 
   function syncViewportRect() {
     const vp = viewportRef.current;
@@ -456,6 +494,26 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
   const isPartyHere = activeHexKey === mapState.partyHexKey;
   const isWater = activeTerrain === "water";
 
+  // Visible wandering monsters -- only ones the fog of war has already revealed, same as every
+  // other piece of map knowledge (a spawn can wander onto an unexplored hex at the fog's edge).
+  const visibleSpawns = useMemo(
+    () => (mapState.monsterSpawns ?? []).filter((s) => exploredSet.has(s.hexKey)),
+    [mapState.monsterSpawns, exploredSet]
+  );
+  const activeSpawn = !matchedEncounter ? visibleSpawns.find((s) => s.hexKey === activeHexKey) : undefined;
+  const spawnEncounter = useMemo(() => (activeSpawn ? buildSpawnEncounter(activeSpawn) : undefined), [activeSpawn]);
+
+  /** Engages a wandering monster: removes it from this character's own spawn list (so it can't reappear once combat resolves) and hands the resulting character + ad-hoc encounter off to the caller. */
+  function ventureSpawn() {
+    if (!activeSpawn || !spawnEncounter) return;
+    const nextCharacter: Character = {
+      ...character,
+      worldMapState: { ...mapState, monsterSpawns: (mapState.monsterSpawns ?? []).filter((s) => s.id !== activeSpawn.id) },
+    };
+    onUpdateCharacter(nextCharacter);
+    onChooseEncounter(spawnEncounter, nextCharacter);
+  }
+
   const partyPlaceName =
     POI_BY_HEX[mapState.partyHexKey]?.name ??
     (mapState.partyHexKey === PARTY_START_HEX ? HOME_TOWN_NAME : (terrain?.regionByHex[mapState.partyHexKey]?.id && REGION_BY_ID[terrain.regionByHex[mapState.partyHexKey]!.id!]?.name) || "the wilds");
@@ -510,6 +568,22 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                   ))}
                   {fogPath && <path d={fogPath} fill="#0b090e" opacity={0.84} />}
                   <path d={FULL_GRID_PATH} fill="none" stroke="rgba(232,200,170,0.15)" strokeWidth={0.5} />
+                  {visibleSpawns.map((s) => {
+                    const hex = HEX_BY_KEY[s.hexKey];
+                    if (!hex) return null;
+                    return (
+                      <circle
+                        key={s.id}
+                        className="aow-hexmap-spawn-dot"
+                        cx={hex.x}
+                        cy={hex.y}
+                        r={4}
+                        fill="#d0604a"
+                        stroke="#1c1410"
+                        strokeWidth={1}
+                      />
+                    );
+                  })}
                   {hoverHexKey && hoverHexKey !== activeHexKey && (
                     <polygon
                       points={hexPoints(HEX_BY_KEY[hoverHexKey].c, HEX_BY_KEY[hoverHexKey].r)}
@@ -626,12 +700,15 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
           )}
 
           <div className="aow-panel aow-map-detail-panel">
-            <div className="aow-panel-header">{isHome ? "HOME" : matchedEncounter ? "ENCOUNTER" : "SELECTED HEX"}</div>
+            <div className="aow-panel-header">{isHome ? "HOME" : matchedEncounter || spawnEncounter ? "ENCOUNTER" : "SELECTED HEX"}</div>
             <div className="aow-card-body">
               <div className="aow-item-header">
                 <div>
                   <div className="aow-item-name">
-                    {isHome ? HOME_TOWN_NAME : (activePoi?.name ?? (matchedEncounter ? matchedEncounter.location : "Unnamed hex"))}
+                    {isHome
+                      ? HOME_TOWN_NAME
+                      : (activePoi?.name ??
+                        (matchedEncounter ? matchedEncounter.location : spawnEncounter ? spawnEncounter.location : "Unnamed hex"))}
                   </div>
                   <div className="aow-item-type-line">
                     {activeRegion ? activeRegion.name : activeRegionInfo?.sea ? activeRegionInfo.sea : "Uncharted"}
@@ -645,22 +722,24 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                   ? HOME_TOWN_DESCRIPTION
                   : matchedEncounter
                     ? matchedEncounter.flavorText
-                    : activePoi?.description ??
-                      (isWater
-                        ? "Open water. A ship would be needed to cross it."
-                        : "An unremarkable stretch of Eridan, unmarked on any chart.")}
+                    : spawnEncounter
+                      ? spawnEncounter.flavorText
+                      : (activePoi?.description ??
+                        (isWater
+                          ? "Open water. A ship would be needed to cross it."
+                          : "An unremarkable stretch of Eridan, unmarked on any chart."))}
               </p>
 
-              {matchedEncounter && (
+              {(matchedEncounter || spawnEncounter) && (
                 <div className="aow-skill-stat-grid">
                   <div className="aow-skill-stat aow-map-foes-stat">
                     <span className="aow-skill-stat-label">FOES</span>
-                    <span>{describeFoes(matchedEncounter.monsters)}</span>
+                    <span>{describeFoes((matchedEncounter ?? spawnEncounter)!.monsters)}</span>
                   </div>
                 </div>
               )}
 
-              {!matchedEncounter && activeRegion && (
+              {!matchedEncounter && !spawnEncounter && activeRegion && (
                 <div className="aow-skill-stat-grid">
                   <div className="aow-skill-stat">
                     <span className="aow-skill-stat-label">LEVEL RANGE</span>
@@ -683,7 +762,7 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                 </div>
               )}
 
-              {matchedEncounter && isPartyHere && !canVenture && (
+              {(matchedEncounter || spawnEncounter) && isPartyHere && !canVenture && (
                 <p className="aow-warning">Too wounded to venture out — rest first.</p>
               )}
 
@@ -709,7 +788,16 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                   type="button"
                   className="aow-button-primary aow-map-venture-button"
                   disabled={!canVenture}
-                  onClick={() => onChooseEncounter(matchedEncounter)}
+                  onClick={() => onChooseEncounter(matchedEncounter, character)}
+                >
+                  Venture Out
+                </button>
+              ) : spawnEncounter && isPartyHere ? (
+                <button
+                  type="button"
+                  className="aow-button-primary aow-map-venture-button"
+                  disabled={!canVenture}
+                  onClick={ventureSpawn}
                 >
                   Venture Out
                 </button>

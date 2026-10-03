@@ -298,12 +298,12 @@ function App() {
         <WorldMapScreen
           character={screen.character}
           onUpdateCharacter={persist}
-          onChooseEncounter={(encounter) =>
+          onChooseEncounter={(encounter, character) =>
             setScreen({
               kind: "combat",
-              character: screen.character,
+              character,
               encounter,
-              combat: beginEncounter(screen.character, encounter),
+              combat: beginEncounter(character, encounter),
             })
           }
         />

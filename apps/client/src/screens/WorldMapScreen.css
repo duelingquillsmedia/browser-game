@@ -205,6 +205,24 @@
   }
 }
 
+.aow-hexmap-spawn-dot {
+  animation: aow-spawn-dot-pulse 2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes aow-spawn-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    r: 4;
+  }
+  50% {
+    opacity: 0.45;
+    r: 5.5;
+  }
+}
+
 /* -- Town Hub (Inn / General Store / Blacksmith) -- */
 
 .aow-town-hub-gold {

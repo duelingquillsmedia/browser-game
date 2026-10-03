@@ -4112,6 +4112,97 @@ distinct, collision-free hexes.
 `apps/client/src/game/lore.ts` (`ENCOUNTERS`);
 `packages/engine/src/__tests__/monsters.test.ts`.
 
+## World Map Spawn System: A Living, Dangerous Map (2026-10-03)
+
+Per the user: the World Map should feel alive and dangerous, not static --
+monsters should spawn out in the wilds (never on a town/landmark or one of
+the 6 hand-authored encounters), linger a couple minutes, then either wander
+to an adjacent hex "as if traveling themselves" or disappear. This adds that
+system entirely client-side, per-character, reusing `TravelState`'s own
+"persist wall-clock timestamps, recompute from `Date.now()` on mount/tick"
+pattern rather than inventing a server-side tick loop -- there's no shared
+Supabase "world" table to put one in, and there doesn't need to be, since
+each player's own wandering monsters are just their own flavor of danger.
+
+**Data model** (`packages/engine/src/character.ts`): a new `MonsterSpawn`
+(`id`, `hexKey`, `templateId`, `since`, `nextEventAt`) and an optional
+`WorldMapState.monsterSpawns` array. The engine treats every field as
+opaque data -- a hex key and a template id, both plain strings -- the same
+way `TravelState.toHexKey` already is; no new Supabase migration needed,
+since it rides along in the same `data` JSONB column everything else does.
+
+**Lifecycle** (new `apps/client/src/game/monsterSpawns.ts`): `reconcileMonsterSpawns`
+advances every spawn whose `nextEventAt` has passed -- a 2-4 minute random
+lifetime -- rolling 60% to wander to a random eligible neighbor hex (via a
+new `hexNeighbors` helper in `eridanMap.ts`, built on the already-tested
+`hexDisk(key, 1)` rather than new cube math) or 40% to despawn, repeated up
+to `MAX_CATCHUP_HOPS` times per spawn so a player who was away for hours
+doesn't force an unbounded loop -- it just catches up a few hops and lets
+the top-up refill the rest. After resolving existing spawns it tops the
+roster back up to a target of 6 from the party's own explored hexes.
+Eligibility (`isEligibleHex`) excludes water, any `POINTS_OF_INTEREST` hex
+(both settlement and landmark kinds, so a spawn marker never overlaps a
+named place's own), the 6 fixed `ENCOUNTER_HEX_KEYS`, and any hex without a
+resolvable region. A spawn's monster template is picked from the full
+31-template roster (`MONSTER_TEMPLATES`), filtered to its hex's region's own
+`[lo, lo+4]` level band -- the same band `REGIONS`' `levelRange` labels use
+-- falling back to the single closest-by-level template if that band is
+empty. Solo monster per spawn, not a multi-enemy encounter, so a chance
+roadside threat doesn't require full-party-fight commitment to even look at.
+
+**World Map integration** (`WorldMapScreen.tsx`): a reconciliation effect
+runs once terrain is sampled and then every 10 seconds while the screen is
+open, persisting via `onUpdateCharacter` only when something actually
+changed. Each spawn renders as a small pulsing red dot on the hex map (CSS
+animation, `WorldMapScreen.css`), visible once its hex is explored --
+clicking one shows the same "ENCOUNTER" side panel a fixed encounter does
+(location, flavor text, a FOES row naming the monster), with "Venture Out"
+appearing once the party is actually standing on that hex. A new
+`buildSpawnEncounter` helper turns a `MonsterSpawn` into an ad-hoc single-
+monster `Encounter` for `beginEncounter` (which only ever reads `id`/
+`monsters`, so generic flavor text is enough), picking whichever of the 3
+existing combat backdrops (Tameless Shore/Tiuv Forest/Collmhor Wood) is
+geographically closest to the spawn's own hex. Venturing out removes that
+spawn from the character's own `monsterSpawns` before handing the ad-hoc
+encounter off, so it can't reappear once combat resolves -- `onChooseEncounter`'s
+signature grew a second `character` parameter (`App.tsx`'s combat-screen
+transition now uses it instead of the screen's own stale `character`) so
+this removal can't be lost to React's batched state updates landing after
+the encounter's already been read.
+
+**Bug fix, caught while touching this code**: `dangerTier`/`encounterChance`
+(`eridanMap.ts`) still used hardcoded level breakpoints (23/26/31) from the
+old pre-rebalance 20-44 region scale, never updated when `REGIONS` was
+rewritten to the new 1-30 curve in the previous round -- so nearly the
+entire map read "Safe" regardless of its actual region level, and even the
+three level-30 endgame regions only showed "Dangerous," never "Deadly."
+Rescaled to 5/15/24, matching the new curve -- directly relevant here, since
+"a sense of danger" was half the point of this feature.
+
+No test infrastructure exists in `apps/client` (confirmed: no `*.test.*`
+files, no `test` script, no vitest config), so `monsterSpawns.ts`'s pure
+logic was verified with a throwaway script (`tsx`, a synthetic `TerrainSample`
+covering a radius-12 disk around Ridgeton, a seeded RNG): ~200 simulated
+ticks confirmed the spawn count never exceeds 6, no two spawns ever share a
+hex, every spawn sits on a non-water, non-POI, non-fixed-encounter hex with
+a resolvable region, every wander moves to a true adjacent hex, every
+template's level falls in its hex's region band, and a spawn stale by many
+lifetimes still resolves in well under a second (the catch-up cap holding).
+The full World Map integration was verified live with a throwaway
+`sandbox.html` Playwright pass (same pattern as Character Select's own
+mocked-roster verification, this container's network policy still blocking
+outbound Supabase): confirmed spawns auto-populate to 6 on terrain load,
+render as map markers, and that clicking one through to "Venture Out" fires
+the correct ad-hoc `Encounter` and drops the spawn count from 6 to 5 with
+its hex freed. Also reran the full engine test suite (205 tests) and a
+clean `tsc --noEmit` + `vite build` for the client.
+
+### Critical files
+`packages/engine/src/character.ts` (`MonsterSpawn`, `WorldMapState`);
+`apps/client/src/game/eridanMap.ts` (`hexNeighbors`, `dangerTier`,
+`encounterChance`), `apps/client/src/game/monsterSpawns.ts` (new);
+`apps/client/src/screens/WorldMapScreen.tsx`+`.css`, `apps/client/src/App.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
