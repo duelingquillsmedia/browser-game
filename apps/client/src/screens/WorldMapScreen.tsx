@@ -500,6 +500,30 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
     () => (mapState.monsterSpawns ?? []).filter((s) => exploredSet.has(s.hexKey)),
     [mapState.monsterSpawns, exploredSet]
   );
+
+  /**
+   * Spawns that just disappeared from `visibleSpawns` (despawned, or wandered out of view),
+   * kept around briefly at their last-known hex with a fade-out so a monster's exit reads as
+   * "it left" rather than an instant pop -- the mirror image of the wander transition below,
+   * which already animates a *surviving* spawn's own dot sliding hex-to-hex via CSS, since it
+   * keeps the same React key (`s.id`) across a wander and only its cx/cy change.
+   */
+  const [ghostSpawns, setGhostSpawns] = useState<{ ghostKey: string; hexKey: string }[]>([]);
+  const prevVisibleSpawnIdsRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    const prevIds = prevVisibleSpawnIdsRef.current;
+    const currentIds = new Set(visibleSpawns.map((s) => s.id));
+    const newlyGone = [...prevIds].filter(([id]) => !currentIds.has(id));
+    prevVisibleSpawnIdsRef.current = new Map(visibleSpawns.map((s) => [s.id, s.hexKey]));
+    if (newlyGone.length === 0) return;
+    const ghosts = newlyGone.map(([id, hexKey]) => ({ ghostKey: `${id}-${Date.now()}`, hexKey }));
+    setGhostSpawns((g) => [...g, ...ghosts]);
+    const timeoutId = setTimeout(() => {
+      setGhostSpawns((g) => g.filter((ghost) => !ghosts.some((gone) => gone.ghostKey === ghost.ghostKey)));
+    }, 1200);
+    return () => clearTimeout(timeoutId);
+  }, [visibleSpawns]);
+
   const activeSpawn = !matchedEncounter ? visibleSpawns.find((s) => s.hexKey === activeHexKey) : undefined;
   const spawnEncounter = useMemo(() => (activeSpawn ? buildSpawnEncounter(activeSpawn) : undefined), [activeSpawn]);
 
@@ -575,6 +599,21 @@ export function WorldMapScreen({ character, onChooseEncounter, onUpdateCharacter
                       <circle
                         key={s.id}
                         className="aow-hexmap-spawn-dot"
+                        style={{ cx: hex.x, cy: hex.y }}
+                        r={4}
+                        fill="#d0604a"
+                        stroke="#1c1410"
+                        strokeWidth={1}
+                      />
+                    );
+                  })}
+                  {ghostSpawns.map((g) => {
+                    const hex = HEX_BY_KEY[g.hexKey];
+                    if (!hex) return null;
+                    return (
+                      <circle
+                        key={g.ghostKey}
+                        className="aow-hexmap-spawn-dot aow-hexmap-spawn-dot-gone"
                         cx={hex.x}
                         cy={hex.y}
                         r={4}

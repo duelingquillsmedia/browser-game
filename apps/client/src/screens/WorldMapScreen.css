@@ -209,6 +209,10 @@
   animation: aow-spawn-dot-pulse 2s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+  /* A surviving spawn keeps the same React key across a wander (see WorldMapScreen.tsx) -- only
+     its cx/cy change -- so this slides the dot hex-to-hex instead of it silently teleporting the
+     next time the reconcile tick happens to run. */
+  transition: cx 1.4s ease, cy 1.4s ease;
 }
 
 @keyframes aow-spawn-dot-pulse {
@@ -220,6 +224,24 @@
   50% {
     opacity: 0.45;
     r: 5.5;
+  }
+}
+
+/* A despawned spawn's dot (kept briefly at its last-known hex, see `ghostSpawns`) fades and
+   grows instead of just vanishing, so leaving reads distinctly from wandering. */
+.aow-hexmap-spawn-dot-gone {
+  animation: aow-spawn-dot-despawn 1.1s ease-out forwards;
+  transition: none;
+}
+
+@keyframes aow-spawn-dot-despawn {
+  0% {
+    opacity: 0.85;
+    r: 4;
+  }
+  100% {
+    opacity: 0;
+    r: 8;
   }
 }
 

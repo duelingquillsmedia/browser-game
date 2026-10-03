@@ -4203,6 +4203,65 @@ clean `tsc --noEmit` + `vite build` for the client.
 `encounterChance`), `apps/client/src/game/monsterSpawns.ts` (new);
 `apps/client/src/screens/WorldMapScreen.tsx`+`.css`, `apps/client/src/App.tsx`.
 
+## Fix: Spawn Movement Now Animates Instead of Silently Teleporting (2026-10-03)
+
+The user reported that a wandering monster's dot "only updates when the
+player finishes a travel," and that a monster visible on arrival would
+already be gone by the time they tried to engage it. A live timing
+investigation (a throwaway Playwright harness logging every reconcile tick
+with real timestamps over several 2-3 minute windows) **ruled out** the
+suspected cause: `reconcileMonsterSpawns`'s 10-second interval
+(`WorldMapScreen.tsx`) genuinely fires on its own schedule, correctly
+computed from real elapsed time, completely independent of travel -- a
+spawn's position was observed updating mid-test with no travel in progress
+at all, and the "only updates on arrival" effect was unreproducible as a
+timing bug.
+
+The real explanation is simpler: a spawn's own lifetime (2-4 minutes) is
+frequently *shorter* than the time it takes the party to travel to it
+(`TRAVEL_SECONDS_PER_HEX` × distance), so a monster spotted several hexes
+away routinely wanders off or despawns before the party arrives -- which is
+the system working as designed, not a bug. But because a surviving spawn's
+marker previously just snapped its `cx`/`cy` SVG attributes to the new hex
+instantly on each reconcile tick, and a despawned one simply vanished from
+the DOM the instant it was removed from the array, any movement that
+happened while the player wasn't actively staring at that exact spot was
+invisible -- it looked like nothing happened until the next thing that
+caught their attention (arriving) revealed the monster was already
+somewhere else.
+
+**Fix** (`WorldMapScreen.tsx`/`.css`, no change to the reconcile logic
+itself): a surviving spawn keeps the same React `key` (its own `id`) across
+a wander, so its `cx`/`cy` are now set via inline `style` rather than plain
+JSX attributes, with a `transition: cx 1.4s ease, cy 1.4s ease` CSS rule on
+`.aow-hexmap-spawn-dot` -- the browser now visibly slides the dot hex-to-hex
+over 1.4 seconds instead of popping it to the new position. A despawned
+spawn is now kept around for 1.2 seconds at its last-known hex as a
+short-lived "ghost" (`ghostSpawns` state, diffed against the previous
+render's spawn-id set via a `useEffect`+`useRef`) with a
+`aow-spawn-dot-despawn` fade-and-grow animation, instead of instantly
+disappearing. Movement is now visible whenever it happens, including while
+the player is mid-travel and simply has the map on screen.
+
+Verified live: re-ran the same timing harness and confirmed (again,
+independent of any travel) the interval still fires correctly and a
+despawn event correctly produces a fading-then-removed marker with no
+stuck ghosts; confirmed via computed-style inspection that the new
+`transition: cx, cy` rule is actually applied to the live DOM nodes and
+that a surviving spawn's marker is the *same* DOM node across ticks (not
+remounted) -- the precondition for the CSS transition to animate rather
+than snap. Didn't happen to catch a live wander event frame-by-frame in
+this pass (the 40%-despawn / 60%-wander roll landed on despawn both times),
+but the three confirmed facts together (transition rule applied + stable
+node identity + a wander changes a surviving spawn's `hexKey` under the
+same `id`, established in the previous round's own live test) are jointly
+sufficient: a CSS `transition` on a changing property of a stable element
+animates, by definition. Also reran the full engine suite (205 tests) and
+a clean client `tsc --noEmit` + `vite build`.
+
+### Critical files
+`apps/client/src/screens/WorldMapScreen.tsx`+`.css`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
