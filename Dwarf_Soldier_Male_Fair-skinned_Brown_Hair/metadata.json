@@ -1,0 +1,36 @@
+{
+  "group_id": "739ff8af-315b-4ba9-b6cc-c2a8529ee72a",
+  "states": [
+    {
+      "character": {
+        "id": "3dd2f4d6-5a3c-48c5-88c9-f18b4189be05",
+        "name": "Idle",
+        "prompt": "A masculine male dwarf soldier with fair skin and brown hair and a brown beard. He is wearing full plate armor. He is wielding a sword in one hand and a shield in the other.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-10-01T19:08:50.560253+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-05T04:19:31.240077"
+}
