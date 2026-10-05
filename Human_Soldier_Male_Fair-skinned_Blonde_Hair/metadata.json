@@ -1,0 +1,36 @@
+{
+  "group_id": "7728150e-3303-403e-8163-41729b5705e6",
+  "states": [
+    {
+      "character": {
+        "id": "8731c3e5-227b-4266-8d78-136c6c96b653",
+        "name": "Idle",
+        "prompt": "A masculine human male soldier with fair skin and blonde hair. He is wearing full plate armor. He is wielding a sword in one hand and a shield in the other.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-10-05T21:28:28.768501+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-05T22:20:31.704105"
+}
