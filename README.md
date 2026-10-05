@@ -4297,6 +4297,42 @@ Also reran the full engine suite (205 tests) and a clean client `tsc
 ### Critical files
 `apps/client/src/screens/WorldMapScreen.tsx` (`completeTravel`).
 
+## Character Creation Only Previews Each Ability's Rank 1 (2026-10-05)
+
+Per the user: Character Creation's class-detail panel (step 2, "Choose
+your class") listed every rank of every ability -- e.g. Warrior's Cleave
+showed all 4 ranks back to back, each with its own scaling numbers --
+which is more than a player needs to decide on a class, and duplicates
+what the Skills page already shows once a rank is actually unlocked by
+leveling. Now only each ability's rank 1 shows at creation (or its only
+rank, for a single-rank ability); higher ranks stay a Skills-page reveal
+as the character levels, same as before this change for every ability
+past rank 1.
+
+**Fix**: `CharacterCreationScreen.tsx`'s class-detail panel already mapped
+over `cls.actions` -- the class definition's full flat list, which holds
+one entry per *rank* of a ranked ability (`combat.ts`'s own
+`applyEquipmentEffects` is what normally collapses that down to a
+character's actual unlocked rank, elsewhere). Each entry already carries
+the `rank` number `actions.ts` documents as existing "for UI display only"
+(1, 2, 3, ... or omitted for a single-rank ability, which counts as its
+own rank 1) -- exactly what this needed. Added one filter,
+`.filter((a) => (a.rank ?? 1) === 1)`, before the existing `.map`.
+
+Verified live (a throwaway `sandbox.html` Playwright pass, same pattern as
+every other Character Creation check in this project, since this
+container's network policy blocks outbound Supabase and Creation needs no
+auth to render standalone): picked Warrior (the class with the most
+ranked abilities -- Cleave, Furious Strike, Bulwark Stance, and Warlord's
+Reckoning all have 2-4 ranks) and confirmed exactly 6 ability cards show
+(one per family, matching Warrior's 6 distinct abilities), zero duplicate
+names, and each card's description is its rank-1 text (Cleave's shown
+description reads "+20% of Attack Power," not a higher rank's bigger
+number). Also reran a clean client `tsc --noEmit` + `vite build`.
+
+### Critical files
+`apps/client/src/screens/CharacterCreationScreen.tsx`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

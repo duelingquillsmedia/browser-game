@@ -401,14 +401,19 @@ export function CharacterCreationScreen({ onComplete, onBack }: CharacterCreatio
                       </div>
                     </div>
                     <div className="aow-creation-skill-list">
-                      {/* cls.actions (the class definition's static list) holds only its leveled abilities now --
-                          the Basic Attack and Flee are generated per-character in character.ts, not listed here. */}
-                      {cls.actions.map((a) => (
-                        <div key={a.id} className="aow-trait-card">
-                          <h3>{a.name}</h3>
-                          <p>{a.description}</p>
-                        </div>
-                      ))}
+                      {/* cls.actions (the class definition's static list) holds every rank of every leveled
+                          ability -- the Basic Attack and Flee are generated per-character in character.ts,
+                          not listed here. Creation only previews each ability's rank 1 (a.rank is omitted
+                          for a single-rank ability, which counts as its own rank 1); higher ranks unlock
+                          as the character levels and are visible on the Skills page instead. */}
+                      {cls.actions
+                        .filter((a) => (a.rank ?? 1) === 1)
+                        .map((a) => (
+                          <div key={a.id} className="aow-trait-card">
+                            <h3>{a.name}</h3>
+                            <p>{a.description}</p>
+                          </div>
+                        ))}
                     </div>
                   </>
                 )}
