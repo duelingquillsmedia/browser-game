@@ -4333,6 +4333,50 @@ number). Also reran a clean client `tsc --noEmit` + `vite build`.
 ### Critical files
 `apps/client/src/screens/CharacterCreationScreen.tsx`.
 
+## Soldier Avatar Art Wired In (2026-10-05)
+
+Per the user: Soldier pixel-art portraits (24 variants -- Elf/Human/Dwarf
+models x male/female x 4 hair colors, matching the exact shape Cleric,
+Warrior, and Wizard already have) had been pushed to the repo but hadn't
+been wired into the game. The source export (a "mannequin" sprite dump,
+64x64, 8-directional `Idle` rotations + `metadata.json` per variant) had
+landed as 24 loose top-level folders at the repo root rather than inside
+`apps/client/src/assets/avatars/` -- not discoverable by searching that
+folder, which is why finding them took a `git fetch`/log check rather than
+a plain file search.
+
+**Wiring**: pulled each variant's `south.png` (front-facing portrait) and
+`south-east.png` (combat-facing pose) -- the only two of the 8 rotations
+this project's avatar system actually uses, matching every other class --
+copied and renamed them into `apps/client/src/assets/avatars/` under the
+established `soldier-{human-|dwarf-}{male|female}-{hair}-hair{-se}.png`
+convention (Elf gets the bare, race-token-less name, same as Cleric/Warrior/
+Wizard, since it doubles as Half-elf's set), added the 48 corresponding
+imports plus a new `soldier` entry to `AVATARS_BY_CLASS` in
+`apps/client/src/game/avatars.ts` (24 `AvatarOption`s, same `raceIds`/label
+pattern as every existing class), and deleted the 24 now-empty staging
+folders from the repo root. No other code changes needed --
+`getAvatarsForRaceClass`/`getAvatarById` and every screen that calls them
+(Character Creation's Appearance step, the Character screen, combat
+portraits) are already fully generic over `AVATARS_BY_CLASS`'s keys.
+
+Verified live (a throwaway `sandbox.html` Playwright pass, same pattern as
+every other Character Creation check in this project): Dwarf + Soldier
+correctly shows exactly the 8 Dwarf-modeled options (not 24), selecting one
+renders instantly in the live preview panel, and carries through to the
+name-step summary; Half-elf + Soldier correctly shows all 16 Elf- and
+Human-modeled options combined (matching the existing Half-elf behavior
+for every other class), and the Human-modeled look rendered correctly once
+selected. Also reran a clean client `tsc --noEmit` + `vite build` and the
+full engine suite (205 tests, unaffected by a client-asset-only change).
+
+Ranger, Rogue, and Druid still have no avatar art and fall back to the
+class-colored runic glyph, same as before this round.
+
+### Critical files
+`apps/client/src/game/avatars.ts` (`AVATARS_BY_CLASS.soldier`);
+`apps/client/src/assets/avatars/soldier-*.png` (48 new files).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
