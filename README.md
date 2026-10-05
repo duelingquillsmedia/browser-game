@@ -4377,6 +4377,50 @@ class-colored runic glyph, same as before this round.
 `apps/client/src/game/avatars.ts` (`AVATARS_BY_CLASS.soldier`);
 `apps/client/src/assets/avatars/soldier-*.png` (48 new files).
 
+## Fix: Hovering An Unaffordable Ability Showed No Tooltip (2026-10-05)
+
+Per the user: hovering a combat action-bar slot the player can't currently
+afford (not enough resource, on cooldown, below level) showed nothing in
+the info line -- no name, no description, no reason why -- making it
+impossible to even read what an ability like Shield Sweep does without
+first being able to use it.
+
+**Root cause**: `SkillSlot` (`CombatHud.tsx`) put `onMouseEnter`/
+`onMouseLeave` directly on the `<button>` itself, which also carries
+`disabled={disabled || (!ready && !armed)}`. A disabled native `<button>`
+doesn't let mouse events bubble past it -- a long-standing, still-current
+Chrome/React quirk -- so React's delegated `onMouseEnter`/`onMouseLeave`
+(which rely on bubbling up to a root listener) silently never fire on a
+disabled button, even though the element still visually renders and the
+cursor is plainly over it. Confirmed directly: a `page.evaluate()` dispatch
+of a real, bubbling `mouseenter` MouseEvent straight at Shield Sweep's
+(disabled) button left the info line unchanged at its idle placeholder
+text; the exact same dispatch after the fix below correctly produced
+"Shield Sweep · MARTIAL · 3 AP · 8 EXPERTISE · RANK · Not enough
+Expertise" plus its full description.
+
+**Fix**: moved the hover (`onMouseEnter`/`onMouseLeave`) and touch
+(`onTouchStart`/`onTouchMove`/`onTouchEnd`, the mobile long-press-for-
+popover path -- same underlying bug would eventually have hit it too) off
+the `<button>` and onto `.cbt-skill-slot-wrap`, the plain `<div>` that
+already wraps every slot (originally added so the long-press popover has
+a non-translucent `position: relative` anchor to render against -- see its
+own comment). That wrapper is never itself disabled, so it always sees
+the hover/touch regardless of the button's disabled state, while the
+`<button>` keeps `disabled` (and therefore still correctly refuses clicks/
+keyboard activation) for the "can't actually use this" case.
+
+Verified live: reproduced the bug first via the dispatch test above on the
+unmodified code (info line didn't change), then confirmed the fix
+produces the full name/school/AP/resource-cost/block-reason/description
+block on hover, and a screenshot showing the populated info line while the
+cursor sits over the dimmed, disabled Shield Sweep slot. Also reran a
+clean client `tsc --noEmit` + `vite build`; no engine changes, so the
+engine suite wasn't rerun.
+
+### Critical files
+`apps/client/src/components/combat/CombatHud.tsx` (`SkillSlot`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

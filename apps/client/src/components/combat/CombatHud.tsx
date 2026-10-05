@@ -384,7 +384,21 @@ function SkillSlot({
     // blended translucent against the status panel behind it too, however far outside the
     // button's own box it's positioned. This wrapper is the nearest `position: relative`
     // ancestor the popover's `position: absolute` anchors to instead, at full opacity.
-    <div ref={buttonRef} className="cbt-skill-slot-wrap">
+    // Hover/touch listeners live on this wrapper, not the <button> itself -- a disabled native
+    // button doesn't let mouse/touch events bubble (a long-standing browser quirk), so React's
+    // onMouseEnter/onMouseLeave never fire on it once an ability is unaffordable/on cooldown,
+    // silently breaking the hover-to-preview info line for exactly the abilities a player is
+    // most likely to want a reminder about. The wrapper is never itself disabled, so it always
+    // sees the hover/touch regardless of the button's own disabled state.
+    <div
+      ref={buttonRef}
+      className="cbt-skill-slot-wrap"
+      onMouseEnter={() => onHover(action.id)}
+      onMouseLeave={() => onHover(null)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={clearPressTimer}
+      onTouchEnd={clearPressTimer}
+    >
       <button
         type="button"
         className="cbt-skill-slot"
@@ -395,11 +409,6 @@ function SkillSlot({
           boxShadow: armed ? `0 0 0 1px ${color}, 0 0 18px ${color}` : "none",
           opacity: !ready && !onCooldown ? 0.4 : 1,
         }}
-        onMouseEnter={() => onHover(action.id)}
-        onMouseLeave={() => onHover(null)}
-        onTouchStart={handleTouchStart}
-        onTouchMove={clearPressTimer}
-        onTouchEnd={clearPressTimer}
         onClick={() => {
           if (longPressRef.current) {
             longPressRef.current = false;
