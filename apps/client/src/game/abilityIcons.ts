@@ -12,6 +12,7 @@ import rangerBarbedArrow from "../assets/ability-icons/ranger-barbed-arrow.png";
 import rangerNaturesRemedy from "../assets/ability-icons/ranger-natures-remedy.png";
 import rangerPinningShot from "../assets/ability-icons/ranger-pinning-shot.png";
 import rangerKillShot from "../assets/ability-icons/ranger-kill-shot.png";
+import rangerEvasiveManeuvers from "../assets/ability-icons/ranger-evasive-maneuvers.png";
 
 /**
  * Painted ability-icon art, keyed by class id then by an action's own
@@ -23,10 +24,10 @@ import rangerKillShot from "../assets/ability-icons/ranger-kill-shot.png";
  * exactly why this is keyed per-class rather than one flat map -- Warrior's
  * Wild Swing and Ranger's Blade Slash need different art under the same id.
  *
- * Only Warrior (full 6-ability + both Basic Attacks) and Ranger (4 of 6
- * named abilities, both Basic Attacks -- Evasive Maneuvers and Sharpshooter
- * have no icon yet) have art so far; every other class/ability falls back
- * to the existing text-glyph treatment (see `getAbilityIcon` below).
+ * Only Warrior (full 6-ability + both Basic Attacks) and Ranger (5 of 6
+ * named abilities, both Basic Attacks -- Sharpshooter is the only one
+ * still without an icon) have art so far; every other class/ability falls
+ * back to the existing text-glyph treatment (see `getAbilityIcon` below).
  */
 export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
   warrior: {
@@ -46,6 +47,7 @@ export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
     "natures-remedy": rangerNaturesRemedy,
     "pinning-shot": rangerPinningShot,
     "kill-shot": rangerKillShot,
+    "evasive-maneuvers": rangerEvasiveManeuvers,
   },
 };
 

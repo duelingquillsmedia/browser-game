@@ -4490,6 +4490,39 @@ PNGs).
 `apps/client/src/screens/SkillsScreen.tsx`,
 `apps/client/src/screens/SkillsScreen.css`.
 
+## Ranger Icon Touch-Up: Evasive Maneuvers Added, Nature's Remedy Replaced (2026-10-06)
+
+Per the user: two more files landed at the repo root after the ability-icon
+pass above -- `Ranger - Evasive Maneuvers.png` and `Ranger - Nature's
+Remedy.png` -- "to add/replace existing ones." Fetched and fast-forward
+merged them in, then diffed pixels against what was already wired: Evasive
+Maneuvers was a genuinely new piece of art (a running-boot icon) for the one
+named Ranger ability that still had no art and was falling back to its text
+glyph; Nature's Remedy was a full replacement of the already-wired icon with
+a different design (a cluster of glowing healing crosses among leaves,
+replacing the old single large leaf).
+
+Moved both into `apps/client/src/assets/ability-icons/` as
+`ranger-evasive-maneuvers.png` (new) and `ranger-natures-remedy.png`
+(overwriting the prior file in place, same filename so no import changes
+needed there), then added the one missing entry --
+`"evasive-maneuvers": rangerEvasiveManeuvers` -- to `abilityIcons.ts`'s
+`ranger` map; `natures-remedy`'s key already existed and just now resolves
+to the new art. Ranger is now at 5 of its 6 named abilities covered (only
+Sharpshooter, a passive, still has no icon).
+
+Verified live via the same `SkillsScreen` sandbox pattern as the prior
+entry (a level-10 Ranger, since Evasive Maneuvers doesn't unlock until
+level 8): a screenshot and DOM check confirmed all 5 named abilities now
+show painted icons, Evasive Maneuvers' boot icon in particular, and that
+Nature's Remedy's slot now points at the replaced file. Clean `tsc --noEmit`
+and `vite build`.
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts`;
+`apps/client/src/assets/ability-icons/ranger-evasive-maneuvers.png` (new),
+`ranger-natures-remedy.png` (replaced in place).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
