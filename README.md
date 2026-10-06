@@ -4523,6 +4523,44 @@ and `vite build`.
 `apps/client/src/assets/ability-icons/ranger-evasive-maneuvers.png` (new),
 `ranger-natures-remedy.png` (replaced in place).
 
+## Flee and End Turn Removed From the Skills Page's Ability List (2026-10-06)
+
+Per the user: Flee and End Turn don't belong on the Skills page -- they're
+inherent to the combat screen itself, not something a player should see
+listed or need to manage alongside their actual abilities.
+
+**Why they showed up at all**: `character.actions` (`character.ts`) always
+appends `FLEE_ACTION` and `END_TURN_ACTION` after a character's leveled/race
+actions, since combat needs both of them on every combatant. The Skills
+page's ability list (`SkillsScreen.tsx`'s `listActions`) only ever filtered
+out `isBasicAttack`, so these two rode along as ordinary-looking rows ("FL"/
+"ET" text glyphs, since neither has painted art) mixed in with real
+abilities.
+
+Confirmed first that nothing else depends on them being listed there:
+`game/actionBar.ts`'s `defaultActionBarIds` already explicitly skips
+`kind === "flee"`/`"endTurn"` (alongside `isBasicAttack`) when computing the
+default 6-slot loadout, and combat itself never sources Flee/End Turn
+through the action-bar slot system at all -- `CombatScreen.tsx` has its own
+dedicated Flee button (`handleFlee`, matched by `action.kind === "flee"`)
+and End Turn button (`handleEndTurn`/`CombatHud`'s End Turn button, matched
+by `action.kind === "endTurn"`), both always present regardless of what's
+on the bar. So excluding them from the Skills page's list is purely
+cosmetic there, with no effect on combat.
+
+**Fix**: added `a.kind !== "flee" && a.kind !== "endTurn"` to
+`listActions`'s filter alongside the existing `!a.isBasicAttack` check.
+
+Verified live via the `SkillsScreen` sandbox: a level-10 Ranger's ability
+list now shows only its 5 named abilities (Barbed Arrow, Nature's Remedy,
+Pinning Shot, Evasive Maneuvers, Kill Shot) -- Flee and End Turn no longer
+appear, and the Utility filter count correctly dropped from 2 to 0. Action
+bar slots, the detail panel, and placing/removing a skill from the bar all
+still work unaffected. Clean `tsc --noEmit` and `vite build`.
+
+### Critical files
+`apps/client/src/screens/SkillsScreen.tsx` (`listActions`).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

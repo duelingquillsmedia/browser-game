@@ -128,7 +128,12 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
   const actionById = new Map(character.actions.map((a) => [a.id, a]));
 
   // Basic Attack doesn't compete for a bar slot anymore -- it's not listed here at all.
-  const listActions = character.actions.filter((a) => !a.isBasicAttack);
+  // Flee and End Turn are always-available combat controls of their own (see CombatScreen.tsx's
+  // dedicated Flee button and CombatHud's End Turn button), not something to place on a bar slot,
+  // so they don't belong in this customization list either.
+  const listActions = character.actions.filter(
+    (a) => !a.isBasicAttack && a.kind !== "flee" && a.kind !== "endTurn"
+  );
 
   const counts: Record<FilterId, number> = { all: listActions.length, attack: 0, heal: 0, buff: 0, utility: 0 };
   for (const action of listActions) counts[bucketFor(action.kind)]++;
