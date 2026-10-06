@@ -13,6 +13,13 @@ import rangerNaturesRemedy from "../assets/ability-icons/ranger-natures-remedy.p
 import rangerPinningShot from "../assets/ability-icons/ranger-pinning-shot.png";
 import rangerKillShot from "../assets/ability-icons/ranger-kill-shot.png";
 import rangerEvasiveManeuvers from "../assets/ability-icons/ranger-evasive-maneuvers.png";
+import clericMeleeAttack from "../assets/ability-icons/cleric-melee-attack.png";
+import clericRangedAttack from "../assets/ability-icons/cleric-ranged-attack.png";
+import clericMend from "../assets/ability-icons/cleric-mend.png";
+import clericRadiantBeam from "../assets/ability-icons/cleric-radiant-beam.png";
+import clericWard from "../assets/ability-icons/cleric-ward.png";
+import clericGrace from "../assets/ability-icons/cleric-grace.png";
+import clericSanctuary from "../assets/ability-icons/cleric-sanctuary.png";
 
 /**
  * Painted ability-icon art, keyed by class id then by an action's own
@@ -24,10 +31,11 @@ import rangerEvasiveManeuvers from "../assets/ability-icons/ranger-evasive-maneu
  * exactly why this is keyed per-class rather than one flat map -- Warrior's
  * Wild Swing and Ranger's Blade Slash need different art under the same id.
  *
- * Only Warrior (full 6-ability + both Basic Attacks) and Ranger (5 of 6
- * named abilities, both Basic Attacks -- Sharpshooter is the only one
- * still without an icon) have art so far; every other class/ability falls
- * back to the existing text-glyph treatment (see `getAbilityIcon` below).
+ * Warrior and Cleric have full coverage (every named ability plus both
+ * Basic Attacks); Ranger has 5 of 6 named abilities, both Basic Attacks --
+ * Sharpshooter is the only one still without an icon. Every other
+ * class/ability falls back to the existing text-glyph treatment (see
+ * `getAbilityIcon` below).
  */
 export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
   warrior: {
@@ -48,6 +56,15 @@ export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
     "pinning-shot": rangerPinningShot,
     "kill-shot": rangerKillShot,
     "evasive-maneuvers": rangerEvasiveManeuvers,
+  },
+  cleric: {
+    "strike-melee": clericMeleeAttack,
+    "strike-ranged": clericRangedAttack,
+    mend: clericMend,
+    "radiant-beam": clericRadiantBeam,
+    ward: clericWard,
+    grace: clericGrace,
+    sanctuary: clericSanctuary,
   },
 };
 

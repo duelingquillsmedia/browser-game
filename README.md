@@ -4561,6 +4561,33 @@ still work unaffected. Clean `tsc --noEmit` and `vite build`.
 ### Critical files
 `apps/client/src/screens/SkillsScreen.tsx` (`listActions`).
 
+## Painted Ability Icons for Cleric (2026-10-06)
+
+Per the user: another asset folder landed at the repo root, `Cleric Skill
+Assets/` with 7 files. Fetched and fast-forward merged it in, then
+cross-referenced the file names against Cleric's roster in
+`packages/engine/src/classes.ts`: Mend, Radiant Beam, Ward, Grace, and
+Sanctuary (5 named abilities) plus Melee Attack and Ranged Attack (Cleric's
+two Basic Attack variants, "Swinging Smite" and "Radiance") -- exactly 7,
+giving Cleric full coverage the same way Warrior already has it.
+
+Moved the files into `apps/client/src/assets/ability-icons/` as
+`cleric-mend.png`, `cleric-radiant-beam.png`, `cleric-ward.png`,
+`cleric-grace.png`, `cleric-sanctuary.png`, `cleric-melee-attack.png`, and
+`cleric-ranged-attack.png`, then added a `cleric` entry to
+`abilityIcons.ts`'s `ABILITY_ICONS_BY_CLASS` map, keyed the same way as
+Warrior's and Ranger's (`familyId ?? id`).
+
+Verified live via the `SkillsScreen` sandbox: a level-10 Cleric (needed Wisdom
+raised in the base scores so Mend's preview numbers made sense) shows all 5
+named abilities with their painted icons -- Mend's glowing healing hand,
+Radiant Beam, Ward, Grace, and Sanctuary all visibly distinct. Clean
+`tsc --noEmit` and `vite build`.
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts`;
+`apps/client/src/assets/ability-icons/cleric-*.png` (new, 7 files).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
