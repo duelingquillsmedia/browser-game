@@ -18,6 +18,7 @@ import {
   statusKindColor,
 } from "../../game/combatDisplay";
 import { getBasicAttackVariants, type ActionBarSlot } from "../../game/actionBar";
+import { getAbilityIcon } from "../../game/abilityIcons";
 
 export interface CombatHudProps {
   state: CombatState;
@@ -376,6 +377,7 @@ function SkillSlot({
   }, [showPopover]);
 
   const blockReason = describeBlockReason(player, action, round);
+  const icon = getAbilityIcon(player.classId, action);
 
   return (
     // The popover renders as a sibling of the button, not a child of it -- a disabled/not-ready
@@ -417,9 +419,13 @@ function SkillSlot({
           onSelect(action);
         }}
       >
-        <span className="cbt-slot-glyph" style={{ color, textShadow: `0 0 10px ${color}` }}>
-          {initialsFor(action.name)}
-        </span>
+        {icon ? (
+          <img src={icon} alt="" className="cbt-slot-icon" />
+        ) : (
+          <span className="cbt-slot-glyph" style={{ color, textShadow: `0 0 10px ${color}` }}>
+            {initialsFor(action.name)}
+          </span>
+        )}
         <span className="cbt-slot-key">{keyLabel}</span>
         {player.ap !== undefined && <span className="cbt-slot-ap">{action.apCost ?? 1}</span>}
         {action.resourceCost !== undefined && <span className="cbt-slot-mana">{action.resourceCost}</span>}

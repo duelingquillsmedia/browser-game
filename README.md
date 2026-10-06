@@ -4421,6 +4421,75 @@ engine suite wasn't rerun.
 ### Critical files
 `apps/client/src/components/combat/CombatHud.tsx` (`SkillSlot`).
 
+## Painted Ability Icons for Warrior and Ranger (2026-10-06)
+
+Per the user: they pushed two new asset folders to the repo (`Warrior Skill
+Assets/`, `Ranger Skill Assets/`) of painted ability-icon art and asked for
+them to be wired into the game, replacing the plain text-initial glyphs
+(e.g. "Cleave" -> "CL") that every ability slot falls back to today.
+
+The folders were pushed as loose top-level directories, not under
+`apps/client/src/`, so they weren't visible locally until fetched: found
+via `git fetch origin` + log/diff inspection (commits `7bcb88c` and
+`4b57863`, both "Add files via upload"), then pulled in with
+`git merge --ff-only`. Cross-referenced each file name against
+`packages/engine/src/classes.ts`'s exact ability names/`familyId`s:
+Warrior's 8 files (2 Basic Attacks + 6 named abilities -- Enrage, Cleave,
+Serrated Blade, Furious Strike, Bulwark Stance, Warlord's Reckoning) give
+full coverage of Warrior's entire roster; Ranger's 6 files (2 Basic Attacks
++ Barbed Arrow, Nature's Remedy, Pinning Shot, Kill Shot) cover 4 of 6 named
+abilities, missing Evasive Maneuvers and Sharpshooter -- those two correctly
+keep falling back to the text-glyph treatment, same as every other
+class's abilities, none of which have art yet.
+
+Copied and renamed the 14 files into a new
+`apps/client/src/assets/ability-icons/` directory (kebab-case, e.g.
+`warrior-cleave.png`, `ranger-barbed-arrow.png`; fixed the source's typo'd
+"Warlord's Eckoning.png" along the way), then added a new
+`apps/client/src/game/abilityIcons.ts` module exporting
+`getAbilityIcon(classId, action)`, keyed first by class then by
+`action.familyId ?? action.id` -- the same rank-collapsing key every other
+per-ability lookup in this codebase already uses (see
+`applyEquipmentEffects` in `character.ts`). Keying by class is required,
+not just convenience: the two Basic Attack ids (`strike-melee`/
+`strike-ranged`) are shared by every class, so Warrior's Wild Swing and
+Ranger's Blade Slash need different art under the identical id.
+
+Wired `getAbilityIcon` into every place an ability's glyph renders: combat's
+action bar (`CombatHud.tsx`'s `SkillSlot`, new `.cbt-slot-icon` CSS rule in
+`CombatScreen.css`) and the Skills page's three glyph sites -- its own
+action-bar row, the ability list, and the detail panel header
+(`SkillsScreen.tsx`, new `.aow-skill-glyph img` rule plus `overflow: hidden`
+on the parent in `SkillsScreen.css`). Each site keeps its existing
+text-glyph fallback (`iconGlyph`/`initialsFor`) for any ability `getAbilityIcon`
+returns `undefined` for -- a class with no icons at all, or (for Ranger) one
+of its two still-uncovered abilities.
+
+Verified live: a throwaway sandbox rendering `SkillsScreen` for both a
+Warrior and a Ranger character confirmed, via screenshot and a `page.evaluate()`
+DOM check, that Enrage/Cleave/Serrated Blade and Barbed Arrow/Nature's
+Remedy all render their painted icons, while Flee and End Turn (shared,
+classless actions with no art) correctly show their text-glyph fallback.
+`CombatHud`'s identical code path could not be screenshotted the same way --
+rendering any real `CombatState` (via the existing `beginEncounter` helper)
+inside this session's sandboxed headless Chromium reliably hung/crashed the
+renderer, reproducible even with zero ability-icon code in the tree (plain
+`SkillsScreen` plus a `beginEncounter` call alone triggered it), so it's an
+environment limitation unrelated to this change rather than something to fix
+here. Confirmed instead by reading `CombatHud.tsx`'s `SkillSlot`, which
+calls the same `getAbilityIcon` and renders the identical
+img-with-text-fallback JSX as the already-screenshotted `SkillsScreen` code,
+plus a clean `tsc --noEmit` and `vite build` (bundle includes all 14 new
+PNGs).
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts` (new);
+`apps/client/src/assets/ability-icons/` (new, 14 files);
+`apps/client/src/components/combat/CombatHud.tsx`,
+`apps/client/src/screens/CombatScreen.css`;
+`apps/client/src/screens/SkillsScreen.tsx`,
+`apps/client/src/screens/SkillsScreen.css`.
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

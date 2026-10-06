@@ -11,6 +11,7 @@ import {
   type CombatActionDef,
 } from "@eridan/engine";
 import { buildActionBarSlots, effectiveActionBarIds } from "../game/actionBar";
+import { getAbilityIcon } from "../game/abilityIcons";
 import "./SkillsScreen.css";
 
 export interface SkillsScreenProps {
@@ -133,6 +134,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
   for (const action of listActions) counts[bucketFor(action.kind)]++;
 
   const selected: CombatActionDef | undefined = character.actions.find((a) => a.id === selectedId);
+  const selectedIcon = selected ? getAbilityIcon(character.classId, selected) : undefined;
   const selectedSlotIndex = selected ? actionBarIds.indexOf(selected.familyId ?? selected.id) : -1;
   const placingAction = placingActionId ? actionById.get(placingActionId) : undefined;
 
@@ -175,6 +177,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
               const isActive = slot.kind === "action" && selectedId === slot.action.id;
               const name = slot.kind === "action" ? slot.action.name : null;
               const bucket = slot.kind === "action" ? bucketFor(slot.action.kind) : null;
+              const icon = slot.kind === "action" ? getAbilityIcon(character.classId, slot.action) : undefined;
               return (
                 <button
                   key={i}
@@ -185,7 +188,9 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                 >
                   <span className="aow-action-bar-key">{i + 1}</span>
                   {name && bucket ? (
-                    <span className={`aow-skill-glyph aow-skill-glyph-${bucket}`}>{iconGlyph(name)}</span>
+                    <span className={`aow-skill-glyph aow-skill-glyph-${bucket}`}>
+                      {icon ? <img src={icon} alt="" /> : iconGlyph(name)}
+                    </span>
                   ) : (
                     <span className="aow-action-bar-empty">Empty</span>
                   )}
@@ -228,6 +233,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                       : null;
                   const slotIndex = actionBarIds.indexOf(action.familyId ?? action.id);
                   const name = action.name;
+                  const icon = getAbilityIcon(character.classId, action);
                   return (
                     <button
                       key={action.id}
@@ -236,7 +242,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
                       onClick={() => setSelectedId(action.id)}
                     >
                       <span className={`aow-skill-glyph aow-skill-glyph-${bucketFor(action.kind)}`}>
-                        {iconGlyph(name)}
+                        {icon ? <img src={icon} alt="" /> : iconGlyph(name)}
                       </span>
                       <span className="aow-skill-row-body">
                         <span className="aow-skill-row-name">
@@ -264,7 +270,7 @@ export function SkillsScreen({ character, onUpdateCharacter }: SkillsScreenProps
               <>
                 <div className="aow-item-header">
                   <span className={`aow-skill-glyph aow-skill-glyph-${bucketFor(selected.kind)} aow-skill-glyph-lg`}>
-                    {iconGlyph(selected.name)}
+                    {selectedIcon ? <img src={selectedIcon} alt="" /> : iconGlyph(selected.name)}
                   </span>
                   <div>
                     <div className="aow-item-name">{selected.name}</div>

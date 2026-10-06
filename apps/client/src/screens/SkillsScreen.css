@@ -142,6 +142,13 @@
   font-weight: 600;
   background: var(--aow-chip-bg);
   border: 1px solid var(--aow-control-border);
+  overflow: hidden;
+}
+
+.aow-skill-glyph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .aow-skill-glyph-lg {
