@@ -20,6 +20,13 @@ import clericRadiantBeam from "../assets/ability-icons/cleric-radiant-beam.png";
 import clericWard from "../assets/ability-icons/cleric-ward.png";
 import clericGrace from "../assets/ability-icons/cleric-grace.png";
 import clericSanctuary from "../assets/ability-icons/cleric-sanctuary.png";
+import soldierMeleeAttack from "../assets/ability-icons/soldier-melee-attack.png";
+import soldierRangedAttack from "../assets/ability-icons/soldier-ranged-attack.png";
+import soldierDefensiveFlourish from "../assets/ability-icons/soldier-defensive-flourish.png";
+import soldierTopple from "../assets/ability-icons/soldier-topple.png";
+import soldierRiposteStance from "../assets/ability-icons/soldier-riposte-stance.png";
+import soldierCounterStrike from "../assets/ability-icons/soldier-counter-strike.png";
+import soldierShieldSweep from "../assets/ability-icons/soldier-shield-sweep.png";
 
 /**
  * Painted ability-icon art, keyed by class id then by an action's own
@@ -31,10 +38,10 @@ import clericSanctuary from "../assets/ability-icons/cleric-sanctuary.png";
  * exactly why this is keyed per-class rather than one flat map -- Warrior's
  * Wild Swing and Ranger's Blade Slash need different art under the same id.
  *
- * Warrior and Cleric have full coverage (every named ability plus both
- * Basic Attacks); Ranger has 5 of 6 named abilities, both Basic Attacks --
- * Sharpshooter is the only one still without an icon. Every other
- * class/ability falls back to the existing text-glyph treatment (see
+ * Warrior, Cleric, and Soldier have full coverage (every named ability
+ * plus both Basic Attacks); Ranger has 5 of 6 named abilities, both Basic
+ * Attacks -- Sharpshooter is the only one still without an icon. Every
+ * other class/ability falls back to the existing text-glyph treatment (see
  * `getAbilityIcon` below).
  */
 export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
@@ -65,6 +72,15 @@ export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
     ward: clericWard,
     grace: clericGrace,
     sanctuary: clericSanctuary,
+  },
+  soldier: {
+    "strike-melee": soldierMeleeAttack,
+    "strike-ranged": soldierRangedAttack,
+    "defensive-flourish": soldierDefensiveFlourish,
+    topple: soldierTopple,
+    "riposte-stance": soldierRiposteStance,
+    "counter-strike": soldierCounterStrike,
+    "shield-sweep": soldierShieldSweep,
   },
 };
 

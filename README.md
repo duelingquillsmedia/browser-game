@@ -4588,6 +4588,35 @@ Radiant Beam, Ward, Grace, and Sanctuary all visibly distinct. Clean
 `apps/client/src/game/abilityIcons.ts`;
 `apps/client/src/assets/ability-icons/cleric-*.png` (new, 7 files).
 
+## Painted Ability Icons for Soldier (2026-10-07)
+
+Per the user: a `Soldier Skill Assets` folder landed at the repo root,
+7 files. Fetched and fast-forward merged it in, then cross-referenced
+against Soldier's roster in `classes.ts`: Defensive Flourish, Topple,
+Riposte Stance, Counter-Strike, and Shield Sweep (5 named abilities) plus
+Melee Attack and Ranged Attack (Soldier's Basic Attack variants, "Practiced
+Strike" and "Steady Shot") -- exactly 7, full coverage, same as Warrior and
+Cleric.
+
+Moved the files into `apps/client/src/assets/ability-icons/`, fixing two
+source-naming quirks along the way: `Soldier Melee Attack.png` was missing
+the " - " separator every other file in the batch uses, and `Soldier -
+Shielf Sweep.png` had the same kind of typo already seen and fixed once
+before for Warrior's Warlord's Reckoning -- both normalized to this
+project's usual `soldier-<ability>.png` kebab-case convention
+(`soldier-shield-sweep.png`, not `soldier-shielf-sweep.png`). Added a
+`soldier` entry to `abilityIcons.ts`'s `ABILITY_ICONS_BY_CLASS` map, keyed
+the same `familyId ?? id` way as every class before it.
+
+Verified live via the `SkillsScreen` sandbox: a level-10 Soldier shows all
+5 named abilities with their painted icons (Defensive Flourish, Topple,
+Riposte Stance, Counter-Strike, Shield Sweep), each visually distinct.
+Clean `tsc --noEmit` and `vite build`.
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts`;
+`apps/client/src/assets/ability-icons/soldier-*.png` (new, 7 files).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
