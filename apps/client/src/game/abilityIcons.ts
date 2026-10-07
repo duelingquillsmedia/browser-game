@@ -34,6 +34,14 @@ import roguePoisonedThrow from "../assets/ability-icons/rogue-poisoned-throw.png
 import rogueGarrote from "../assets/ability-icons/rogue-garrote.png";
 import rogueVanish from "../assets/ability-icons/rogue-vanish.png";
 import rogueAssassinate from "../assets/ability-icons/rogue-assassinate.png";
+import druidMeleeAttack from "../assets/ability-icons/druid-melee-attack.png";
+import druidRangedAttack from "../assets/ability-icons/druid-ranged-attack.png";
+import druidWyldeHealing from "../assets/ability-icons/druid-wylde-healing.png";
+import druidWyldeWrath from "../assets/ability-icons/druid-wylde-wrath.png";
+import druidEntanglingRoots from "../assets/ability-icons/druid-entangling-roots.png";
+import druidBarkskin from "../assets/ability-icons/druid-barkskin.png";
+import druidBloom from "../assets/ability-icons/druid-bloom.png";
+import druidSavageGrowth from "../assets/ability-icons/druid-savage-growth.png";
 
 /**
  * Painted ability-icon art, keyed by class id then by an action's own
@@ -45,11 +53,11 @@ import rogueAssassinate from "../assets/ability-icons/rogue-assassinate.png";
  * exactly why this is keyed per-class rather than one flat map -- Warrior's
  * Wild Swing and Ranger's Blade Slash need different art under the same id.
  *
- * Warrior, Cleric, Soldier, and Rogue have full coverage (every named
- * ability plus both Basic Attacks); Ranger has 5 of 6 named abilities, both
- * Basic Attacks -- Sharpshooter is the only one still without an icon.
- * Every other class/ability falls back to the existing text-glyph
- * treatment (see `getAbilityIcon` below).
+ * Warrior, Cleric, Soldier, Rogue, and Druid have full coverage (every
+ * named ability plus both Basic Attacks); Ranger has 5 of 6 named
+ * abilities, both Basic Attacks -- Sharpshooter is the only one still
+ * without an icon. Every other class/ability falls back to the existing
+ * text-glyph treatment (see `getAbilityIcon` below).
  */
 export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
   warrior: {
@@ -97,6 +105,16 @@ export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
     garrote: rogueGarrote,
     vanish: rogueVanish,
     assassinate: rogueAssassinate,
+  },
+  druid: {
+    "strike-melee": druidMeleeAttack,
+    "strike-ranged": druidRangedAttack,
+    "wylde-healing": druidWyldeHealing,
+    "wylde-wrath": druidWyldeWrath,
+    "entangling-roots": druidEntanglingRoots,
+    barkskin: druidBarkskin,
+    bloom: druidBloom,
+    "savage-growth": druidSavageGrowth,
   },
 };
 

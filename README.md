@@ -4650,6 +4650,36 @@ named abilities with their painted icons, each visually distinct. Clean
 `apps/client/src/game/abilityIcons.ts`;
 `apps/client/src/assets/ability-icons/rogue-*.png` (new, 7 files).
 
+## Painted Ability Icons for Druid (2026-10-07)
+
+Per the user: a `Druid Skill Assets` folder landed at the repo root, 8
+files this time (one more than the usual 7, since Druid has 6 named
+abilities rather than 5). Fetched and fast-forward merged it in, then
+cross-referenced against Druid's roster in `classes.ts`: Wylde Healing,
+Wylde Wrath, Entangling Roots, Barkskin, Bloom, and Savage Growth (6 named
+abilities) plus Melee Attack and Ranged Attack (Druid's Basic Attack
+variants, "Nature's Strike" and "Nature's Blast") -- exactly 8, full
+coverage, same as every class wired in so far except Ranger.
+
+One source file needed the same kind of typo fix as prior batches:
+`Druid - Barksin.png` (missing the 'k') -- confirmed it was meant as
+Barkskin by opening it (an axe splitting into bark/wood, matching a
+defensive "tough bark" ability), then renamed to `druid-barkskin.png` on
+the way in, following the same precedent as Warrior's "Warlord's Eckoning"
+and Soldier's "Shielf Sweep".
+
+Moved all 8 files into `apps/client/src/assets/ability-icons/` and added a
+`druid` entry to `abilityIcons.ts`'s `ABILITY_ICONS_BY_CLASS` map.
+
+Verified live via the `SkillsScreen` sandbox: a level-10 Druid shows all 6
+named abilities with their painted icons (Wylde Healing, Wylde Wrath,
+Entangling Roots, Barkskin, Bloom, Savage Growth), each visually distinct.
+Clean `tsc --noEmit` and `vite build`.
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts`;
+`apps/client/src/assets/ability-icons/druid-*.png` (new, 8 files).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
