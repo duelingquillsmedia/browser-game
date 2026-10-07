@@ -4680,6 +4680,37 @@ Clean `tsc --noEmit` and `vite build`.
 `apps/client/src/game/abilityIcons.ts`;
 `apps/client/src/assets/ability-icons/druid-*.png` (new, 8 files).
 
+## Painted Ability Icons for Wizard -- Every Class Now Covered (2026-10-07)
+
+Per the user: a `Wizard Skill Assets` folder landed at the repo root, 8
+files. Fetched and fast-forward merged it in, then cross-referenced against
+Wizard's roster in `classes.ts`: Elemental Shard, Arcane Barrier, Frostbind,
+Arcane Nova, Immolate, and Spellstrike (6 named abilities) plus Melee Attack
+and Ranged Attack (Wizard's Basic Attack variants, "Arcane Smash" and
+"Arcane Bolt") -- exactly 8, full coverage, same as every other class wired
+in across this batch of requests.
+
+Moved the files into `apps/client/src/assets/ability-icons/` and added a
+`wizard` entry to `abilityIcons.ts`'s `ABILITY_ICONS_BY_CLASS` map -- no
+source-naming issues to fix this time, unlike the Warrior/Soldier/Druid
+batches.
+
+Wizard was the last class with zero ability-icon art, so this closes out
+the painted-icon rollout started several requests ago: all 7 classes
+(Warrior, Ranger, Cleric, Soldier, Rogue, Druid, Wizard) now have icons for
+their full ability kit, with the single exception of Ranger's Sharpshooter
+passive, which still has no art uploaded and falls back to its text glyph
+like it always has.
+
+Verified live via the `SkillsScreen` sandbox: a level-10 Wizard shows all 6
+named abilities with their painted icons (Elemental Shard, Arcane Barrier,
+Frostbind, Arcane Nova, Immolate, Spellstrike), each visually distinct.
+Clean `tsc --noEmit` and `vite build`.
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts`;
+`apps/client/src/assets/ability-icons/wizard-*.png` (new, 8 files).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**
