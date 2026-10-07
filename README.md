@@ -4617,6 +4617,39 @@ Clean `tsc --noEmit` and `vite build`.
 `apps/client/src/game/abilityIcons.ts`;
 `apps/client/src/assets/ability-icons/soldier-*.png` (new, 7 files).
 
+## Painted Ability Icons for Rogue (2026-10-07)
+
+Per the user: a `Rogue Skill Assets` folder landed at the repo root, 7
+files. Fetched and fast-forward merged it in, then cross-referenced against
+Rogue's roster in `classes.ts`: Evasive Jab, Poisoned Throw, Garrote,
+Vanish, and Assassinate (5 named abilities) plus a Ranged Attack file and a
+melee-attack file, for Rogue's Basic Attack variants ("Subtle Slash" and
+"Quick Strike").
+
+One file needed a judgment call: the melee-attack file was named `Ranger -
+Melee Attack.png` despite sitting inside the Rogue folder with every other
+file named `Rogue - ...` -- a mislabel, not a second Ranger icon slipped in
+by mistake, confirmed by opening it: a dagger rendered in the same green
+glow/stealth palette as Vanish and the rest of the Rogue set, nothing like
+Ranger's existing (differently colored) icons. Treated it as Rogue's melee
+attack and renamed it accordingly on the way in, the same way earlier
+batches fixed "Warlord's Eckoning" and "Shielf Sweep". That gives Rogue the
+same full coverage Warrior, Cleric, and Soldier already have.
+
+Moved the files into `apps/client/src/assets/ability-icons/` as
+`rogue-melee-attack.png`, `rogue-ranged-attack.png`, `rogue-evasive-jab.png`,
+`rogue-poisoned-throw.png`, `rogue-garrote.png`, `rogue-vanish.png`, and
+`rogue-assassinate.png`, then added a `rogue` entry to `abilityIcons.ts`'s
+`ABILITY_ICONS_BY_CLASS` map.
+
+Verified live via the `SkillsScreen` sandbox: a level-10 Rogue shows all 5
+named abilities with their painted icons, each visually distinct. Clean
+`tsc --noEmit` and `vite build`.
+
+### Critical files
+`apps/client/src/game/abilityIcons.ts`;
+`apps/client/src/assets/ability-icons/rogue-*.png` (new, 7 files).
+
 ## Lore
 
 World content is grounded in the project's own **Encyclopedia of Eridan**

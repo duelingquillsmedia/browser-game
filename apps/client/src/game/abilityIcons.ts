@@ -27,6 +27,13 @@ import soldierTopple from "../assets/ability-icons/soldier-topple.png";
 import soldierRiposteStance from "../assets/ability-icons/soldier-riposte-stance.png";
 import soldierCounterStrike from "../assets/ability-icons/soldier-counter-strike.png";
 import soldierShieldSweep from "../assets/ability-icons/soldier-shield-sweep.png";
+import rogueMeleeAttack from "../assets/ability-icons/rogue-melee-attack.png";
+import rogueRangedAttack from "../assets/ability-icons/rogue-ranged-attack.png";
+import rogueEvasiveJab from "../assets/ability-icons/rogue-evasive-jab.png";
+import roguePoisonedThrow from "../assets/ability-icons/rogue-poisoned-throw.png";
+import rogueGarrote from "../assets/ability-icons/rogue-garrote.png";
+import rogueVanish from "../assets/ability-icons/rogue-vanish.png";
+import rogueAssassinate from "../assets/ability-icons/rogue-assassinate.png";
 
 /**
  * Painted ability-icon art, keyed by class id then by an action's own
@@ -38,11 +45,11 @@ import soldierShieldSweep from "../assets/ability-icons/soldier-shield-sweep.png
  * exactly why this is keyed per-class rather than one flat map -- Warrior's
  * Wild Swing and Ranger's Blade Slash need different art under the same id.
  *
- * Warrior, Cleric, and Soldier have full coverage (every named ability
- * plus both Basic Attacks); Ranger has 5 of 6 named abilities, both Basic
- * Attacks -- Sharpshooter is the only one still without an icon. Every
- * other class/ability falls back to the existing text-glyph treatment (see
- * `getAbilityIcon` below).
+ * Warrior, Cleric, Soldier, and Rogue have full coverage (every named
+ * ability plus both Basic Attacks); Ranger has 5 of 6 named abilities, both
+ * Basic Attacks -- Sharpshooter is the only one still without an icon.
+ * Every other class/ability falls back to the existing text-glyph
+ * treatment (see `getAbilityIcon` below).
  */
 export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
   warrior: {
@@ -81,6 +88,15 @@ export const ABILITY_ICONS_BY_CLASS: Record<string, Record<string, string>> = {
     "riposte-stance": soldierRiposteStance,
     "counter-strike": soldierCounterStrike,
     "shield-sweep": soldierShieldSweep,
+  },
+  rogue: {
+    "strike-melee": rogueMeleeAttack,
+    "strike-ranged": rogueRangedAttack,
+    "evasive-jab": rogueEvasiveJab,
+    "poisoned-throw": roguePoisonedThrow,
+    garrote: rogueGarrote,
+    vanish: rogueVanish,
+    assassinate: rogueAssassinate,
   },
 };
 
